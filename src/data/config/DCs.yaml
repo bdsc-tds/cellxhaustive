@@ -1,0 +1,13 @@
+name: "DCs"
+name_annotation: "DCs"
+positive:
+    - CD3: False
+    - CD19: False
+    - CD56: False
+    - HLA-DR: True
+    - CD14: False
+min_cluster_size: 100
+min_samples: 100
+nclusters: 10
+x: CD3
+y: HLA-DR

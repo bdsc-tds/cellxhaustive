@@ -1,0 +1,11 @@
+name: "B cells"
+name_annotation: "B"
+positive:
+    - CD3: False
+    - CD4: False
+    - CD19: True
+min_cluster_size: 100
+min_samples: 100
+nclusters: 10
+x: CD3
+y: CD19

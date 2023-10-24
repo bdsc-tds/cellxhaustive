@@ -1,0 +1,10 @@
+name: "Monocytes"
+name_annotation: "monocytes"
+positive:
+    - CD3: False
+    - CD4: True
+min_cluster_size: 300
+min_samples: 300
+nclusters: 10
+x: CD3
+y: CD4

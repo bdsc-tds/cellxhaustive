@@ -1,0 +1,11 @@
+name: "CD8+ T-cells"
+name_annotation: "CD8 T"
+positive:
+    - CD3: True
+    - CD8: True
+    - CD4: False
+min_cluster_size: 200
+min_samples: 200
+nclusters: 10
+x: CD3
+y: CD8

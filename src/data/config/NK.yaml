@@ -1,0 +1,11 @@
+name: "NKs"
+name_annotation: "NK"
+positive:
+    - CD3: False
+    - CD4: False
+    - CD56: True
+min_cluster_size: 100
+min_samples: 100
+nclusters: 10
+x: CD3
+y: CD56
