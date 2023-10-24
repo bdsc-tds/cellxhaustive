@@ -32,9 +32,7 @@ from scipy.sparse import csr_matrix
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 
-import diptest
-
-from cell_ontology_names import *
+from cellxhaustive.cell_ontology_names import *
 
 # Perform main gating strategy to separate CD4T, CD8T, Monocytes, DCs, NKs, and B cells.
 def gaussian_gating(mat, markers, marker_order = ["CD3", "CD4"], positive = [True, True], makeplot = False, random_state = None, hao_extension = ".2", root = "./"):
