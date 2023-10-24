@@ -22,8 +22,6 @@ import sys
 import pickle
 
 # ML libraries
-from scipy import stats
-from sklearn.mixture import GaussianMixture
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
@@ -32,82 +30,11 @@ from scipy.sparse import csr_matrix
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 
+# Local imports
 from cellxhaustive.cell_ontology_names import *
-
-# Perform main gating strategy to separate CD4T, CD8T, Monocytes, DCs, NKs, and B cells.
-def gaussian_gating(mat, markers, marker_order = ["CD3", "CD4"], positive = [True, True], makeplot = False, random_state = None, hao_extension = ".2", root = "./"):
-    """Main gating strategy
-
-       Parameters
-       ----------
-       mat : ndarray
-         A 2-D array expression matrix
-
-       markers : array
-         A 1-D array with the markers in `mat` corresponding to each column
-
-       marker_order : list(str)
-         List of markers used in the gating strategy ordered accordingly.
-         
-       positive : list(bool)
-         List describing wether the markers in `marker_order` are positively (True) or negatively (False) expressed
-         
-       makeplot : bool
-         whether or not to generate figure
-
-       random_state : float or None, (default=None)
-          random seed.
-        
-        hao_extension : str, (default=".2")
-          The hao dataset uses multiple clones for some of the antibodies, e.g. naming them as CD4.1, CD4.2, etc. This variable allows you to add the extension for the right clone
-          There are certainly better and more generalizable ways to do so, but I just can't be bothered...
-    """
-    
-    # Two vectors that are meant to filter things progressively
-    truefalse = np.zeros(np.shape(mat)[0])==0
-    truefalse_ = np.zeros(np.shape(mat)[0])!=0
-
-    for idx, marker in enumerate(marker_order):
-        # Find expression for a given marker index
-        mdx = np.where(markers==marker)[0]
-        if len(mdx)==0:
-            mdx = np.where(markers==marker + hao_extension)[0][0]
-        else:
-            mdx = mdx[0]
-        
-        # Select expression for such marker
-        expression = mat[truefalse,mdx]
-        
-        # Figure out what the peaks are along the x axis.
-        xran = np.linspace(np.min(expression), np.max(expression),num=10000)
-        gm = GaussianMixture(n_components=2, random_state=random_state, max_iter=100, n_init=10, #tol=1e-5,
-                             means_init=np.array([[1],[5]])).fit(expression[:, np.newaxis])
-
-        # Sort peaks
-        means_ = gm.means_[:,0]
-        order = np.argsort(means_)
-        means_ = means_[order]
-        
-        # Find density kde for the peaks and figure out where the valley is.
-        kernel = stats.gaussian_kde(expression)
-        density = kernel.evaluate(xran)
-        xran_ = np.logical_and(xran>means_[0], xran<means_[1])
-        density_ = density[xran_]
-        xran_ = xran[xran_]
-        kdx = np.argmin(density_)
-        valley = xran_[kdx]
-                
-        # Based on the position of the valley, select the positive or negative cells for marker idx
-        if positive[idx]:
-            truefalse_[truefalse] = expression>valley
-            truefalse = copy.copy(truefalse_)
-            truefalse_ = truefalse_*False
-        else:
-            truefalse_[truefalse] = expression<valley
-            truefalse = copy.copy(truefalse_)
-            truefalse_ = truefalse_*False
-
-    return truefalse
+from cellxhaustive.main_gating import gaussian_gating
+from cellxhaustive.utility import find_set_differences
+from cellxhaustive.select import select_cells
 
 # Brute force way to select cells given normalized data
 def select_cells(mat, markers, positive=[], negative=[], lowpositive=[], three_marker=[], two_peak_threshold=3, three_peak_lower_threshold = 2, three_peak_upper_threshold = 4):
@@ -170,121 +97,8 @@ def select_cells(mat, markers, positive=[], negative=[], lowpositive=[], three_m
     
     return pos
 
-# Clustering method to select cells given normalized data
-def broad_identification(mat, markers, positive, negative, lowpositive=[],three_marker=[], min_cluster_size=10, min_samples = 10, method = "kmeans", nclusters=30, random_state = None, mat_raw = None):
-
-    """Main gating strategy
-
-       Parameters
-       ----------
-       mat : ndarray
-         A 2-D array normalized expression matrix
-
-       mat_raw : ndarray
-         A 2-D array raw expression matrix
-
-       markers : array
-         A 1-D array with the markers in `mat` corresponding to each column
-
-       positive : list(str)
-         List of markers that are positively expressed.
-         
-       negative : list(str)
-         List of markers that are negatively expressed.
-         
-       lowpositive : list(str)
-         List of markers that are express a middle peak.
-
-       three_marker : list(str)
-         List of markers that have three peaks.
-
-       method : str
-         Method to perform the clustering.
-         
-       min_cluster_size, min_samples, nclusters : int
-         parameters to control the hdbscan clustering.
-         
-       random_state : int or None, (default=None)
-          random seed.
-    """
-    
-    # Slice matrix
-    marker_id = np.isin(markers, positive + negative + lowpositive)
-    if mat_raw is None:
-        mmm = mat[:, marker_id]
-    else:
-        mmm = mat_raw[:, marker_id]
-    
-    # Cluster based on selected markers
-    clustering = KMeans(n_clusters=nclusters, n_init="auto", random_state = random_state).fit(mmm)
-                                 
-    # Generate cluster by marker expression matrix
-    ulabels = np.unique(clustering.labels_)
-    mark_exprr = np.zeros((len(ulabels), np.shape(mmm)[1]))
-    for idx, i in enumerate(ulabels):
-        mark_exprr[idx, :] = np.mean(mmm[clustering.labels_==i,:], axis=0)
-    
-    # Figure out which cluster fall within the defined thresholds
-    truefalse = select_cells(
-                     mat = mark_exprr,
-                     markers = markers[marker_id],
-                     positive = positive,
-                     negative = negative,
-                     lowpositive = lowpositive,
-                     three_marker = three_marker
-                     )
-    truefalse = ulabels[truefalse]
-    truefalse = truefalse[truefalse!=-1]
-    
-    # Return selection of cells
-    return np.isin(clustering.labels_, truefalse)
- 
-# A utility function to rename cell types
-def find_set_differences(cell_groups_renaming, baseline_name = "baseline"):
-    """Find key differences across dictionaries. Provided a dictionary where every key corresponds to a given cell line,
-       and every value is the set of positive/negative markers for that same cell line,
-       the function will provide a dictionary with the key diferences between cell types.
-
-       Parameters
-       ----------
-       cell_groups_renaming : dict(set(str))
-         Imagine that you have three cell lines (CD4 T, CD8 T and DCs) that are characterized by three markers: CD3, CD4, CD8.
-         `cell_groups_renaming` is a dictionary such that `cell_groups_renaming["CD4 T"] = set(["CD3+", "CD4+", "CD8-"])`
-         
-       baseline_name : str
-         name given to the baseline cell type picked.
-       
-       Returns
-       -------
-       Following the example above, the function will return the following dictionary:
-       ```
-       {'CD4 T': 'CD4+', 'CD8 T': 'CD8+', 'DCs': 'CD3-'}
-       ```
-    """
-    mark, cnts = np.unique([y for x in cell_groups_renaming.keys() for y in list(cell_groups_renaming[x])], return_counts=True)
-    common_mark = mark[np.flip(np.argsort(cnts))]
-
-    # Identify what are the key markers that distinguish the different groups and define the baseline based on the shortest combination
-    keep_marks = []
-    common_first = set()
-    for i in common_mark:
-        x = i.replace("-", "").replace("+", "")
-        if x not in common_first:
-            common_first.add(x)
-            keep_marks.append(i)
-            
-    for x in cell_groups_renaming.keys():
-        cell_groups_renaming[x] = " ".join(np.sort(list(cell_groups_renaming[x] - set(keep_marks))))
-        if cell_groups_renaming[x] == "" and x!=-1:
-            cell_groups_renaming[x] = baseline_name
-        elif x==-1:
-            cell_groups_renaming[x] = "undefined"
-
-    return cell_groups_renaming
-
 # Permute across positive and negative expression of the relevant markers, and identify new cell types
-def cell_subdivision(mat, mat_representative, markers, markers_representative, batches, samples, marker_order,
-                     three_marker=[], p_min=np.array([0.1,0.2]), s_min=np.array([5,10])):
+def cell_subdivision_counts(mat, mat_representative, markers, markers_representative, batches, samples, marker_order, three_marker=[], p_min=np.array([0.1,0.2]), s_min=np.array([5,10])):
     """Cell line subdivision
 
        Parameters
@@ -325,7 +139,6 @@ def cell_subdivision(mat, mat_representative, markers, markers_representative, b
     groups = [tuple(np.unique(i)) for i in ite.combinations_with_replacement(
         markers_representative_,len(markers_representative_))]
     groups = [tuple([])] + groups
-    
     
     # Loop over unique groups
     for i in set(groups):
@@ -416,7 +229,7 @@ def check_all_subsets(max_markers, x_p, y_ns, mat_, mat_representative, markers,
             mset[index] = g
 
             # Find number of cells and undefined cells for a given marker combination across the p and ns grid
-            results, undefined = cell_subdivision(
+            results, undefined = cell_subdivision_counts(
                 mat = mat_,
                 mat_representative = mat_subset,
                 markers = markers,
@@ -504,7 +317,7 @@ def check_all_subsets(max_markers, x_p, y_ns, mat_, mat_representative, markers,
     
 
 # Permute across positive and negative expression of the relevant markers, and identify new cell types
-def cell_subdivision_annotate(mat, mat_representative, markers, markers_representative, batches, samples, marker_order,
+def cell_subdivision(mat, mat_representative, markers, markers_representative, batches, samples, marker_order,
                      three_marker=[], cell_name = "None", p_min=0.4,s_min=10):
     """Cell line subdivision
 
@@ -716,7 +529,7 @@ def knn_classifier(mat_representative, clustering_labels, min_probability = 0.5)
     return clustering_labels
 
 # Full pipeline
-def cell_identification_by_batch(mat,
+def cell_identification(mat,
                         markers,
                         batches,
                         samples,
@@ -724,8 +537,11 @@ def cell_identification_by_batch(mat,
                         positive,
                         three_marker=[],
                         s_min=10, p_min=0.5,
-                        max_markers = 15, min_annotations = 3, bimodality_selection_method = "midpoint",
-                        mat_raw = None, cell_name = "None", knn_refine = True, knn_min_probability = 0.5,
+                        max_midpoint_preselection = 15,
+                        max_markers = 15,
+                        min_annotations = 3, bimodality_selection_method = "midpoint",
+                        mat_raw = None, cell_name = "None", knn_refine = True,
+                        knn_min_probability = 0.5,
                         random_state = None):
 
     """Pipeline for automated gating, feature selection, and clustering to generate new annotations.
@@ -879,7 +695,7 @@ def cell_identification_by_batch(mat,
 
             # Check bimodality of the markers selected
             center_values = -np.abs(np.mean(mat_, axis=0)-3)
-            max_values = np.sort(center_values)[::-1][max_markers]
+            max_values = np.sort(center_values)[::-1][max_midpoint_preselection]
             labels_ = center_values>max_values
             markers_representative = markers[np.isin(markers, markers[labels_])]
 
@@ -935,7 +751,7 @@ def cell_identification_by_batch(mat,
         mat_representative = mat_[:, np.isin(markers, markers_representative_)]
         
         # Now let's figure out which groups of markers form relevant cell types
-        cell_groups, cell_groups_name, clustering_labels, mat_average, markers_average = cell_subdivision_annotate(
+        cell_groups, cell_groups_name, clustering_labels, mat_average, markers_average = cell_subdivision(
                         mat = mat_,
                         mat_representative = mat_representative,
                         markers = markers,
