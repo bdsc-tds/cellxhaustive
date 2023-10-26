@@ -771,4 +771,304 @@ def cell_identification(mat,
         return truefalse, cell_groups_name, clustering_labels, markers_representative_batches, markers_representative #, dfdata
     else:
         return truefalse, {-1 : cell_name}, np.zeros(np.sum(truefalse))-1, markers_representative_batches, []
+        
+# Full pipeline
+def identify_phenotypes(truefalse,
+                        mat,
+                        markers,
+                        batches,
+                        samples,
+                        s_min=10, p_min=0.5,
+                        max_midpoint_preselection = 15,
+                        max_markers = 15,
+                        min_annotations = 3, bimodality_selection_method = "midpoint",
+                        cell_name = "None", knn_refine = True,
+                        knn_min_probability = 0.5,
+                        random_state = None):
+    """Pipeline for automated gating, feature selection, and clustering to generate new annotations.
 
+       Parameters
+       ----------
+       mat : ndarray
+         A 2-D array expression matrix
+         
+       markers : array
+         A 1-D array with the markers in `mat` corresponding to each column
+
+       batches : array(str)
+         A list of batch names per cell, useful for defining the thresholds for the new annotations.
+
+       samples : array(str)
+         A list of sample names per cell, useful for defining the thresholds for the new annotations.
+
+       marker_order : list(str)
+         List of markers used in the gating strategy, ordered accordingly.
+         
+       positive : list(bool)
+         List indicating whether the markers in `marker_order` are positively (True) or negatively (False) expressed.
+
+       three_marker : list(str)
+         List of markers with potentially three peaks.
+
+       s_min : float, (default=10)
+         minimum number of cells within sample in 'p_min' % of samples within each batch for a new annotation to be considered.
+
+       p_min : float, (default=0.5)
+         minimum proportion of samples within batch with 's_min' cells for a new annotation to be considered.
+
+       max_markers : int or None, (default=15)
+          maximum number of relevant markers selected.
+          
+       bimodality_selection_method : str, (default = "midpoint")
+         Two methods possible: 'DBSCAN', which uses the clustering method with the same name; and, 'midpoint', which basically uses those markers closer to the normalized matrix
+        
+       mat_raw : ndarray or None, (default=None)
+         A 2-D array raw expression matrix
+
+       cell_name : str, (default = "None")
+         Base name for cell types (e.g. CD4 T-cells for 'CD4T')
+
+       knn_refine : bool, (default=False)
+         If True, the clustering done via permutations of relevant markers will be refined using a knn classifier
+
+       knn_min_probability : float, (default=0.5)
+         confidence threshold for the knn classifier to reassign new cell type
+         
+       random_state : int or None, (default=None)
+         random seed.
+    """
+    
+    ### MAIN GATING: we perform the gating for every batch independently. But that might be a bit of an overkill...
+    
+    
+    for kdx, k in enumerate(np.unique(batches)):
+        batch = batches==k
+
+        # Subset batch
+        truefalse_b = truefalse[batch]
+        mat_ = mat[batch,:]
+
+        if bimodality_selection_method == "DBSCAN":
+
+            eps_marker_clustering = np.sqrt((pairwise_distances(mat_.transpose(), metric="euclidean")**2)/float(np.sum(batch)))
+            eps_marker_clustering = np.quantile(eps_marker_clustering[np.triu_indices(np.shape(eps_marker_clustering)[0], k=1)], q=0.05)
+
+            # Subset cell types
+            mat_ = mat_[truefalse_b,:]
+
+            # Transpose matrix to perform marker clustering
+            X = mat_.transpose()
+            
+            # Calculate normalized pairwise distance
+            eps = np.sqrt((pairwise_distances(X, metric="euclidean")**2)/float(np.shape(X)[1]))
+
+            # Calculate PCA space
+            Xt = PCA(n_components=2).fit_transform(X)
+
+            # Run DBSCAN
+            km = DBSCAN(min_samples=1, eps=eps_marker_clustering, metric='precomputed', leaf_size=2).fit(eps)
+            labels_ = km.labels_
+
+            # Find the cluster center and generate an array of cluster by cell.
+            cluster_centers_ = np.zeros((len(np.unique(labels_)), np.shape(mat_)[0]))
+            for i in range(len(np.unique(labels_))):
+                cluster_centers_[i, :] = np.mean(mat_[:,labels_ ==i], axis=1)
+        
+            # Generate marker expression per cluster matrix
+            mark_exprr = np.zeros((len(np.unique(labels_)), len(markers)))
+            for idx, i in enumerate(labels_):
+                mark_exprr[i, idx] += 1
+
+            # Remove known invariants and associated clustered markers
+            known_invariants = markers[np.sum(mark_exprr[np.any(mark_exprr[:,np.isin(markers, marker_order)], axis=1),:], axis=0)>0]
+
+            # Remove invariant markers based on the known invariants
+            vt = VarianceThreshold().fit(mat_)
+            invariants = markers[vt.variances_<=np.max(vt.variances_[np.isin(markers,marker_order)])]
+            invariants = np.unique(list(invariants)+list(known_invariants))
+
+            # For the variable markers, find closer to the cluster centroids. Slice matrix subsequently
+            markers_representative = []
+            for idx, i in enumerate(np.sum(mark_exprr, axis=1)):
+                m_step = markers[mark_exprr[idx, :]>0]
+                if i==1:
+                    markers_representative += [m_step[0]]
+                else:
+                    closest, _ = pairwise_distances_argmin_min(cluster_centers_[idx, :][np.newaxis, :],
+                                                               X[np.isin(markers, m_step),:])
+                    markers_representative += [markers[np.isin(markers, m_step)][closest][0]]
+                    
+            markers_representative = np.asarray(markers_representative)[np.isin(markers_representative,invariants)==False]
+            markers_representative = markers[np.isin(markers, markers_representative)]
+            
+            # Generate dictionary for relevant markers
+            mdict = dict()
+            for i in markers_representative:
+                mdict[i] = markers[mark_exprr[labels_[markers==i][0], :] > 0]
+
+            # Store dictionary for every batch
+            markers_representative_batches[k] = mdict
+            
+        else:
+        
+            # Subset cell types
+            mat_ = mat_[truefalse_b,:]
+
+            # Check bimodality of the markers selected
+            center_values = -np.abs(np.mean(mat_, axis=0)-3)
+            max_values = np.sort(center_values)[::-1][max_midpoint_preselection]
+            labels_ = center_values>max_values
+            markers_representative = markers[np.isin(markers, markers[labels_])]
+
+            # Remove invariant markers based on the known invariants
+            vt = VarianceThreshold().fit(mat_)
+            invariants = markers[vt.variances_<=np.max(vt.variances_[np.isin(markers,marker_order)])]
+            markers_representative = np.asarray(markers_representative)[np.isin(markers_representative,invariants)==False]
+            markers_representative = markers[np.isin(markers, markers_representative)]
+            
+            # Generate dictionary for relevant markers
+            mdict = dict([(i,i) for i in markers_representative])
+
+            # Store dictionary for every batch
+            markers_representative_batches[k] = mdict
+
+    ### SELECT RELEVANT MARKERS BASED ON SELECTIONS ACROSS BATCHES AND SLICE DATA
+    
+    # Filter markers with appearences in all batches
+    m, c = np.unique(list(ite.chain.from_iterable(
+        [list(markers_representative_batches[i].keys()) for idx, i in enumerate(markers_representative_batches.keys())])),
+        return_counts = True)
+    markers_representative = m[c == len(markers_representative_batches.keys())]
+
+    # Merge all batches together and extract main cell type
+    mat_ = mat[truefalse, :]
+    samples_ = samples[truefalse]
+    batches_ = batches[truefalse]
+    
+    # Slice matrix and markers using the selected markers through the main gating
+    mat_representative = mat_[:, np.isin(markers, markers_representative)]
+    markers_representative = markers[np.isin(markers, markers_representative)]
+
+    ### STUDY SUBSETS OF MARKERS: Go over every combination of markers and understand the resulting number of cell types and unidentified cells
+    x_p = np.linspace(0,1,101)
+    y_ns = np.arange(101)
+    
+    markers_representative_ = check_all_subsets(max_markers = max_markers,
+                                                x_p = x_p,
+                                                y_ns = y_ns,
+                                                mat_ = mat_,
+                                                mat_representative = mat_representative,
+                                                markers = markers,
+                                                markers_representative = markers_representative,
+                                                marker_order = marker_order,
+                                                batches = batches_,
+                                                samples = samples_,
+                                                cell = cell_name,
+                                                ns = s_min, p = p_min,
+                                                min_cells = min_annotations)
+
+    if len(markers_representative_)>0:
+        markers_representative = markers[np.isin(markers, markers_representative_)]
+        mat_representative = mat_[:, np.isin(markers, markers_representative_)]
+        
+        # Now let's figure out which groups of markers form relevant cell types
+        cell_groups, cell_groups_name, clustering_labels, mat_average, markers_average = cell_subdivision(
+                        mat = mat_,
+                        mat_representative = mat_representative,
+                        markers = markers,
+                        markers_representative = markers_representative,
+                        batches = batches_,
+                        samples = samples_,
+                        marker_order = marker_order,
+                        three_marker = three_marker,
+                        p_min = p_min,
+                        s_min = s_min,
+                        cell_name = cell_name)
+
+        # Try to classify undefined cells using a knn classifier
+        if knn_refine:
+            clustering_labels = knn_classifier(mat_representative, clustering_labels, min_probability = knn_min_probability)
+
+        return truefalse, cell_groups_name, clustering_labels, markers_representative_batches, markers_representative #, dfdata
+    else:
+        return truefalse, {-1 : cell_name}, np.zeros(np.sum(truefalse))-1, markers_representative_batches, []
+
+def annotate(mat,
+            markers,
+            batches,
+            samples,
+            labels,
+            min_cellxsample = 10,
+            percent_samplesxbatch = 0.5,
+            max_midpoint_preselection = 15,
+            max_markers = 15,
+            min_annotations = 3,
+            bimodality_selection_method = "midpoint",
+            knn_refine = True,
+            knn_min_probability = 0.5,
+            min_annotations = 3
+            random_state = None):
+            
+    """Pipeline for automated gating, feature selection, and clustering to generate new annotations.
+
+       Parameters
+       ----------
+       mat : ndarray
+         A 2-D numpy array expression matrix
+         
+       markers : array
+         A 1-D numpy array with the markers in `mat` corresponding to each column
+
+       labels : array(str)
+         A 1-D numpy array with the main cell labels.
+
+       batches : array(str)
+         A 1-D numpy array with batch names per cell.
+
+       samples : array(str)
+         A 1-D numpy array with sample names per cell.
+    
+       min_cellxsample : float, (default=10)
+         minimum number of cells within sample in 'p_min' % of samples within each batch for a new annotation to be considered.
+
+       percent_samplesxbatch : float, (default=0.5)
+         minimum proportion of samples within batch with 's_min' cells for a new annotation to be considered.
+
+       max_markers : int or None, (default=15)
+         maximum number of relevant markers selected.
+          
+       bimodality_selection_method : str, (default = "midpoint")
+         Two methods possible: 'DBSCAN', which uses the clustering method with the same name; and, 'midpoint', which basically uses those markers closer to the normalized matrix
+
+       knn_refine : bool, (default=False)
+         If True, the clustering done via permutations of relevant markers will be refined using a knn classifier
+
+       knn_min_probability : float, (default=0.5)
+         confidence threshold for the knn classifier to reassign new cell type
+         
+       random_state : int or None, (default=None)
+         random seed.
+    """
+
+    annotations = np.asarray(["undefined"]*len(labels)).astype('U100')
+
+    for idx, i in enumerate(np.unique(labels)):
+        truefalse = labels == i
+        cell_groups, clustering_labels, mdictA, fmarker = identify_phenotypes(
+                            truefalse = truefalse,
+                            mat = mat,
+                            markers = markers,
+                            batches = batches,
+                            samples = samples,
+                            p_min = percent_samplesxbatch,
+                            s_min = min_cellxsample,
+                            max_midpoint_preselection = max_midpoint_preselection,
+                            max_markers = max_markers,
+                            min_annotations = min_annotations,
+                            bimodality_selection_method = bimodality_selection_method,
+                            random_state = random_state,
+                            knn_refine = knn_refine,
+                            cell_name = i)
+
+        cell_dict = dict([tuple([x,cell_groups[x].split(" (")[0]]) for x in cell_groups])
+        annotations[truefalse] = np.vectorize(cell_dict.get)(clustering_labels)

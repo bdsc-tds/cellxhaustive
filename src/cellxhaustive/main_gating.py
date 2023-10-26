@@ -76,3 +76,7 @@ def gaussian_gating(mat, markers, marker_order = ["CD3", "CD4"], positive = [Tru
             truefalse_ = truefalse_*False
 
     return truefalse
+
+def main_gating():
+
+    return True
