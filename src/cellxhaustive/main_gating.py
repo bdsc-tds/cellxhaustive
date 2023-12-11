@@ -3,7 +3,7 @@ from scipy import stats
 from sklearn.mixture import GaussianMixture
 
 # Perform main gating strategy to separate CD4T, CD8T, Monocytes, DCs, NKs, and B cells.
-def gaussian_gating(mat, markers, marker_order = ["CD3", "CD4"], positive = [True, True], makeplot = False, random_state = None, hao_extension = ".2", root = "./"):
+def gaussian_gating(mat, markers, marker_order=["CD3", "CD4"], positive=[True, True], makeplot=False, random_state=None, hao_extension=".2", root="./"):
     """Main gating strategy
 
        Parameters
@@ -32,34 +32,33 @@ def gaussian_gating(mat, markers, marker_order = ["CD3", "CD4"], positive = [Tru
     """
     
     # Two vectors that are meant to filter things progressively
-    truefalse = np.zeros(np.shape(mat)[0])==0
-    truefalse_ = np.zeros(np.shape(mat)[0])!=0
+    truefalse = np.zeros(np.shape(mat)[0]) == 0
+    truefalse_ = np.zeros(np.shape(mat)[0]) != 0
 
     for idx, marker in enumerate(marker_order):
         # Find expression for a given marker index
-        mdx = np.where(markers==marker)[0]
-        if len(mdx)==0:
-            mdx = np.where(markers==marker + hao_extension)[0][0]
+        mdx = np.where(markers == marker)[0]
+        if len(mdx) == 0:
+            mdx = np.where(markers == marker + hao_extension)[0][0]
         else:
             mdx = mdx[0]
         
         # Select expression for such marker
-        expression = mat[truefalse,mdx]
-        
+        expression = mat[truefalse, mdx]
         # Figure out what the peaks are along the x axis.
-        xran = np.linspace(np.min(expression), np.max(expression),num=10000)
-        gm = GaussianMixture(n_components=2, random_state=random_state, max_iter=100, n_init=10, #tol=1e-5,
-                             means_init=np.array([[1],[5]])).fit(expression[:, np.newaxis])
+        xran = np.linspace(np.min(expression), np.max(expression), num=10000)
+        gm = GaussianMixture(n_components=2, random_state=random_state, max_iter=100, n_init=10,  # AT. Double-check this 'tol=1e-5,'
+                             means_init=np.array([[1], [5]])).fit(expression[:, np.newaxis])
 
         # Sort peaks
-        means_ = gm.means_[:,0]
+        means_ = gm.means_[:, 0]
         order = np.argsort(means_)
         means_ = means_[order]
         
         # Find density kde for the peaks and figure out where the valley is.
         kernel = stats.gaussian_kde(expression)
         density = kernel.evaluate(xran)
-        xran_ = np.logical_and(xran>means_[0], xran<means_[1])
+        xran_ = np.logical_and(xran > means_[0], xran < means_[1])
         density_ = density[xran_]
         xran_ = xran[xran_]
         kdx = np.argmin(density_)
@@ -67,13 +66,13 @@ def gaussian_gating(mat, markers, marker_order = ["CD3", "CD4"], positive = [Tru
                 
         # Based on the position of the valley, select the positive or negative cells for marker idx
         if positive[idx]:
-            truefalse_[truefalse] = expression>valley
-            truefalse = copy.copy(truefalse_)
-            truefalse_ = truefalse_*False
+            truefalse_[truefalse] = expression > valley
+            truefalse = copy.copy(truefalse_)  # AT. Double check this 'copy: undefined name
+            truefalse_ = truefalse_ * False
         else:
-            truefalse_[truefalse] = expression<valley
-            truefalse = copy.copy(truefalse_)
-            truefalse_ = truefalse_*False
+            truefalse_[truefalse] = expression < valley
+            truefalse = copy.copy(truefalse_)  # AT. Double check this 'copy: undefined name
+            truefalse_ = truefalse_ * False
 
     return truefalse
 

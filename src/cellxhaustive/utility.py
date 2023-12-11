@@ -22,23 +22,25 @@ def find_set_differences(cell_groups_renaming, baseline_name = "baseline"):
        {'CD4 T': 'CD4+', 'CD8 T': 'CD8+', 'DCs': 'CD3-'}
        ```
     """
-    mark, cnts = np.unique([y for x in cell_groups_renaming.keys() for y in list(cell_groups_renaming[x])], return_counts=True)
+    mark, cnts = np.unique([y for x in cell_groups_renaming.keys()
+                            for y in list(cell_groups_renaming[x])],
+                           return_counts=True)
     common_mark = mark[np.flip(np.argsort(cnts))]
 
     # Identify what are the key markers that distinguish the different groups and define the baseline based on the shortest combination
     keep_marks = []
     common_first = set()
     for i in common_mark:
-        x = i.replace("-", "").replace("+", "")
+        x = i.replace('-', '').replace('+', '')
         if x not in common_first:
             common_first.add(x)
             keep_marks.append(i)
             
     for x in cell_groups_renaming.keys():
-        cell_groups_renaming[x] = " ".join(np.sort(list(cell_groups_renaming[x] - set(keep_marks))))
-        if cell_groups_renaming[x] == "" and x!=-1:
+        cell_groups_renaming[x] = ' '.join(np.sort(list(cell_groups_renaming[x] - set(keep_marks))))
+        if cell_groups_renaming[x] == '' and x != -1:
             cell_groups_renaming[x] = baseline_name
-        elif x==-1:
-            cell_groups_renaming[x] = "undefined"
+        elif x == -1:
+            cell_groups_renaming[x] = 'undefined'
 
     return cell_groups_renaming

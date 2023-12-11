@@ -91,23 +91,28 @@ immport_labels = {
 
 major_cell_types = {}
 
-for k, v in cells.items():
+for url, cell_type in cells.items():
 
-    name = immport_labels[k][0].split(":")[1].strip()
-    ### Remove bright
-    #name = re.sub('bright', "+", name)
-    ###
-    
+    name = import_labels[url][0].split(':')[1].strip()
+    # AT. Why element 0?
+
+    # name = re.sub('bright', '+', name)  # AT. Remove bright? Ask Bernat
+
     positive = []
     negative = []
-    for j in v:
-        j=re.sub(r'\+\+$', '+', re.sub(r'\+\-$', "+", j))
-        sign = j[-1]
-        protein = j[:-1]
-        if sign == "+":
+
+    for cell in cell_type:
+        cell = re.sub(r'\+\+$', '+', re.sub(r'\+\-$', '+', cell))
+        # AT. Is it really possible to have a protein name with '++-'? If not, best to use:
+        # cell = re.sub(r'\+\+$|\+\-$', '+', cell)  # Replaces double-signs by '+'
+        sign = cell[-1]
+        protein = cell[:-1]
+        if sign == '+':
             positive += [protein]
         else:
             negative += [protein]
-    positive = list(np.sort(positive))
-    negative = list(np.sort(negative))
-    major_cell_types[name] = {"positive": positive, "negative": negative}
+    # positive = list(np.sort(positive))  # AT. Unless there is a specific reason to use numpy sort?
+    positive = positive.sort()
+    # negative = list(np.sort(negative))  # AT. Unless there is a specific reason to use numpy sort?
+    negative = negative.sort()
+    major_cell_types[name] = {'positive': positive, 'negative': negative}
