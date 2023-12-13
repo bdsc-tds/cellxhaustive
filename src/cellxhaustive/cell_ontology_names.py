@@ -102,6 +102,8 @@ import_labels = {'http://purl.obolibrary.org/obo/CL_0000236': ('B: B cell', 'B c
                                                                'CD4-positive, CD25+, alpha-beta regulatory T cell')
                  }
 
+# AT. Check for missing cell between the two lists
+
 major_cell_types = {}
 
 for url, cell_type in cells.items():
