@@ -8,6 +8,7 @@ import numpy as np
 
 
 # Brute force way to select cells given normalized data
+# AT. Check presence/absence of all parameters/variable
 def select_cells(mat, markers, positive=[], negative=[], lowpositive=[],
                  three_markers=[], two_peak_threshold=3,
                  three_peak_lower_threshold=2, three_peak_upper_threshold=4):
