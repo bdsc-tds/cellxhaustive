@@ -1,7 +1,5 @@
 """
 AT. Add general description here.
-AT. Double-check description in doc-string
-AT. Change variables x and y to something more meaningful
 """
 
 
@@ -12,6 +10,7 @@ import numpy as np
 # Utility function to rename cell types
 def find_set_differences(cell_groups_renaming, baseline_name='baseline'):
     """
+    # AT. Double-check description in doc-string
     Find key differences across dictionaries. Provided a dictionary where every
     key corresponds to a given cell line, and every value is the set of
     positive/negative markers for that same cell line, the function will provide
@@ -45,16 +44,16 @@ def find_set_differences(cell_groups_renaming, baseline_name='baseline'):
     keep_markers = []
     common_first = set()
     for marker in common_markers:
-        x = marker.replace('-', '').replace('+', '')
-        if x not in common_first:
-            common_first.add(x)
+        marker_cleaned = marker.replace('-', '').replace('+', '')
+        if marker_cleaned not in common_first:
+            common_first.add(marker_cleaned)
             keep_markers.append(marker)
 
-    for x in cell_groups_renaming.keys():
-        cell_groups_renaming[x] = ' '.join(np.sort(list(cell_groups_renaming[x] - set(keep_markers))))
-        if cell_groups_renaming[x] == '' and x != -1:
-            cell_groups_renaming[x] = baseline_name
-        elif x == -1:
-            cell_groups_renaming[x] = 'undefined'
+    for cell_pop in cell_groups_renaming.keys():
+        cell_groups_renaming[cell_pop] = ' '.join(np.sort(list(cell_groups_renaming[cell_pop] - set(keep_markers))))
+        if cell_groups_renaming[cell_pop] == '' and cell_pop != -1:
+            cell_groups_renaming[cell_pop] = baseline_name
+        elif cell_pop == -1:
+            cell_groups_renaming[cell_pop] = 'undefined'
 
     return cell_groups_renaming
