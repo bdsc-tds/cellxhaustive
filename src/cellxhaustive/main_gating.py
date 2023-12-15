@@ -19,11 +19,14 @@ def gaussian_gating(mat, markers, marker_order=['CD3', 'CD4'],
 
     Parameters:
     -----------
-    mat: ndarray
-      A 2-D array expression matrix.
+    mat: array(float)
+      2-D numpy array expression matrix, with cells in D0 and markers in D1.
+      In other words, rows contain cells and columns contain markers.
 
-    markers: array
-      A 1-D array with the markers in mat corresponding to each column.
+    markers: array(str)
+      1-D numpy array with markers matching each column of mat.
+
+
 
     marker_order: list(str) (default=['CD3', 'CD4'])  # AT. Check if it really is default or best to leave empty?
       List of markers used in the gating strategy ordered accordingly.
@@ -32,18 +35,22 @@ def gaussian_gating(mat, markers, marker_order=['CD3', 'CD4'],
       List describing wether the markers in marker_order are positively
       (True) or negatively (False) expressed.
 
-    makeplot: bool (default=False)
-      Whether or not to generate figure.
-
-    random_state: float or None (default=None)
-       Random seed.
-
     hao_extension: str (default='.2')
        The hao dataset uses multiple clones for some of the antibodies, e.g.
        naming them as CD4.1, CD4.2, etc. This variable allows you to add the
        extension for the right clone. There are certainly better and more
        generalizable ways to do so, but I just can't be bothered...
        # AT. Double check this and update description
+
+
+
+    makeplot: bool (default=False)
+      Whether or not to generate a figure.
+
+    random_state: int or None (default=42)
+       Random seed.
+
+
 
     root: str (default='./')
       Output path of the figure.

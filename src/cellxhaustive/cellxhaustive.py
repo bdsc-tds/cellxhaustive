@@ -32,32 +32,47 @@ def annotate(mat, markers, batches, samples, labels,
              knn_refine=True, knn_min_probability=0.5,
              random_state=None):
     """
-    Pipeline for automated gating, feature selection, and clustering to generate new annotations.
+    Pipeline for automated gating, feature selection, and clustering to
+    generate new annotations.
+    # AT. Update description
 
     Parameters
     ----------
-    mat: ndarray
-      A 2-D numpy array expression matrix.
+    mat: array(float)
+      2-D numpy array expression matrix, with cells in D0 and markers in D1.
+      In other words, rows contain cells and columns contain markers.
 
-    markers: array
-      1-D numpy array with the markers in `mat` corresponding to each column.
+    markers: array(str)
+      1-D numpy array with markers matching each column of mat.
 
     batches: array(str)
-      1-D numpy array with batch names per cell.
+      1-D numpy array with batch names of each cell of mat. Useful for defining
+      the thresholds for the new annotations.
 
     samples: array(str)
-      1-D numpy array with sample names per cell.
+      1-D numpy array with sample names of each cell of mat. Useful for defining
+      the thresholds for the new annotations.
 
-    labels: array(str)
-      1-D numpy array with the main cell labels.
+    cell_labels: array(str)
+      1-D numpy array with main cell labels of each cell of mat.
+      # AT. Set as an option, as it was used for the main gating
+      # AT. Problem with annotations ontology/vocabulary?
 
     min_cellxsample: float (default=10)
-      Minimum number of cells within sample in 'p_min' % of samples within each
-      batch for a new annotation to be considered.
+      Minimum number of cells within each sample in percent_samplesxbatch % of
+      samples within each batch for a new annotation to be considered. In other
+      words, by default, an annotation needs to be assigned to at least
+      10 cells/sample in at least 50% of the samples (see description of next
+      parameter) within a batch to be considered.
 
     percent_samplesxbatch: float (default=0.5)
-      Minimum proportion of samples within batch with 's_min' cells for a new
-      annotation to be considered.
+      Minimum proportion of samples within each batch with at least
+      min_cellxsample cells for a new annotation to be considered. In other
+      words, by default, an annotation needs to be assigned to at least 10
+      cells/sample (see description of previous parameter) in at least 50% of
+      the samples within a batch to be considered.
+
+
 
     max_midpoint_preselection: int or None (default=15)
       # AT. Add parameter description

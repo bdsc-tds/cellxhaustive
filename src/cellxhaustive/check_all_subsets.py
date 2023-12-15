@@ -53,11 +53,23 @@ def check_all_subsets(max_markers, x_p, y_ns,
     samples:
       # AT. Add parameter description (and default?)
 
-    p:
-      # AT. Add parameter description (and default?)
 
-    ns:
-      # AT. Add parameter description (and default?)
+
+    min_cellxsample: float (default=10)
+      Minimum number of cells within each sample in percent_samplesxbatch % of
+      samples within each batch for a new annotation to be considered. In other
+      words, by default, an annotation needs to be assigned to at least
+      10 cells/sample in at least 50% of the samples (see description of next
+      parameter) within a batch to be considered.
+
+    percent_samplesxbatch: float (default=0.5)
+      Minimum proportion of samples within each batch with at least
+      min_cellxsample cells for a new annotation to be considered. In other
+      words, by default, an annotation needs to be assigned to at least 10
+      cells/sample (see description of previous parameter) in at least 50% of
+      the samples within a batch to be considered.
+
+
 
     cell:
       # AT. Add parameter description (and default?)

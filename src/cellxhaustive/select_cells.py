@@ -17,11 +17,14 @@ def select_cells(mat, markers, positive=[], negative=[], lowpositive=[],
 
     Parameters:
     -----------
-    mat: ndarray
-      A 2-D array normalized expression matrix.
+    mat: array(float)
+      2-D numpy array expression matrix, with cells in D0 and markers in D1.
+      In other words, rows contain cells and columns contain markers.
 
-    markers: array
-      A 1-D array with the markers in mat corresponding to each column.
+    markers: array(str)
+      1-D numpy array with markers matching each column of mat.
+
+
 
     positive: list(str)
       List of markers that are positively expressed.

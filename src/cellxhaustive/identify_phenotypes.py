@@ -34,40 +34,39 @@ def identify_phenotypes(mat, markers, truefalse, batches, samples,
 
     Parameters
     ----------
-    mat: ndarray
-      2-D array expression matrix.
+    mat: array(float)
+      2-D numpy array expression matrix, with cells in D0 and markers in D1.
+      In other words, rows contain cells and columns contain markers.
 
-    markers: array
-      1-D array with the markers in `mat` corresponding to each column.
-
-    truefalse:  # AT. Add type
-      # AT. Add parameter description
+    markers: array(str)
+      1-D numpy array with markers matching each column of mat.
 
     batches: array(str)
-      List of batch names per cell, useful for defining the thresholds for
-      the new annotations.
+      1-D numpy array with batch names of each cell of mat. Useful for defining
+      the thresholds for the new annotations.
 
     samples: array(str)
-      List of sample names per cell, useful for defining the thresholds for
-      the new annotations.
+      1-D numpy array with sample names of each cell of mat. Useful for defining
+      the thresholds for the new annotations.
 
-    marker_order: list(str)
-      List of markers used in the gating strategy, ordered accordingly.
-      # AT. Check if useful
+    is_label: array(bool)
+      1-D numpy array with booleans to indicate cells matching current label.
 
-    positive: list(bool)
-      List indicating whether the markers in `marker_order` are positively (True) or negatively (False) expressed.
-      # AT. Check if useful
+    min_cellxsample: float (default=10)
+      Minimum number of cells within each sample in percent_samplesxbatch % of
+      samples within each batch for a new annotation to be considered. In other
+      words, by default, an annotation needs to be assigned to at least
+      10 cells/sample in at least 50% of the samples (see description of next
+      parameter) within a batch to be considered.
 
-    three_markers: list(str)
-      List of markers with potentially three peaks.
-      # AT. Check if useful
+    percent_samplesxbatch: float (default=0.5)
+      Minimum proportion of samples within each batch with at least
+      min_cellxsample cells for a new annotation to be considered. In other
+      words, by default, an annotation needs to be assigned to at least 10
+      cells/sample (see description of previous parameter) in at least 50% of
+      the samples within a batch to be considered.
 
-    s_min: float, (default=10)
-      Minimum number of cells within sample in 'p_min' % of samples within each batch for a new annotation to be considered.
 
-    p_min: float, (default=0.5)
-      Minimum proportion of samples within batch with 's_min' cells for a new annotation to be considered.
 
     max_midpoint_preselection: int or None (default=15)
       # AT. Add parameter description
@@ -88,16 +87,21 @@ def identify_phenotypes(mat, markers, truefalse, batches, samples,
       2-D array raw expression matrix
       # AT. Should be removed because not in code anymore, but why?
 
-    knn_refine: bool, (default=False)
-      If True, the clustering done via permutations of relevant markers will be refined using a knn classifier
 
-    knn_min_probability: float, (default=0.5)
-      Confidence threshold for the knn classifier to reassign new cell type
 
-    cell_name: str, (default = 'None')
-      Base name for cell types (e.g. CD4 T-cells for 'CD4T')
+    knn_refine: bool (default=False)
+      If True, the clustering done via permutations of relevant markers will be
+      refined using a KNN classifier.
 
-    random_state: int or None, (default=None)
+    knn_min_probability: float (default=0.5)
+      Confidence threshold for the KNN classifier to reassign a new cell type
+      to previously undefined cells.
+
+    cell_name: str or None (default=None)
+      Base name for cell types (e.g. CD4 T-cells for 'CD4T').
+      # AT. None is automatically converted to str and always appears in f-string
+
+    random_state: int or None (default=42)
       Random seed.
 
     Returns:

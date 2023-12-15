@@ -24,39 +24,56 @@ def cell_subdivision_counts(mat, mat_representative,
 
     Parameters:
     -----------
-    mat: ndarray
-      2-D array expression matrix.
+    mat: array(float)
+      2-D numpy array expression matrix, with cells in D0 and markers in D1.
+      In other words, rows contain cells and columns contain markers.
 
-    mat_representative: ndarray
-      2-D array expression matrix of the representative markers.
+    mat_representative: array(float)
+      2-D numpy array expression matrix of the representative markers, with
+      cells in D0 and markers in D1. In other words, rows contain cells and
+      columns contain markers.
 
-    markers: array
-      1-D array with the markers in mat corresponding to each column.
+    markers: array(str)
+      1-D numpy array with markers matching each column of mat.
 
-    markers_representative: ndarray
-      1-D array with the relevant markers in mat_representative corresponding
-      to each column.
+    markers_representative: array(str)
+      1-D numpy array with markers matching each column of mat_representative.
+
+
 
     marker_order: list(str)
       List of markers used in the gating strategy ordered accordingly.
+      # AT. Check parameter description (and default?). Do we even keep it? Or set it as an option?
 
-    batches:
-      # AT. Update parameter description.
 
-    samples:
-      # AT. Update parameter description.
 
-    three_markers: list(str)
+    batches: array(str)
+      1-D numpy array with batch names of each cell of mat. Useful for defining
+      the thresholds for the new annotations.
+
+    samples: array(str)
+      1-D numpy array with sample names of each cell of mat. Useful for defining
+      the thresholds for the new annotations.
+
+    min_cellxsample: array(float) (default=[5, 10])
+      Minimum number of cells within each sample in percent_samplesxbatch % of
+      samples within each batch for a new annotation to be considered. In other
+      words, by default, an annotation needs to be assigned to at least
+      5 or 10 cells/sample in at least 10 or 20% of the samples (see
+      description of next parameter) within a batch to be considered.
+
+    percent_samplesxbatch: array(float) (default=[0.1, 0.2])
+      Minimum proportion of samples within each batch with at least
+      min_cellxsample cells for a new annotation to be considered. In other
+      words, by default, an annotation needs to be assigned to at least 5 or 10
+      cells/sample (see description of previous parameter) in at least 10 or 20%
+      of the samples within a batch to be considered.
+
+
+
+    three_markers: list(str) (default=[])
       List of markers with potentially three peaks.
-      # AT. Add (default=[])
-
-    p_min: list(int) (default=)
-      Minimum proportion of samples for annotation to be considered.
-      # AT. Check if int, list, or else and update/remove default
-
-    s_min: list(int) (default=)
-      # AT. Update parameter description.
-      # AT. Check if int, list, or else and update/remove default
+      # AT. Improve description? Do we even keep it? Or set it as an option?
 
     Returns:
     --------

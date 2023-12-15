@@ -19,8 +19,12 @@ def knn_classifier(mat_representative, clustering_labels, knn_min_probability=0.
 
     Parameters:
     -----------
-    mat_representative: ndarray
-      2-D array expression matrix of the representative markers.
+    mat_representative: array(float)
+      2-D numpy array expression matrix of the representative markers, with
+      cells in D0 and markers in D1. In other words, rows contain cells and
+      columns contain markers.
+
+
 
     clustering_labels: ndarray
       Clustering indices, where -1 is assigned to undefined nodes/cells.
