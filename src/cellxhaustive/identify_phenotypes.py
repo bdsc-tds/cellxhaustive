@@ -24,13 +24,13 @@ from knn_classifier import knn_classifier  # AT. Double-check path
 
 # AT. Check annotation
 # AT. Check presence/absence of all parameters/variable
-def identify_phenotypes(mat, markers, truefalse, batches, samples,
-                        marker_order, positive, three_markers=[],  # AT. Present in the code but not in the original function parameters
-                        s_min=10, p_min=0.5,
+def identify_phenotypes(mat, markers, batches, samples, is_label,
+                        # marker_order, positive, three_markers=[],  # AT. Present in the code but not in the original function parameters
+                        min_cellxsample=10, percent_samplesxbatch=0.5,
                         max_midpoint_preselection=15, max_markers=15,
                         min_annotations=3, bimodality_selection_method='midpoint',
                         knn_refine=True, knn_min_probability=0.5,
-                        cell_name='None', random_state=None):
+                        cell_name=None, random_state=42):
     """
     Pipeline for automated gating, feature selection, and clustering to
     generate new annotations.
@@ -114,16 +114,12 @@ def identify_phenotypes(mat, markers, truefalse, batches, samples,
 
     # MAIN GATING: we perform the gating for every batch independently. But that might be a bit of an overkill...
 
-    # # AT. This is from cell_identification()
-    # markers_representative_batches = dict()
-    # truefalse = np.zeros(np.shape(mat)[0]) != 0
-
-    for kdx, k in enumerate(np.unique(batches)):
-        # AT. kdx is not used, so remove it along with enumerate?
+    for k in np.unique(batches):
+        # Create boolean array to select cells matching current batch
         batch = (batches == k)
 
         # Subset batch
-        truefalse_b = truefalse[batch]  # AT. truefalse[batch] = truefalse_b???
+        is_label_b = is_label[batch]
         mat_ = mat[batch, :]
 
         if bimodality_selection_method == 'DBSCAN':  # AT. upper/lower to avoid case problems?
@@ -132,7 +128,7 @@ def identify_phenotypes(mat, markers, truefalse, batches, samples,
             eps_marker_clustering = np.quantile(eps_marker_clustering[np.triu_indices(np.shape(eps_marker_clustering)[0], k=1)], q=0.05)
 
             # Subset cell types
-            mat_ = mat_[truefalse_b, :]
+            mat_ = mat_[is_label_b, :]
 
             # Transpose matrix to perform marker clustering
             X = mat_.transpose()
@@ -190,7 +186,7 @@ def identify_phenotypes(mat, markers, truefalse, batches, samples,
         else:
 
             # Subset cell types
-            mat_ = mat_[truefalse_b, :]
+            mat_ = mat_[is_label_b, :]
 
             # Check bimodality of the markers selected
             center_values = -np.abs(np.mean(mat_, axis=0) - 3)
@@ -219,10 +215,10 @@ def identify_phenotypes(mat, markers, truefalse, batches, samples,
     markers_representative = m[c == len(markers_representative_batches.keys())]
 
     # Merge all batches together and extract main cell type
-    # AT. Select samples for this population (decided in truefalse)
-    mat_ = mat[truefalse, :]
-    samples_ = samples[truefalse]
-    batches_ = batches[truefalse]
+    # AT. Select samples for this population (decided in is_label)
+    mat_ = mat[is_label, :]
+    samples_ = samples[is_label]
+    batches_ = batches[is_label]
 
     # Slice matrix and markers using the selected markers through the main gating
     # AT. Matrix with relevant markers only (15 markers)
@@ -244,7 +240,8 @@ def identify_phenotypes(mat, markers, truefalse, batches, samples,
                                                 batches=batches_,
                                                 samples=samples_,
                                                 cell=cell_name,
-                                                ns=s_min, p=p_min,
+                                                min_cellxsample=min_cellxsample,
+                                                percent_samplesxbatch=percent_samplesxbatch,
                                                 min_cells=min_annotations)
 
     if len(markers_representative_) > 0:
@@ -263,18 +260,18 @@ def identify_phenotypes(mat, markers, truefalse, batches, samples,
             samples=samples_,
             marker_order=marker_order,
             three_markers=three_markers,
-            p_min=p_min,
-            s_min=s_min,
+            percent_samplesxbatch=percent_samplesxbatch,
+            min_cellxsample=min_cellxsample,
             cell_name=cell_name)
 
-        # Try to classify undefined cells using a knn classifier
+        # Try to classify undefined cells using a KNN classifier
         if knn_refine:
             clustering_labels = knn_classifier(mat_representative,
                                                clustering_labels,
                                                knn_min_probability=knn_min_probability)
 
-        return truefalse, cell_groups_name, clustering_labels, markers_representative_batches, markers_representative  # AT. Double-check this ', dfdata'
+        return is_label, cell_groups_name, clustering_labels, markers_representative_batches, markers_representative  # AT. Double-check this ', dfdata'
     else:
-        return truefalse, {-1: cell_name}, np.zeros(np.sum(truefalse)) - 1, markers_representative_batches, []
+        return is_label, {-1: cell_name}, np.zeros(np.sum(is_label)) - 1, markers_representative_batches, []
         # AT. If there is no 'best set' and more specialized annotation, keep the parent one (more general)
         # AT. DIRTY!

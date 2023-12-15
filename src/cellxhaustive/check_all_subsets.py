@@ -18,7 +18,7 @@ from cell_subdivision_counts import cell_subdivision_counts  # AT. Double-check 
 def check_all_subsets(max_markers, x_p, y_ns,
                       mat_, mat_representative,
                       markers, markers_representative, marker_order,
-                      batches, samples, p, ns, cell, min_cells):
+                      batches, samples, min_cellxsample, percent_samplesxbatch, cell, min_cells):
     """
     # AT. Add function description
 
@@ -107,10 +107,10 @@ def check_all_subsets(max_markers, x_p, y_ns,
     matx_ = np.transpose(np.asarray([list(x_p) for ljh in range(len(y_ns))])).astype(float)
 
     # Slice the grid variables
-    matx_ = matx_[:, y_ns >= ns]
-    matx_ = matx_[x_p >= p, :]
-    maty_ = maty_[:, y_ns >= ns]
-    maty_ = maty_[x_p >= p, :]
+    matx_ = matx_[:, y_ns >= min_cellxsample]
+    matx_ = matx_[x_p >= percent_samplesxbatch, :]
+    maty_ = maty_[:, y_ns >= min_cellxsample]
+    maty_ = maty_[x_p >= percent_samplesxbatch, :]
 
     # We keep permuting until no better solution can be found
     while True:
@@ -152,15 +152,15 @@ def check_all_subsets(max_markers, x_p, y_ns,
             matx = copy.deepcopy(matx_)
             maty = copy.deepcopy(maty_)
 
-            # Slice N phenotypes matrix given the conditions p and ns and
+            # Slice N phenotypes matrix given the conditions percent_samplesxbatch and min_cellxsample and
             # calculate the maximum number of phenotypes for the marker combination g
-            results = results[:, y_ns >= ns]
-            results = results[x_p >= p, :]
+            results = results[:, y_ns >= min_cellxsample]
+            results = results[x_p >= percent_samplesxbatch, :]
             resmax_ = np.max(results)
 
             # Slice the undefined matrix as above
-            undefined = undefined[:, y_ns >= ns]
-            undefined = undefined[x_p >= p, :]
+            undefined = undefined[:, y_ns >= min_cellxsample]
+            undefined = undefined[x_p >= percent_samplesxbatch, :]
 
             # Further constrain matrix given the minimum number of phenotype conditions
             condi = results < min_cells

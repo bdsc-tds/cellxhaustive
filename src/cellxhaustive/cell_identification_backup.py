@@ -23,12 +23,11 @@ from cellxhaustive.main_gating import gaussian_gating
 # Full pipeline
 # AT- Check annotation
 def cell_identification(mat, markers, marker_order, batches, samples, positive,
-                        three_markers=[], s_min=10, p_min=0.5,
+                        three_markers=[], min_cellxsample=10, percent_samplesxbatch=0.5,
                         max_midpoint_preselection=15, max_markers=15,
                         min_annotations=3, bimodality_selection_method='midpoint',
-                        mat_raw=None, cell_name='None',
-                        knn_refine=True, knn_min_probability=0.5,
-                        random_state=None):
+                        mat_raw=None, knn_refine=True, knn_min_probability=0.5,
+                        cell_name='None', random_state=42):
     """
     Pipeline for automated gating, feature selection, and clustering to
     generate new annotations.
@@ -116,7 +115,7 @@ def cell_identification(mat, markers, marker_order, batches, samples, positive,
       Base name for cell types (e.g. CD4 T-cells for 'CD4T').
       # AT. None is automatically converted to str and always appears in f-string
 
-    random_state: int or None (default=None)
+    random_state: int or None (default=42)
       Random seed.
 
     Returns:
@@ -129,7 +128,7 @@ def cell_identification(mat, markers, marker_order, batches, samples, positive,
     # AT. Adapt if we don't perform gating independently
 
     markers_representative_batches = dict()
-    truefalse = np.zeros(np.shape(mat)[0]) != 0
+    is_label = np.zeros(np.shape(mat)[0]) != 0
 
     for kdx, k in enumerate(np.unique(batches)):
         # AT. kdx is not used, so remove it along with enumerate?
@@ -137,22 +136,22 @@ def cell_identification(mat, markers, marker_order, batches, samples, positive,
 
         # if a raw matrix is provided, we use this for the main gating
         if mat_raw is None:
-            truefalse_b = gaussian_gating(mat[batch, :],
-                                          markers,
-                                          marker_order=marker_order,
-                                          positive=positive,
-                                          random_state=random_state
-                                          )
+            is_label_b = gaussian_gating(mat[batch, :],
+                                         markers,
+                                         marker_order=marker_order,
+                                         positive=positive,
+                                         random_state=random_state
+                                         )
         else:
-            truefalse_b = gaussian_gating(mat_raw[batch, :],
-                                          markers,
-                                          marker_order=marker_order,
-                                          positive=positive,
-                                          random_state=random_state
-                                          )
+            is_label_b = gaussian_gating(mat_raw[batch, :],
+                                         markers,
+                                         marker_order=marker_order,
+                                         positive=positive,
+                                         random_state=random_state
+                                         )
 
         # Subset batch
-        truefalse[batch] = truefalse_b
+        is_label[batch] = is_label_b
         mat_ = mat[batch, :]
 
         if bimodality_selection_method == 'DBSCAN':  # AT. upper/lower to avoid case problems?
@@ -161,7 +160,7 @@ def cell_identification(mat, markers, marker_order, batches, samples, positive,
             eps_marker_clustering = np.quantile(eps_marker_clustering[np.triu_indices(np.shape(eps_marker_clustering)[0], k=1)], q=0.05)
 
             # Subset cell types
-            mat_ = mat_[truefalse_b, :]
+            mat_ = mat_[is_label_b, :]
 
             # Transpose matrix to perform marker clustering
             X = mat_.transpose()
@@ -219,7 +218,7 @@ def cell_identification(mat, markers, marker_order, batches, samples, positive,
         else:
 
             # Subset cell types
-            mat_ = mat_[truefalse_b, :]
+            mat_ = mat_[is_label_b, :]
 
             # Check bimodality of the markers selected
             center_values = -np.abs(np.mean(mat_, axis=0) - 3)
@@ -248,9 +247,9 @@ def cell_identification(mat, markers, marker_order, batches, samples, positive,
     markers_representative = m[c == len(markers_representative_batches.keys())]
 
     # Merge all batches together and extract main cell type
-    mat_ = mat[truefalse, :]
-    samples_ = samples[truefalse]
-    batches_ = batches[truefalse]
+    mat_ = mat[is_label, :]
+    samples_ = samples[is_label]
+    batches_ = batches[is_label]
 
     # Slice matrix and markers using the selected markers through the main gating
     mat_representative = mat_[:, np.isin(markers, markers_representative)]
@@ -272,7 +271,8 @@ def cell_identification(mat, markers, marker_order, batches, samples, positive,
                                                 batches=batches_,
                                                 samples=samples_,
                                                 cell=cell_name,
-                                                ns=s_min, p=p_min,
+                                                min_cellxsample=min_cellxsample,
+                                                percent_samplesxbatch=percent_samplesxbatch,
                                                 min_cells=min_annotations)
 
     if len(markers_representative_) > 0:
@@ -289,14 +289,14 @@ def cell_identification(mat, markers, marker_order, batches, samples, positive,
             samples=samples_,
             marker_order=marker_order,
             three_markers=three_markers,
-            p_min=p_min,
-            s_min=s_min,
+            percent_samplesxbatch=percent_samplesxbatch,
+            min_cellxsample=min_cellxsample,
             cell_name=cell_name)
 
         # Try to classify undefined cells using a KNN classifier
         if knn_refine:
             clustering_labels = knn_classifier(mat_representative, clustering_labels, knn_min_probability=knn_min_probability)
 
-        return truefalse, cell_groups_name, clustering_labels, markers_representative_batches, markers_representative  # AT. Double-check this ', dfdata'
+        return is_label, cell_groups_name, clustering_labels, markers_representative_batches, markers_representative  # AT. Double-check this ', dfdata'
     else:
-        return truefalse, {-1: cell_name}, np.zeros(np.sum(truefalse)) - 1, markers_representative_batches, []
+        return is_label, {-1: cell_name}, np.zeros(np.sum(is_label)) - 1, markers_representative_batches, []

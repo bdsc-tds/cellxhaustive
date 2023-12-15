@@ -26,12 +26,12 @@ from identify_phenotypes import identify_phenotypes
 
 
 # AT. Add description
-def annotate(mat, markers, batches, samples, labels,
+def annotate(mat, markers, batches, samples, cell_labels,
              min_cellxsample=10, percent_samplesxbatch=0.5,
              max_midpoint_preselection=15, max_markers=15,
              min_annotations=3, bimodality_selection_method='midpoint',
              knn_refine=True, knn_min_probability=0.5,
-             random_state=None):
+             random_state=42):
     """
     Pipeline for automated gating, feature selection, and clustering to
     generate new annotations.
@@ -100,7 +100,7 @@ def annotate(mat, markers, batches, samples, labels,
       Confidence threshold for the KNN classifier to reassign a new cell type
       to previously undefined cells.
 
-    random_state: int or None (default=None)
+    random_state: int or None (default=42)
       Random seed.
 
     Returns:
@@ -108,28 +108,30 @@ def annotate(mat, markers, batches, samples, labels,
       # AT. Add what is returned by the function
     """
 
-    annotations = np.asarray(['undefined'] * len(labels)).astype('U100')
+    annotations = np.asarray(['undefined'] * len(cell_labels)).astype('U100')
 
-    for idx, i in enumerate(np.unique(labels)):
-        # AT. idx is not used, so remove it along with enumerate?
-        truefalse = (labels == i)
-        cell_groups, clustering_labels, mdictA, fmarker = identify_phenotypes(
-            truefalse=truefalse,
+    for label in np.unique(cell_labels):
+        # Create boolean array to select cells matching current label
+        is_label = (cell_labels == label)
+
+        cell_groups, clustering_labels, mdictA, fmarker = identify_phenotypes(  # AT. Rename mdictA and fmarker
+            is_label=is_label,
             mat=mat,
             markers=markers,
             batches=batches,
             samples=samples,
-            p_min=percent_samplesxbatch,
-            s_min=min_cellxsample,
+            min_cellxsample=min_cellxsample,
+            percent_samplesxbatch=percent_samplesxbatch,
             max_midpoint_preselection=max_midpoint_preselection,
             max_markers=max_markers,
             min_annotations=min_annotations,
             bimodality_selection_method=bimodality_selection_method,
             random_state=random_state,
             knn_refine=knn_refine,
-            cell_name=i)
+            cell_name=label)
 
         cell_dict = dict([tuple([x, cell_groups[x].split(" (")[0]])
                           for x in cell_groups])
-        # AT. Because cell numbers is inside the name in () --> Change name before
-        annotations[truefalse] = np.vectorize(cell_dict.get)(clustering_labels)
+        # AT. Because cell numbers is inside the name in (), we have to use .split() here --> Better to change the name in a function before
+
+        annotations[is_label] = np.vectorize(cell_dict.get)(clustering_labels)

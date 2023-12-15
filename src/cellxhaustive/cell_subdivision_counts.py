@@ -83,8 +83,8 @@ def cell_subdivision_counts(mat, mat_representative,
       # AT. Add what is returned by the function
     """
 
-    undefined = np.zeros((len(p_min), len(s_min)))
-    results = np.zeros((len(p_min), len(s_min)))
+    undefined = np.zeros((len(percent_samplesxbatch), len(min_cellxsample)))
+    results = np.zeros((len(percent_samplesxbatch), len(min_cellxsample)))
 
     # Find different groups of positive cells
     three_markers_ = np.asarray(three_markers)[np.isin(three_markers, markers_representative)]
@@ -125,9 +125,9 @@ def cell_subdivision_counts(mat, mat_representative,
             cells_ = cells[batches == b]
             samples_ = samples[batches == b]
             keep_cell_type_ = np.asarray([np.sum(samples_[cells_] == x) for x in np.unique(samples_)])
-            keep_cell_type_ = keep_cell_type_[:, np.newaxis] > s_min
+            keep_cell_type_ = keep_cell_type_[:, np.newaxis] > min_cellxsample
             keep_cell_type_ = (np.sum(keep_cell_type_, axis=0) / float(len(np.unique(samples_))))[np.newaxis, :]
-            keep_cell_type_ = keep_cell_type_ > p_min[:, np.newaxis]
+            keep_cell_type_ = keep_cell_type_ > percent_samplesxbatch[:, np.newaxis]
             keep_cell_type = np.logical_and(keep_cell_type, keep_cell_type_)
 
         results += keep_cell_type * 1

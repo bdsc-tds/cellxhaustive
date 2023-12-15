@@ -18,9 +18,11 @@ from select_cells import select_cells  # AT. Double-check path
 # identify new cell types
 # AT. Check presence/absence of all parameters/variable
 def cell_subdivision(mat, mat_representative,
-                     markers, markers_representative,
-                     marker_order, batches, samples, three_markers=[],
-                     cell_name='None', p_min=0.4, s_min=10):  # AT. None or 'None'??
+                     markers, markers_representative, marker_order,
+                     batches, samples,
+                     min_cellxsample=10, percent_samplesxbatch=0.4,
+                     three_markers=[], cell_name=None):
+    # AT. percent_samplesxbatch is different from the usual default value. Is it on purpose
     """
     Cell line subdivision.
     # AT. Add function description (use the one before?)
@@ -175,9 +177,9 @@ def cell_subdivision(mat, mat_representative,
         for b in np.unique(batches):
             cells_ = cells[batches == b]
             samples_ = samples[batches == b]
-            keep_cell_type_ = np.asarray([np.sum(samples_[cells_] == x) > s_min for x in np.unique(samples_)])
+            keep_cell_type_ = np.asarray([np.sum(samples_[cells_] == x) > min_cellxsample for x in np.unique(samples_)])
             keep_cell_type_ = np.sum(keep_cell_type_, axis=0) / float(len(np.unique(samples_)))
-            keep_cell_type = keep_cell_type and keep_cell_type_ > p_min
+            keep_cell_type = keep_cell_type and keep_cell_type_ > percent_samplesxbatch
 
         if keep_cell_type:
             # To store it, let's find a name for it

@@ -11,9 +11,10 @@ from sklearn.mixture import GaussianMixture
 
 
 # Perform main gating strategy to separate CD4T, CD8T, Monocytes, DCs, NKs, and B cells
-def gaussian_gating(mat, markers, marker_order=['CD3', 'CD4'],
-                    positive=[True, True], makeplot=False, random_state=None,
-                    hao_extension='.2', root='./'):
+def gaussian_gating(mat, markers,
+                    marker_order=['CD3', 'CD4'], positive=[True, True],
+                    hao_extension='.2',
+                    makeplot=False, random_state=42, root='./'):
     """
     Main gating strategy
 
@@ -62,8 +63,8 @@ def gaussian_gating(mat, markers, marker_order=['CD3', 'CD4'],
     """
 
     # Use two vectors to filter progressively
-    truefalse = np.zeros(np.shape(mat)[0]) == 0
-    truefalse_ = np.zeros(np.shape(mat)[0]) != 0
+    is_label = np.zeros(np.shape(mat)[0]) == 0
+    is_label_ = np.zeros(np.shape(mat)[0]) != 0
 
     for idx, marker in enumerate(marker_order):
         # Find expression for a given marker index
@@ -74,7 +75,7 @@ def gaussian_gating(mat, markers, marker_order=['CD3', 'CD4'],
             mdx = mdx[0]
 
         # Select expression for such marker
-        expression = mat[truefalse, mdx]
+        expression = mat[is_label, mdx]
 
         # Figure out what the peaks are along the x axis.
         xran = np.linspace(np.min(expression), np.max(expression), num=10000)
@@ -98,15 +99,15 @@ def gaussian_gating(mat, markers, marker_order=['CD3', 'CD4'],
 
         # Based on the position of the valley, select the positive or negative cells for marker idx
         if positive[idx]:
-            truefalse_[truefalse] = expression > valley
-            truefalse = copy.copy(truefalse_)
-            truefalse_ = truefalse_ * False
+            is_label_[is_label] = expression > valley
+            is_label = copy.copy(is_label_)
+            is_label_ = is_label_ * False
         else:
-            truefalse_[truefalse] = expression < valley
-            truefalse = copy.copy(truefalse_)
-            truefalse_ = truefalse_ * False
+            is_label_[is_label] = expression < valley
+            is_label = copy.copy(is_label_)
+            is_label_ = is_label_ * False
 
-    return truefalse
+    return is_label
 
 
 def main_gating():
