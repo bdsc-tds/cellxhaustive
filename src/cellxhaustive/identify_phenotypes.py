@@ -14,9 +14,12 @@ from sklearn.feature_selection import VarianceThreshold
 from sklearn.metrics import pairwise_distances, pairwise_distances_argmin_min
 
 # Imports local functions
-from cellxhaustive.cell_subdivision import cell_subdivision
-from cellxhaustive.check_all_subsets import check_all_subsets
-from cellxhaustive.knn_classifier import knn_classifier
+from cell_subdivision import cell_subdivision  # AT. Double-check path
+from check_all_subsets import check_all_subsets  # AT. Double-check path
+from knn_classifier import knn_classifier  # AT. Double-check path
+# from cellxhaustive.cell_subdivision import cell_subdivision
+# from cellxhaustive.check_all_subsets import check_all_subsets
+# from cellxhaustive.knn_classifier import knn_classifier
 
 
 # AT. Check annotation
@@ -118,26 +121,6 @@ def identify_phenotypes(mat, markers, truefalse, batches, samples,
     for kdx, k in enumerate(np.unique(batches)):
         # AT. kdx is not used, so remove it along with enumerate?
         batch = (batches == k)
-
-        # # AT. In cell_identification(), the gaussian gating is located here
-        # if mat_raw is None:
-        #     truefalse_b = gaussian_gating(mat[batch, :],
-        #                                   markers,
-        #                                   marker_order=marker_order,
-        #                                   positive=positive,
-        #                                   random_state=random_state
-        #                                   )
-        # else:
-        #     truefalse_b = gaussian_gating(mat_raw[batch, :],
-        #                                   markers,
-        #                                   marker_order=marker_order,
-        #                                   positive=positive,
-        #                                   random_state=random_state
-        #                                   )
-
-        # # Subset batch
-        # truefalse[batch] = truefalse_b
-        # mat_ = mat[batch, :]
 
         # Subset batch
         truefalse_b = truefalse[batch]  # AT. truefalse[batch] = truefalse_b???

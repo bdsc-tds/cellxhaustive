@@ -8,8 +8,10 @@ import itertools as ite
 import numpy as np
 
 # Imports local functions
-from cellxhaustive.find_set_differences import find_set_differences
-from cellxhaustive.select_cells import select_cells
+from find_set_differences import find_set_differences  # AT. Double-check path
+from select_cells import select_cells  # AT. Double-check path
+# from cellxhaustive.find_set_differences import find_set_differences
+# from cellxhaustive.select_cells import select_cells
 
 
 # Permute across positive and negative expression of the relevant markers, and

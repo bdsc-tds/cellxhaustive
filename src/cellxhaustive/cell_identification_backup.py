@@ -293,7 +293,7 @@ def cell_identification(mat, markers, marker_order, batches, samples, positive,
             s_min=s_min,
             cell_name=cell_name)
 
-        # Try to classify undefined cells using a knn classifier
+        # Try to classify undefined cells using a KNN classifier
         if knn_refine:
             clustering_labels = knn_classifier(mat_representative, clustering_labels, knn_min_probability=knn_min_probability)
 

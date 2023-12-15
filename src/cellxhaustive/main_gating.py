@@ -113,3 +113,19 @@ def main_gating():
 
     return True
 # AT. Check if useful
+
+
+# AT. Add a function to import the yaml files describing the markers
+
+# def read_yaml(cell = "CD4T", root = "./"):
+
+#     with open(root + cell + ".yaml") as file:
+#         documents = yaml.full_load(file)
+#         positive = documents["positive"]
+
+#     marker_order = [list(i.keys())[0] for i in positive]
+#     positive = [list(i.values())[0] for i in positive]
+#     return marker_order, positive
+
+# marker_order: list with the markers in the order in which they should be gated
+# positive: list with boolean values for whether or not each marker in marker_order is positively or negatively gated

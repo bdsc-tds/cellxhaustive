@@ -21,7 +21,8 @@ several versions of the same pipeline (see github history)
 import numpy as np
 
 # Imports local functions
-from cellxhaustive.identify_phenotypes import identify_phenotypes
+from identify_phenotypes import identify_phenotypes
+# from cellxhaustive.identify_phenotypes import identify_phenotypes  # AT. Double-check path
 
 
 # AT. Add description
@@ -89,12 +90,15 @@ def annotate(mat, markers, batches, samples, labels,
       Two possible methods: 'DBSCAN', which uses the clustering method with the
       same name, and 'midpoint', which uses markers closer to the normalized matrix.
 
+
+
     knn_refine: bool (default=False)
       If True, the clustering done via permutations of relevant markers will be
-      refined using a knn classifier.
+      refined using a KNN classifier.
 
     knn_min_probability: float (default=0.5)
-      Confidence threshold for the knn classifier to reassign new cell type
+      Confidence threshold for the KNN classifier to reassign a new cell type
+      to previously undefined cells.
 
     random_state: int or None (default=None)
       Random seed.

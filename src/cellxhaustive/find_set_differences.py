@@ -23,6 +23,7 @@ def find_set_differences(cell_groups_renaming, baseline_name='baseline'):
       characterized by three markers: CD3, CD4, CD8. cell_groups_renaming is a
       dictionary such as:
       cell_groups_renaming['CD4 T'] = set(['CD3+', 'CD4+', 'CD8-'])
+      # AT. Improve description
 
     baseline_name : str (default='baseline')
       Name given to the baseline cell type picked.

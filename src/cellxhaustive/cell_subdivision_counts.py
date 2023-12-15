@@ -8,16 +8,19 @@ import itertools as ite
 import numpy as np
 
 # Imports local functions
-from cellxhaustive.select_cells import select_cells
+from select_cells import select_cells  # AT. Double-check path
+# from cellxhaustive.select_cells import select_cells
 
 
 # Permute across positive and negative expression of the relevant markers
 # and identify new cell types
 # AT. Check presence/absence of all parameters/variable
 def cell_subdivision_counts(mat, mat_representative,
-                            markers, markers_representative,
-                            marker_order, batches, samples, three_markers=[],
-                            p_min=np.array([0.1, 0.2]), s_min=np.array([5, 10])):
+                            markers, markers_representative, marker_order,
+                            batches, samples,
+                            percent_samplesxbatch=np.array([0.1, 0.2]),
+                            min_cellxsample=np.array([5, 10]),
+                            three_markers=[]):
     """
     Cell line subdivision.
     # AT. Add function description (use the one before?)

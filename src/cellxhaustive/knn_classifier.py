@@ -13,7 +13,9 @@ from sklearn.preprocessing import StandardScaler
 
 # AT. Check presence/absence of all parameters/variable
 # Reclassify undefined cells with KNN classifier
-def knn_classifier(mat_representative, clustering_labels, knn_min_probability=0.5):
+def knn_classifier(mat_representative,
+                   clustering_labels,
+                   knn_min_probability=0.5):
     """
     Reclassify cells based on KNN classifier
 
@@ -28,9 +30,13 @@ def knn_classifier(mat_representative, clustering_labels, knn_min_probability=0.
 
     clustering_labels: ndarray
       Clustering indices, where -1 is assigned to undefined nodes/cells.
+      # AT. Improve description
+
+
 
     knn_min_probability: float (default=0.5)
-      Confidence threshold for the KNN classifier to reassign new cell type.
+      Confidence threshold for the KNN classifier to reassign a new cell type
+      to previously undefined cells.
 
     Returns:
     --------
@@ -44,7 +50,7 @@ def knn_classifier(mat_representative, clustering_labels, knn_min_probability=0.
         scaler = StandardScaler()
         mat_representative_scaled = scaler.fit_transform(mat_representative)
 
-        # Start knn classifier
+        # Start KNN classifier
         clf = KNeighborsClassifier(n_neighbors=20)
 
         # Find cells that were classified and train the classifier
