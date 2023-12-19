@@ -72,14 +72,16 @@ def annotate(mat, markers, batches, samples, cell_labels,
       cells/sample (see description of previous parameter) in at least 50% of
       the samples within a batch to be considered.
 
+    max_midpoint_preselection: int (default=15)
+      Number of representative markers to select among the total list of
+      markers from the markers array. Must be less than or equal to len(markers).
 
 
-    max_midpoint_preselection: int or None (default=15)
-      # AT. Add parameter description
-      # AT. Check if None is valid
 
     max_markers: int or None (default=15)
       Maximum number of relevant markers selected.
+      # AT. Merge with max_midpoint_preselection?
+      # AT. Check if None is valid
 
     min_annotations: int (default=3)
       Maximum number of relevant markers selected.
@@ -107,15 +109,17 @@ def annotate(mat, markers, batches, samples, cell_labels,
     annotations = np.asarray(['undefined'] * len(cell_labels)).astype('U100')
 
     for label in np.unique(cell_labels):
+        # AT. Multithread here? Rework processing by label?
+
         # Create boolean array to select cells matching current label
         is_label = (cell_labels == label)
 
         cell_groups, clustering_labels, mdictA, fmarker = identify_phenotypes(  # AT. Rename mdictA and fmarker
-            is_label=is_label,
             mat=mat,
             markers=markers,
             batches=batches,
             samples=samples,
+            is_label=is_label,
             min_cellxsample=min_cellxsample,
             percent_samplesxbatch=percent_samplesxbatch,
             max_midpoint_preselection=max_midpoint_preselection,
@@ -123,6 +127,7 @@ def annotate(mat, markers, batches, samples, cell_labels,
             min_annotations=min_annotations,
             bimodality_selection_method=bimodality_selection_method,
             knn_refine=knn_refine,
+            knn_min_probability=knn_min_probability,
             cell_name=label)
 
         cell_dict = dict([tuple([x, cell_groups[x].split(" (")[0]])

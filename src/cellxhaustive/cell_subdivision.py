@@ -165,8 +165,8 @@ def cell_subdivision(mat, mat_representative,
             lowpositives = np.asarray(three_markers_)[np.isin(three_markers_low, iteration)]
 
         # Figure out which cells fulfill these rules
-        cells = select_cells(mat_representative,
-                             markers_representative,
+        cells = select_cells(mat=mat_representative,
+                             markers=markers_representative,
                              positive=positives,
                              negative=negatives,
                              lowpositive=lowpositives,

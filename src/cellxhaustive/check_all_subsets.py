@@ -127,7 +127,7 @@ def check_all_subsets(max_markers, x_p, y_ns,
 
             # Slice data based on the current marker combination g
             markers_subset = np.asarray(list(g))
-            mat_subset = mat_[:, np.isin(markers, markers_subset)]
+            mat_marker_g = mat_subset[:, np.isin(markers, markers_subset)]
             markers_subset = markers[np.isin(markers, markers_subset)]
 
             # This variable is probably unnecessary but it's not a big deal to keep it
@@ -136,16 +136,13 @@ def check_all_subsets(max_markers, x_p, y_ns,
             # Find number of cells and undefined cells for a given marker
             # combination across the p and ns grid
             results, undefined = cell_subdivision_counts(
-                mat=mat_,
-                mat_representative=mat_subset,
-                markers=markers,
+                mat_representative=mat_marker_g,
                 markers_representative=markers_subset,
                 batches=batches,
                 samples=samples,
-                marker_order=list(marker_order),
-                three_marker=["CD4"],
-                p_min=x_p,
-                s_min=y_ns)
+                min_cellxsample=y_ns,
+                percent_samplesxbatch=x_p,
+                three_marker=["CD4"])
 
             # Deep copy of the grid variables (potential for efficientcy)
             matx = copy.deepcopy(matx_)

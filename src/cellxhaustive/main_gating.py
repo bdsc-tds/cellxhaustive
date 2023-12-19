@@ -52,7 +52,7 @@ def gaussian_gating(mat, markers,
 
     root: str (default='./')
       Output path of the figure.
-      # AT. Improved parameter description. Maybe reorder to put it next to makeplot
+      # AT. Improve parameter description.
 
     Returns:
     --------

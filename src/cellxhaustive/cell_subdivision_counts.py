@@ -18,8 +18,8 @@ from select_cells import select_cells  # AT. Double-check path
 def cell_subdivision_counts(mat_representative,
                             markers_representative,
                             batches, samples,
-                            percent_samplesxbatch=np.array([0.1, 0.2]),
                             min_cellxsample=np.array([5, 10]),
+                            percent_samplesxbatch=np.array([0.1, 0.2]),
                             three_markers=[]):
     """
     Cell line subdivision.
@@ -27,17 +27,26 @@ def cell_subdivision_counts(mat_representative,
 
     Parameters:
     -----------
-    mat: array(float)
+
+
+
+    mat_subset: array(float)
       2-D numpy array expression matrix, with cells in D0 and markers in D1.
       In other words, rows contain cells and columns contain markers.
+    # AT. Double-check and adapt for representative
+
+
+
 
     mat_representative: array(float)
       2-D numpy array expression matrix of the representative markers, with
       cells in D0 and markers in D1. In other words, rows contain cells and
       columns contain markers.
+      # AT. Double-check this
 
     markers_representative: array(str)
       1-D numpy array with markers matching each column of mat_representative.
+      # AT. Double-check this
 
 
 
@@ -104,8 +113,8 @@ def cell_subdivision_counts(mat_representative,
 
         # Figure out which cells fulfill these rules
         # AT. select_cells heavily relies on ADTnorm DEFAULT values for pos and neg peaks --> Make a note in documentation
-        cells = select_cells(mat_representative,
-                             markers_representative,
+        cells = select_cells(mat=mat_representative,
+                             markers=markers_representative,
                              positive=positives,
                              negative=negatives,
                              lowpositive=lowpositives,

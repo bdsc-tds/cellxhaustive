@@ -69,11 +69,11 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
       cells/sample (see description of previous parameter) in at least 50% of
       the samples within a batch to be considered.
 
+    max_midpoint_preselection: int (default=15)
+      Number of representative markers to select among the total list of
+      markers from the markers array. Must be less than or equal to len(markers).
 
 
-    max_midpoint_preselection: int or None (default=15)
-      # AT. Add parameter description
-      # AT. Check if None is valid
 
     max_markers: int or None (default=15)
       Maximum number of relevant markers selected.
