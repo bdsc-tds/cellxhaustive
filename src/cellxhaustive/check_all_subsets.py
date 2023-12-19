@@ -16,9 +16,10 @@ from cell_subdivision_counts import cell_subdivision_counts  # AT. Double-check 
 # AT. Add description
 # AT. Check presence/absence of all parameters/variable
 def check_all_subsets(max_markers, x_p, y_ns,
-                      mat_, mat_representative,
-                      markers, markers_representative, marker_order,
-                      batches, samples, min_cellxsample, percent_samplesxbatch, cell, min_cells):
+                      mat_subset,
+                      markers, markers_representative,
+                      batches, samples, min_cellxsample, percent_samplesxbatch,
+                      min_cells):
     """
     # AT. Add function description
 
@@ -33,19 +34,20 @@ def check_all_subsets(max_markers, x_p, y_ns,
     y_ns:
       # AT. Add parameter description (and default?)
 
-    mat_:
-      # AT. Add parameter description (and default?)
 
-    mat_representative:
-      # AT. Add parameter description (and default?)
+
+    mat_subset: array(float)
+      2-D numpy array expression matrix, with cells in D0 and markers in D1.
+      In other words, rows contain cells and columns contain markers. This
+      matrix is a subset of the general expression matrix and contains data only
+      on the required cell label and batch.
+
+
 
     markers:
       # AT. Add parameter description (and default?)
 
     markers_representative:
-      # AT. Add parameter description (and default?)
-
-    marker_order:
       # AT. Add parameter description (and default?)
 
     batches:
@@ -71,9 +73,6 @@ def check_all_subsets(max_markers, x_p, y_ns,
       the samples within a batch to be considered.
 
 
-
-    cell:
-      # AT. Add parameter description (and default?)
 
     min_cells:
       # AT. Add parameter description (and default?)

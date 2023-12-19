@@ -30,7 +30,7 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
                         max_midpoint_preselection=15, max_markers=15,
                         min_annotations=3, bimodality_selection_method='midpoint',
                         knn_refine=True, knn_min_probability=0.5,
-                        cell_name=None, random_state=42):
+                        cell_name=None):
     """
     Pipeline for automated gating, feature selection, and clustering to
     generate new annotations.
@@ -86,10 +86,6 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
       Two possible methods: 'DBSCAN', which uses the clustering method with the
       same name, and 'midpoint', which uses markers closer to the normalized matrix
 
-    mat_raw: ndarray or None, (default=None)
-      2-D array raw expression matrix
-      # AT. Should be removed because not in code anymore, but why?
-
 
 
     knn_refine: bool (default=False)
@@ -103,9 +99,6 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
     cell_name: str or None (default=None)
       Base name for cell types (e.g. CD4 T-cells for 'CD4T').
       # AT. None is automatically converted to str and always appears in f-string
-
-    random_state: int or None (default=42)
-      Random seed.
 
     Returns:
     --------

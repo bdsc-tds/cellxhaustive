@@ -126,8 +126,6 @@ for url, cell_type in cells.items():
             positive += [protein]
         else:
             negative += [protein]
-    # positive = list(np.sort(positive))  # AT. Unless there is a specific reason to use numpy sort?
     positive = positive.sort()
-    # negative = list(np.sort(negative))  # AT. Unless there is a specific reason to use numpy sort?
     negative = negative.sort()
     major_cell_types[name] = {'positive': positive, 'negative': negative}

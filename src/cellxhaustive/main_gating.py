@@ -14,7 +14,7 @@ from sklearn.mixture import GaussianMixture
 def gaussian_gating(mat, markers,
                     marker_order=['CD3', 'CD4'], positive=[True, True],
                     hao_extension='.2',
-                    makeplot=False, random_state=42, root='./'):
+                    random_state=42, root='./'):
     """
     Main gating strategy
 
@@ -44,9 +44,6 @@ def gaussian_gating(mat, markers,
        # AT. Double check this and update description
 
 
-
-    makeplot: bool (default=False)
-      Whether or not to generate a figure.
 
     random_state: int or None (default=42)
        Random seed.

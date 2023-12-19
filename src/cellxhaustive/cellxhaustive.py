@@ -30,8 +30,7 @@ def annotate(mat, markers, batches, samples, cell_labels,
              min_cellxsample=10, percent_samplesxbatch=0.5,
              max_midpoint_preselection=15, max_markers=15,
              min_annotations=3, bimodality_selection_method='midpoint',
-             knn_refine=True, knn_min_probability=0.5,
-             random_state=42):
+             knn_refine=True, knn_min_probability=0.5):
     """
     Pipeline for automated gating, feature selection, and clustering to
     generate new annotations.
@@ -100,9 +99,6 @@ def annotate(mat, markers, batches, samples, cell_labels,
       Confidence threshold for the KNN classifier to reassign a new cell type
       to previously undefined cells.
 
-    random_state: int or None (default=42)
-      Random seed.
-
     Returns:
     --------
       # AT. Add what is returned by the function
@@ -126,7 +122,6 @@ def annotate(mat, markers, batches, samples, cell_labels,
             max_markers=max_markers,
             min_annotations=min_annotations,
             bimodality_selection_method=bimodality_selection_method,
-            random_state=random_state,
             knn_refine=knn_refine,
             cell_name=label)
 

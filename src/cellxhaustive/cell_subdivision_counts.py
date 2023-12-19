@@ -15,8 +15,8 @@ from select_cells import select_cells  # AT. Double-check path
 # Permute across positive and negative expression of the relevant markers
 # and identify new cell types
 # AT. Check presence/absence of all parameters/variable
-def cell_subdivision_counts(mat, mat_representative,
-                            markers, markers_representative, marker_order,
+def cell_subdivision_counts(mat_representative,
+                            markers_representative,
                             batches, samples,
                             percent_samplesxbatch=np.array([0.1, 0.2]),
                             min_cellxsample=np.array([5, 10]),
@@ -36,17 +36,9 @@ def cell_subdivision_counts(mat, mat_representative,
       cells in D0 and markers in D1. In other words, rows contain cells and
       columns contain markers.
 
-    markers: array(str)
-      1-D numpy array with markers matching each column of mat.
-
     markers_representative: array(str)
       1-D numpy array with markers matching each column of mat_representative.
 
-
-
-    marker_order: list(str)
-      List of markers used in the gating strategy ordered accordingly.
-      # AT. Check parameter description (and default?). Do we even keep it? Or set it as an option?
 
 
 
