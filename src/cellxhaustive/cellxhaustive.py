@@ -109,7 +109,7 @@ def annotate(mat, markers, batches, samples, cell_labels,
     annotations = np.asarray(['undefined'] * len(cell_labels)).astype('U100')
 
     for label in np.unique(cell_labels):
-        # AT. Multithread here? Rework processing by label?
+        # AT. Multithread/process here? Rework processing by label?
 
         # Create boolean array to select cells matching current label
         is_label = (cell_labels == label)

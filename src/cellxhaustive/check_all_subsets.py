@@ -9,8 +9,8 @@ import itertools as ite
 import numpy as np
 
 # Imports local functions
-from cell_subdivision_counts import cell_subdivision_counts  # AT. Double-check path
-# from cellxhaustive.cell_subdivision_counts import cell_subdivision_counts
+from cell_subdivision_counts import cell_subdivision_counts
+# from cellxhaustive.cell_subdivision_counts import cell_subdivision_counts  # AT. Double-check path
 
 
 # AT. Add description

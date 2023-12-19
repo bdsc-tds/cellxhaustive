@@ -297,6 +297,6 @@ def cell_identification(mat, markers, marker_order, batches, samples, positive,
         if knn_refine:
             clustering_labels = knn_classifier(mat_representative, clustering_labels, knn_min_probability=knn_min_probability)
 
-        return is_label, cell_groups_name, clustering_labels, markers_representative_batches, markers_representative  # AT. Double-check this ', dfdata'
+        return is_label, cell_groups_name, clustering_labels, markers_representative_batches, markers_representative
     else:
         return is_label, {-1: cell_name}, np.zeros(np.sum(is_label)) - 1, markers_representative_batches, []
