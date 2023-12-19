@@ -153,8 +153,6 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
             # Calculate normalized pairwise distance
             eps = np.sqrt((pairwise_distances(X, metric='euclidean') ** 2) / float(np.shape(X)[1]))
 
-            # Calculate PCA space
-            Xt = PCA(n_components=2).fit_transform(X)  # AT. Never used so double check this
 
             # Run DBSCAN
             km = DBSCAN(min_samples=1, eps=eps_marker_clustering, metric='precomputed', leaf_size=2).fit(eps)
