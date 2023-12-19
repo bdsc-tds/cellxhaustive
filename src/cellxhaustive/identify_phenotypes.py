@@ -25,7 +25,7 @@ from knn_classifier import knn_classifier  # AT. Double-check path
 # AT. Check annotation
 # AT. Check presence/absence of all parameters/variable
 def identify_phenotypes(mat, markers, batches, samples, is_label,
-                        # marker_order, positive, three_markers=[],  # AT. Present in the code but not in the original function parameters
+                        # marker_order, positive, three_markers=[],  # AT. Present in the code but not in the original function parameters...
                         min_cellxsample=10, percent_samplesxbatch=0.5,
                         max_midpoint_preselection=15, max_markers=15,
                         min_annotations=3, bimodality_selection_method='midpoint',
@@ -103,28 +103,52 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
     Returns:
     --------
       # AT. Add what is returned by the function
+      With best set:
+        is_label:
+        cell_groups_name:
+        clustering_labels:
+        markers_rep_batches:
+        markers_rep_all:
+      Without best set:
+        is_label:
+        {-1: cell_name}:
+        np.zeros(np.sum(is_label)) - 1:
+        markers_rep_batches:
+        []:
     """
 
-    # MAIN GATING: we perform the gating for every batch independently. But that might be a bit of an overkill...
+    # Main gating: perform gating for every batch independently
+    # AT. Might be a bit of an overkill
 
-    for k in np.unique(batches):
+    for batch in np.unique(batches):
+        # AT. Multithread/process here? Rework processing by batch?
+
         # Create boolean array to select cells matching current batch
-        batch = (batches == k)
+        is_batch = (batches == batch)
 
-        # Subset batch
-        is_label_b = is_label[batch]
-        mat_ = mat[batch, :]
+        if bimodality_selection_method.upper() == 'DBSCAN':  # AT. Haven't reviewed the if content yet
 
-        if bimodality_selection_method == 'DBSCAN':  # AT. upper/lower to avoid case problems?
+            # Subset expression matrix to cells of the current batch only
+            mat_subset = mat[is_batch, :]
 
-            eps_marker_clustering = np.sqrt((pairwise_distances(mat_.transpose(), metric='euclidean') ** 2) / float(np.sum(batch)))
+            # AT. Note: pairwise distances are computed between rows
+            eps_marker_clustering = np.sqrt((pairwise_distances(mat_subset.transpose(), metric='euclidean') ** 2) / float(np.sum(is_batch)))
+            # AT. Why transpose the expression matrix?
+                # AT. Why the ** 2 and the square root? Square-root transformation to stabilize variance?
+                # AT. float(np.sum(is_batch)): total number of cells in the current batch. Why divide by this?
             eps_marker_clustering = np.quantile(eps_marker_clustering[np.triu_indices(np.shape(eps_marker_clustering)[0], k=1)], q=0.05)
+            # AT. k=1: diagonal offset, not to take the 0-diag into account
+            # AT. np.triu_indices() returns two arrays, one containing x-coordinates, the other containing y-coordinates
+            # AT. Overall, this selects the 5th quantile of the upper-right triangle of the transposed expression matrix of the whole batch
 
-            # Subset cell types
-            mat_ = mat_[is_label_b, :]
+            # Create boolean array to select cells matching current label and batch
+            is_label_batch = is_label[is_batch]
+
+            # Subset expression matrix to cells of current batch and label only
+            mat_subset = mat_subset[is_label_batch, :]
 
             # Transpose matrix to perform marker clustering
-            X = mat_.transpose()
+            X = mat_subset.transpose()
 
             # Calculate normalized pairwise distance
             eps = np.sqrt((pairwise_distances(X, metric='euclidean') ** 2) / float(np.shape(X)[1]))
@@ -137,9 +161,9 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
             labels_ = km.labels_
 
             # Find the cluster center and generate an array of cluster by cell.
-            cluster_centers_ = np.zeros((len(np.unique(labels_)), np.shape(mat_)[0]))
+            cluster_centers_ = np.zeros((len(np.unique(labels_)), np.shape(mat_subset)[0]))
             for i in range(len(np.unique(labels_))):
-                cluster_centers_[i, :] = np.mean(mat_[:, labels_ == i], axis=1)
+                cluster_centers_[i, :] = np.mean(mat_subset[:, labels_ == i], axis=1)
 
             # Generate marker expression per cluster matrix
             mark_exprr = np.zeros((len(np.unique(labels_)), len(markers)))
@@ -150,121 +174,159 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
             known_invariants = markers[np.sum(mark_exprr[np.any(mark_exprr[:, np.isin(markers, marker_order)], axis=1), :], axis=0) > 0]
 
             # Remove invariant markers based on the known invariants
-            vt = VarianceThreshold().fit(mat_)
+            vt = VarianceThreshold().fit(mat_subset)
             invariants = markers[vt.variances_ <= np.max(vt.variances_[np.isin(markers, marker_order)])]
             invariants = np.unique(list(invariants) + list(known_invariants))
 
             # For the variable markers, find closer to the cluster centroids. Slice matrix subsequently
-            markers_representative = []
+            markers_rep = []
             for idx, i in enumerate(np.sum(mark_exprr, axis=1)):
                 m_step = markers[mark_exprr[idx, :] > 0]
                 if i == 1:
-                    markers_representative += [m_step[0]]
+                    markers_rep += [m_step[0]]
                 else:
                     closest, _ = pairwise_distances_argmin_min(cluster_centers_[idx, :][np.newaxis, :],
                                                                X[np.isin(markers, m_step), :])
-                    markers_representative += [markers[np.isin(markers, m_step)][closest][0]]
+                    markers_rep += [markers[np.isin(markers, m_step)][closest][0]]
 
-            markers_representative = np.asarray(markers_representative)[np.isin(markers_representative, invariants) == False]
-            markers_representative = markers[np.isin(markers, markers_representative)]
+            markers_rep = np.asarray(markers_rep)[np.isin(markers_rep, invariants) == False]
+            markers_rep = markers[np.isin(markers, markers_rep)]
 
             # Generate dictionary for relevant markers
-            mdict = dict()
-            for i in markers_representative:
-                mdict[i] = markers[mark_exprr[labels_[markers == i][0], :] > 0]
-
-            # Store dictionary for every batch
-            markers_representative_batches[k] = mdict
+            markers_rep_dict = dict()
+            for i in markers_rep:
+                markers_rep_dict[i] = markers[mark_exprr[labels_[markers == i][0], :] > 0]
 
         else:
 
-            # Subset cell types
-            mat_ = mat_[is_label_b, :]
+            # Create boolean array to select cells matching current label and batch
+            is_label_batch = np.logical_and(is_batch, is_label)
+
+            # Subset expression matrix to cells of current batch and label only
+            mat_subset = mat[is_label_batch, :]
 
             # Check bimodality of the markers selected
-            center_values = -np.abs(np.mean(mat_, axis=0) - 3)
-            max_values = np.sort(center_values)[::-1][max_midpoint_preselection]
-            labels_ = center_values > max_values
-            markers_representative = markers[np.isin(markers, markers[labels_])]
+            marker_center_values = -np.abs(np.mean(mat_subset, axis=0) - 3)
+            marker_midpoint_value = np.sort(marker_center_values)[::-1][max_midpoint_preselection]  # Select the max_midpoint_preselection-th center value in descending order
+            # AT. max_midpoint_preselection: it looks a bit weird to always select the 15th value to test for max. Is it on purpose? Or should take something like the median value? Or something else?
+            # AT. Change name of variable max_midpoint_preselection?
+                # AT. Change max_midpoint_preselection for max_markers??
+            # AT. Change name of variable marker_midpoint_value?
+            is_center_greater = (marker_center_values > marker_midpoint_value)
+            # markers_rep = markers[np.isin(markers, markers[is_center_greater])]  # AT. Use shorter version below?
+            markers_rep = markers[is_center_greater]  # Select markers with center higher than max_midpoint_preselection-th center
 
             # Remove invariant markers based on the known invariants
-            vt = VarianceThreshold().fit(mat_)
+            vt = VarianceThreshold().fit(mat_subset)
+            # AT. We could use a threshold directly in VarianceThreshold()
+
+
+
             invariants = markers[vt.variances_ <= np.max(vt.variances_[np.isin(markers, marker_order)])]
-            markers_representative = np.asarray(markers_representative)[np.isin(markers_representative, invariants) == False]
-            markers_representative = markers[np.isin(markers, markers_representative)]
+            # invariants = markers[vt.variances_ <= np.max(vt.variances_[np.isin(markers, markers_rep)])]
+            # AT. Problem here with marker_order missing because it was used during main gating
+                # AT. Use markers_rep instead?
+            # AT. If selecting variances smaller than the max variance, it will always select everything...
+
+            markers_rep = np.asarray(markers_rep)[np.isin(markers_rep, invariants) == False]
+
+            markers_rep = markers[np.isin(markers, markers_rep)]
+
+
+
 
             # Generate dictionary for relevant markers
-            mdict = dict([(i, i) for i in markers_representative])
+            markers_rep_dict = dict([(mark_rep, mark_rep) for mark_rep in markers_rep])
 
-            # Store dictionary for every batch
-            markers_representative_batches[k] = mdict
+        # Store dictionary for every batch
+        try:  # To avoid problem if dict doesn't exist yet
+            markers_rep_batches[batch] = markers_rep_dict
+        except Exception:
+            markers_rep_batches = dict()
+            markers_rep_batches[batch] = markers_rep_dict
+        # AT. Check usage of this dict
 
-    # SELECT RELEVANT MARKERS BASED ON SELECTIONS ACROSS BATCHES AND SLICE DATA
+
+
+    # Select relevant markers shared across batches and slice data accordingly
+    # AT. Check part about data slicing
 
     # Filter markers with appearences in all batches
-    m, c = np.unique(list(ite.chain.from_iterable(
-        [list(markers_representative_batches[i].keys()) for idx, i in enumerate(markers_representative_batches.keys())])),
+    # mark_uniq, mark_uniq_count = np.unique(list(ite.chain.from_iterable(
+    #     [list(markers_rep_batches[i].keys()) for idx, i in enumerate(markers_rep_batches.keys())])),
+    #     return_counts=True)
+
+    # Extract markers present in all batches
+    mark_uniq, mark_uniq_count = np.unique(list(
+        ite.chain.from_iterable(
+            [list(markers_rep_batches[i].keys()) for i in markers_rep_batches.keys()]
+        )
+    ),
         return_counts=True)
-    markers_representative = m[c == len(markers_representative_batches.keys())]
+
+    markers_rep_all = mark_uniq[mark_uniq_count == len(markers_rep_batches.keys())]
 
     # Merge all batches together and extract main cell type
+    # Merge all batches together and extract main cell type
     # AT. Select samples for this population (decided in is_label)
-    mat_ = mat[is_label, :]
-    samples_ = samples[is_label]
-    batches_ = batches[is_label]
+    # AT. It
+    mat_subset_label = mat[is_label, :]
+    batches_label = batches[is_label]
+    samples_label = samples[is_label]
 
     # Slice matrix and markers using the selected markers through the main gating
     # AT. Matrix with relevant markers only (15 markers)
-    mat_representative = mat_[:, np.isin(markers, markers_representative)]
-    markers_representative = markers[np.isin(markers, markers_representative)]
+    mat_representative = mat_subset_label[:, np.isin(markers, markers_rep_all)]
+    markers_rep_all = markers[np.isin(markers, markers_rep_all)]
 
-    # STUDY SUBSETS OF MARKERS: Go over every combination of markers and understand the resulting number of cell types and unidentified cells
+    # STUDY SUBSETS OF MARKERS: Go over every combination of markers and
+    # understand the resulting number of cell types and unidentified cells
     x_p = np.linspace(0, 1, 101)
     y_ns = np.arange(101)
 
-    markers_representative_ = check_all_subsets(max_markers=max_markers,
+    markers_rep_all_ = check_all_subsets(max_markers=max_markers,
                                                 x_p=x_p,
                                                 y_ns=y_ns,
-                                                mat_=mat_,
-                                                mat_representative=mat_representative,
+                                                mat_subset=mat_subset_label,
                                                 markers=markers,
-                                                markers_representative=markers_representative,
+                                                markers_representative=markers_rep_all,
                                                 marker_order=marker_order,
-                                                batches=batches_,
-                                                samples=samples_,
-                                                cell=cell_name,
+                                                batches=batches_label,
+                                                samples=samples_label,
                                                 min_cellxsample=min_cellxsample,
                                                 percent_samplesxbatch=percent_samplesxbatch,
                                                 min_cells=min_annotations)
 
-    if len(markers_representative_) > 0:
-        markers_representative = markers[np.isin(markers, markers_representative_)]
-        mat_representative = mat_[:, np.isin(markers, markers_representative_)]
+    if len(markers_rep_all_) > 0:
+        markers_rep_all = markers[np.isin(markers, markers_rep_all_)]
+        mat_representative = mat_subset_label[:, np.isin(markers, markers_rep_all_)]
         # AT. Redundant?
 
         # Now let's figure out which groups of markers form relevant cell types
         # AT. Assign the annotations to the cells using the best set of markers defined before
         cell_groups, cell_groups_name, clustering_labels, mat_average, markers_average = cell_subdivision(
-            mat=mat_,
+            # AT. CHANGE THIS IN FUNCTION
+            mat=mat_subset_label,
             mat_representative=mat_representative,
             markers=markers,
-            markers_representative=markers_representative,
-            batches=batches_,
-            samples=samples_,
+            markers_representative=markers_rep_all,
             marker_order=marker_order,
-            three_markers=three_markers,
-            percent_samplesxbatch=percent_samplesxbatch,
+            batches=batches_label,
+            samples=samples_label,
             min_cellxsample=min_cellxsample,
+            percent_samplesxbatch=percent_samplesxbatch,
+            three_markers=three_markers,
             cell_name=cell_name)
 
         # Try to classify undefined cells using a KNN classifier
         if knn_refine:
-            clustering_labels = knn_classifier(mat_representative,
-                                               clustering_labels,
+            clustering_labels = knn_classifier(mat_representative=mat_representative,
+                                               clustering_labels=clustering_labels,
                                                knn_min_probability=knn_min_probability)
 
-        return is_label, cell_groups_name, clustering_labels, markers_representative_batches, markers_representative  # AT. Double-check this ', dfdata'
+        return is_label, cell_groups_name, clustering_labels, markers_rep_batches, markers_rep_all
+
     else:
-        return is_label, {-1: cell_name}, np.zeros(np.sum(is_label)) - 1, markers_representative_batches, []
         # AT. If there is no 'best set' and more specialized annotation, keep the parent one (more general)
         # AT. DIRTY!
+        return is_label, {-1: cell_name}, np.zeros(np.sum(is_label)) - 1, markers_rep_batches, []
