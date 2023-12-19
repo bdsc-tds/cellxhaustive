@@ -118,128 +118,131 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
     """
 
     # Main gating: perform gating for every batch independently
-    # AT. Might be a bit of an overkill
+    # AT. Might be a bit of an overkill. Do we need it?
 
     for batch in np.unique(batches):
-        # AT. Multithread/process here? Rework processing by batch?
 
         # Create boolean array to select cells matching current batch
         is_batch = (batches == batch)
 
-        if bimodality_selection_method.upper() == 'DBSCAN':  # AT. Haven't reviewed the if content yet
+        # if bimodality_selection_method.upper() == 'DBSCAN':
 
-            # Subset expression matrix to cells of the current batch only
-            mat_subset = mat[is_batch, :]
+        #     # Subset expression matrix to cells of the current batch only
+        #     mat_subset = mat[is_batch, :]
 
-            # AT. Note: pairwise distances are computed between rows
-            eps_marker_clustering = np.sqrt((pairwise_distances(mat_subset.transpose(), metric='euclidean') ** 2) / float(np.sum(is_batch)))
-            # AT. Why transpose the expression matrix?
-                # AT. Why the ** 2 and the square root? Square-root transformation to stabilize variance?
-                # AT. float(np.sum(is_batch)): total number of cells in the current batch. Why divide by this?
-            eps_marker_clustering = np.quantile(eps_marker_clustering[np.triu_indices(np.shape(eps_marker_clustering)[0], k=1)], q=0.05)
-            # AT. k=1: diagonal offset, not to take the 0-diag into account
-            # AT. np.triu_indices() returns two arrays, one containing x-coordinates, the other containing y-coordinates
-            # AT. Overall, this selects the 5th quantile of the upper-right triangle of the transposed expression matrix of the whole batch
+        #     eps_marker_clustering = np.sqrt((pairwise_distances(mat_subset.transpose(), metric='euclidean') ** 2) / float(np.sum(is_batch)))
+        #     # Notes:
+        #     # - Pairwise distances are computed between rows
+        #     # - Matrix is transposed to have scores per marker and not cell
+        #     eps_marker_clustering = np.quantile(eps_marker_clustering[np.triu_indices(np.shape(eps_marker_clustering)[0], k=1)], q=0.05)
+        #     # Notes:
+        #     # - k=1 offsets the diagonal by 1 on the right, not to take the
+        #     # 0-diagonal into account
+        #     # - np.triu_indices() returns two arrays, one containing
+        #     # x-coordinates, the other containing y-coordinates
+        #     # Overall, this selects the 5th quantile of the upper-right triangle
+        #     # of the transposed expression matrix of the whole batch
 
-            # Create boolean array to select cells matching current label and batch
-            is_label_batch = is_label[is_batch]
+        #     # Create boolean array to select cells matching current label and batch
+        #     is_label_batch = is_label[is_batch]
 
-            # Subset expression matrix to cells of current batch and label only
-            mat_subset = mat_subset[is_label_batch, :]
+        #     # Subset expression matrix to cells of current batch and label only
+        #     mat_subset = mat_subset[is_label_batch, :]
 
-            # Transpose matrix to perform marker clustering
-            X = mat_subset.transpose()
+        #     # AT. Only reviewed until here
 
-            # Calculate normalized pairwise distance
-            eps = np.sqrt((pairwise_distances(X, metric='euclidean') ** 2) / float(np.shape(X)[1]))
+        #     # Transpose matrix to perform marker clustering
+        #     X = mat_subset.transpose()
 
+        #     # Calculate normalized pairwise distance
+        #     eps = np.sqrt((pairwise_distances(X, metric='euclidean') ** 2) / float(np.shape(X)[1]))
 
-            # Run DBSCAN
-            km = DBSCAN(min_samples=1, eps=eps_marker_clustering, metric='precomputed', leaf_size=2).fit(eps)
-            labels_ = km.labels_
+        #     # Run DBSCAN
+        #     km = DBSCAN(min_samples=1, eps=eps_marker_clustering, metric='precomputed', leaf_size=2).fit(eps)
+        #     labels_ = km.labels_
 
-            # Find the cluster center and generate an array of cluster by cell.
-            cluster_centers_ = np.zeros((len(np.unique(labels_)), np.shape(mat_subset)[0]))
-            for i in range(len(np.unique(labels_))):
-                cluster_centers_[i, :] = np.mean(mat_subset[:, labels_ == i], axis=1)
+        #     # Find the cluster center and generate an array of cluster by cell.
+        #     cluster_centers_ = np.zeros((len(np.unique(labels_)), np.shape(mat_subset)[0]))
+        #     for i in range(len(np.unique(labels_))):
+        #         cluster_centers_[i, :] = np.mean(mat_subset[:, labels_ == i], axis=1)
 
-            # Generate marker expression per cluster matrix
-            mark_exprr = np.zeros((len(np.unique(labels_)), len(markers)))
-            for idx, i in enumerate(labels_):
-                mark_exprr[i, idx] += 1
+        #     # Generate marker expression per cluster matrix
+        #     mark_exprr = np.zeros((len(np.unique(labels_)), len(markers)))
+        #     for idx, i in enumerate(labels_):
+        #         mark_exprr[i, idx] += 1
 
-            # Remove known invariants and associated clustered markers
-            known_invariants = markers[np.sum(mark_exprr[np.any(mark_exprr[:, np.isin(markers, marker_order)], axis=1), :], axis=0) > 0]
+        #     # Remove known invariants and associated clustered markers
+        #     known_invariants = markers[np.sum(mark_exprr[np.any(mark_exprr[:, np.isin(markers, marker_order)], axis=1), :], axis=0) > 0]
 
-            # Remove invariant markers based on the known invariants
-            vt = VarianceThreshold().fit(mat_subset)
-            invariants = markers[vt.variances_ <= np.max(vt.variances_[np.isin(markers, marker_order)])]
-            invariants = np.unique(list(invariants) + list(known_invariants))
+        #     # Remove invariant markers based on the known invariants
+        #     vt = VarianceThreshold().fit(mat_subset)
+        #     invariants = markers[vt.variances_ <= np.max(vt.variances_[np.isin(markers, marker_order)])]
+        #     invariants = np.unique(list(invariants) + list(known_invariants))
 
-            # For the variable markers, find closer to the cluster centroids. Slice matrix subsequently
-            markers_rep = []
-            for idx, i in enumerate(np.sum(mark_exprr, axis=1)):
-                m_step = markers[mark_exprr[idx, :] > 0]
-                if i == 1:
-                    markers_rep += [m_step[0]]
-                else:
-                    closest, _ = pairwise_distances_argmin_min(cluster_centers_[idx, :][np.newaxis, :],
-                                                               X[np.isin(markers, m_step), :])
-                    markers_rep += [markers[np.isin(markers, m_step)][closest][0]]
+        #     # For the variable markers, find closer to the cluster centroids. Slice matrix subsequently
+        #     markers_rep = []
+        #     for idx, i in enumerate(np.sum(mark_exprr, axis=1)):
+        #         m_step = markers[mark_exprr[idx, :] > 0]
+        #         if i == 1:
+        #             markers_rep += [m_step[0]]
+        #         else:
+        #             closest, _ = pairwise_distances_argmin_min(cluster_centers_[idx, :][np.newaxis, :],
+        #                                                        X[np.isin(markers, m_step), :])
+        #             markers_rep += [markers[np.isin(markers, m_step)][closest][0]]
 
-            markers_rep = np.asarray(markers_rep)[np.isin(markers_rep, invariants) == False]
-            markers_rep = markers[np.isin(markers, markers_rep)]
+        #     markers_rep = np.asarray(markers_rep)[np.isin(markers_rep, invariants) == False]
+        #     markers_rep = markers[np.isin(markers, markers_rep)]
 
-            # Generate dictionary for relevant markers
-            markers_rep_dict = dict()
-            for i in markers_rep:
-                markers_rep_dict[i] = markers[mark_exprr[labels_[markers == i][0], :] > 0]
+        #     # Generate dictionary for relevant markers
+        #     markers_rep_dict = dict()
+        #     for i in markers_rep:
+        #         markers_rep_dict[i] = markers[mark_exprr[labels_[markers == i][0], :] > 0]
 
-        else:
+        # else:
 
-            # Create boolean array to select cells matching current label and batch
-            is_label_batch = np.logical_and(is_batch, is_label)
+        # Create boolean array to select cells matching current label and batch
+        is_label_batch = np.logical_and(is_batch, is_label)
 
-            # Subset expression matrix to cells of current batch and label only
-            mat_subset = mat[is_label_batch, :]
+        # Subset expression matrix to cells of current batch and label only
+        mat_subset = mat[is_label_batch, :]
 
-            # Check bimodality of the markers selected
-            marker_center_values = -np.abs(np.mean(mat_subset, axis=0) - 3)
-            marker_midpoint_value = np.sort(marker_center_values)[::-1][max_midpoint_preselection]  # Select the max_midpoint_preselection-th center value in descending order
-            # AT. max_midpoint_preselection: it looks a bit weird to always select the 15th value to test for max. Is it on purpose? Or should take something like the median value? Or something else?
-            # AT. Change name of variable max_midpoint_preselection?
-                # AT. Change max_midpoint_preselection for max_markers??
-            # AT. Change name of variable marker_midpoint_value?
-            is_center_greater = (marker_center_values > marker_midpoint_value)
-            # markers_rep = markers[np.isin(markers, markers[is_center_greater])]  # AT. Use shorter version below?
-            markers_rep = markers[is_center_greater]  # Select markers with center higher than max_midpoint_preselection-th center
+        # Check bimodality of the markers selected
+        marker_center_values = -np.abs(np.mean(mat_subset, axis=0) - 3)
+        marker_midpoint_value = np.sort(marker_center_values)[::-1][max_midpoint_preselection]  # Select the max_midpoint_preselection-th center value in descending order
+        # AT. max_midpoint_preselection: it looks a bit weird to always select the 15th value to test for max. Is it on purpose? Or should take something like the median value? Or something else?
+        # AT. Change name of variable max_midpoint_preselection?
+            # AT. Change max_midpoint_preselection for max_markers??
+        # AT. Change name of variable marker_midpoint_value?
+        is_center_greater = (marker_center_values > marker_midpoint_value)
+        # markers_rep = markers[np.isin(markers, markers[is_center_greater])]  # AT. Use shorter version below?
+        markers_rep = markers[is_center_greater]  # Select markers with center higher than max_midpoint_preselection-th center
 
-            # Remove invariant markers based on the known invariants
-            vt = VarianceThreshold().fit(mat_subset)
-            # AT. We could use a threshold directly in VarianceThreshold()
-
-
-
-            invariants = markers[vt.variances_ <= np.max(vt.variances_[np.isin(markers, marker_order)])]
-            # invariants = markers[vt.variances_ <= np.max(vt.variances_[np.isin(markers, markers_rep)])]
-            # AT. Problem here with marker_order missing because it was used during main gating
-                # AT. Use markers_rep instead?
-            # AT. If selecting variances smaller than the max variance, it will always select everything...
-
-            markers_rep = np.asarray(markers_rep)[np.isin(markers_rep, invariants) == False]
-
-            markers_rep = markers[np.isin(markers, markers_rep)]
+        # Remove invariant markers based on the known invariants
+        vt = VarianceThreshold().fit(mat_subset)
+        # AT. We could use a threshold directly in VarianceThreshold()
 
 
 
+        invariants = markers[vt.variances_ <= np.max(vt.variances_[np.isin(markers, marker_order)])]
+        # invariants = markers[vt.variances_ <= np.max(vt.variances_[np.isin(markers, markers_rep)])]
+        # AT. Problem here with marker_order missing because it was used during main gating
+            # AT. Use markers_rep instead?
+        # AT. If selecting variances smaller than the max variance, it will always select everything...
 
-            # Generate dictionary for relevant markers
-            markers_rep_dict = dict([(mark_rep, mark_rep) for mark_rep in markers_rep])
+        markers_rep = np.asarray(markers_rep)[np.isin(markers_rep, invariants) == False]
+
+        markers_rep = markers[np.isin(markers, markers_rep)]
+
+
+
+
+        # Generate dictionary for relevant markers
+        markers_rep_dict = dict([(mark_rep, mark_rep) for mark_rep in markers_rep])
 
         # Store dictionary for every batch
         try:  # To avoid problem if dict doesn't exist yet
             markers_rep_batches[batch] = markers_rep_dict
-        except Exception:
+        except NameError:
             markers_rep_batches = dict()
             markers_rep_batches[batch] = markers_rep_dict
         # AT. Check usage of this dict
