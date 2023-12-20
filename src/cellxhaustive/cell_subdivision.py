@@ -55,11 +55,11 @@ def cell_subdivision(mat, mat_representative,
 
 
     batches: array(str)
-      1-D numpy array with batch names of each cell of mat. Useful for defining
+      1-D numpy array with batch names of each cell of mat.
       the thresholds for the new annotations.
 
     samples: array(str)
-      1-D numpy array with sample names of each cell of mat. Useful for defining
+      1-D numpy array with sample names of each cell of mat.
       the thresholds for the new annotations.
 
     min_cellxsample: float (default=10)

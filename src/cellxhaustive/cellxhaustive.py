@@ -27,9 +27,8 @@ from identify_phenotypes import identify_phenotypes
 
 # AT. Add description
 def annotate(mat, markers, batches, samples, cell_labels,
+             max_markers=15, min_annotations=3,  # bimodality_selection_method='midpoint',  # AT. Remove parameter if we decide to remove DBSCAN
              min_cellxsample=10, percent_samplesxbatch=0.5,
-             max_midpoint_preselection=15, max_markers=15,
-             min_annotations=3, bimodality_selection_method='midpoint',
              knn_refine=True, knn_min_probability=0.5):
     """
     Pipeline for automated gating, feature selection, and clustering to
@@ -43,23 +42,36 @@ def annotate(mat, markers, batches, samples, cell_labels,
       In other words, rows contain cells and columns contain markers.
 
     markers: array(str)
-      1-D numpy array with markers matching each column of mat.
+      1-D numpy array with markers matching each column of 'mat'.
 
     batches: array(str)
-      1-D numpy array with batch names of each cell of mat. Useful for defining
+      1-D numpy array with batch names of each cell of 'mat'.
       the thresholds for the new annotations.
 
     samples: array(str)
-      1-D numpy array with sample names of each cell of mat. Useful for defining
+      1-D numpy array with sample names of each cell of 'mat'.
       the thresholds for the new annotations.
 
     cell_labels: array(str)
-      1-D numpy array with main cell labels of each cell of mat.
+      1-D numpy array with main cell labels of each cell of 'mat'.
       # AT. Set as an option, as it was used for the main gating
       # AT. Problem with annotations ontology/vocabulary?
 
+    max_markers: int (default=15)
+      Maximum number of markers to select among the total list of markers from
+      the 'markers' array. Must be less than or equal to 'len(markers)'.
+
+    min_annotations: int (default=3)
+      Minimum number of markers used to define a cell population. Must be in
+      [2; len(markers)], but it is advised to choose a value in [3; len(markers) - 1].
+
+    bimodality_selection_method: str (default = 'midpoint')
+      Two possible methods: 'DBSCAN', which uses the clustering method with the
+      same name, and 'midpoint', which uses markers closer to the normalized matrix
+      # AT. Remove description if we decide to remove DBSCAN
+
     min_cellxsample: float (default=10)
-      Minimum number of cells within each sample in percent_samplesxbatch % of
+      Minimum number of cells within each sample in 'percent_samplesxbatch' % of
       samples within each batch for a new annotation to be considered. In other
       words, by default, an annotation needs to be assigned to at least
       10 cells/sample in at least 50% of the samples (see description of next
@@ -67,33 +79,12 @@ def annotate(mat, markers, batches, samples, cell_labels,
 
     percent_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least
-      min_cellxsample cells for a new annotation to be considered. In other
+      'min_cellxsample' cells for a new annotation to be considered. In other
       words, by default, an annotation needs to be assigned to at least 10
       cells/sample (see description of previous parameter) in at least 50% of
       the samples within a batch to be considered.
 
-    max_midpoint_preselection: int (default=15)
-      Number of representative markers to select among the total list of
-      markers from the markers array. Must be less than or equal to len(markers).
-
-
-
-    max_markers: int or None (default=15)
-      Maximum number of relevant markers selected.
-      # AT. Merge with max_midpoint_preselection?
-      # AT. Check if None is valid
-
-    min_annotations: int (default=3)
-      Maximum number of relevant markers selected.
-      # AT. Check if None is valid
-
-    bimodality_selection_method: str (default = 'midpoint')
-      Two possible methods: 'DBSCAN', which uses the clustering method with the
-      same name, and 'midpoint', which uses markers closer to the normalized matrix.
-
-
-
-    knn_refine: bool (default=False)
+    knn_refine: bool (default=True)
       If True, the clustering done via permutations of relevant markers will be
       refined using a KNN classifier.
 
@@ -109,7 +100,6 @@ def annotate(mat, markers, batches, samples, cell_labels,
     annotations = np.asarray(['undefined'] * len(cell_labels)).astype('U100')
 
     for label in np.unique(cell_labels):
-        # AT. Multithread/process here? Rework processing by label?
 
         # Create boolean array to select cells matching current label
         is_label = (cell_labels == label)
@@ -120,18 +110,17 @@ def annotate(mat, markers, batches, samples, cell_labels,
             batches=batches,
             samples=samples,
             is_label=is_label,
-            min_cellxsample=min_cellxsample,
-            percent_samplesxbatch=percent_samplesxbatch,
-            max_midpoint_preselection=max_midpoint_preselection,
             max_markers=max_markers,
             min_annotations=min_annotations,
-            bimodality_selection_method=bimodality_selection_method,
+            # bimodality_selection_method=bimodality_selection_method,  # AT. Remove parameter if we decide to remove DBSCAN
+            min_cellxsample=min_cellxsample,
+            percent_samplesxbatch=percent_samplesxbatch,
             knn_refine=knn_refine,
             knn_min_probability=knn_min_probability,
             cell_name=label)
 
-        cell_dict = dict([tuple([x, cell_groups[x].split(" (")[0]])
-                          for x in cell_groups])
+        cell_dict = dict([tuple([x, cell_groups_name[x].split(" (")[0]])
+                          for x in cell_groups_name])
         # AT. Because cell numbers is inside the name in (), we have to use .split() here --> Better to change the name in a function before
 
         annotations[is_label] = np.vectorize(cell_dict.get)(clustering_labels)

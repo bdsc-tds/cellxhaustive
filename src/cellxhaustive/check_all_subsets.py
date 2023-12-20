@@ -15,18 +15,46 @@ from cell_subdivision_counts import cell_subdivision_counts
 
 # AT. Add description
 # AT. Check presence/absence of all parameters/variable
-def check_all_subsets(max_markers, x_p, y_ns,
-                      mat_subset,
+def check_all_subsets(mat_subset, batches, samples,
                       markers, markers_representative,
-                      batches, samples, min_cellxsample, percent_samplesxbatch,
-                      min_cells):
+                      max_markers=15, min_annotations=3,
+                      x_p, y_ns,
+                      min_cellxsample=10, percent_samplesxbatch=0.5):
     """
     # AT. Add function description
 
     Parameters:
     -----------
-    max_markers:
-      # AT. Add parameter description (and default?)
+
+
+    # AT. Update description
+    mat_subset: array(float)
+      2-D numpy array expression matrix, with cells in D0 and markers in D1.
+      In other words, rows contain cells and columns contain markers. This
+      matrix is a subset of the general expression matrix and contains data only
+      on the required cell label and batch.
+
+
+    batches: array(str)
+      1-D numpy array with batch names of each cell of 'mat'.
+      the thresholds for the new annotations.
+
+    samples: array(str)
+      1-D numpy array with sample names of each cell of 'mat'.
+      the thresholds for the new annotations.
+
+
+
+
+    max_markers: int (default=15)
+      Maximum number of relevant markers to select among the total list of
+      markers from the markers array. Must be less than or equal to 'len(markers)'.
+
+    min_annotations: int (default=3)
+      Minimum number of markers used to define a cell population. Must be in
+      [2; len(markers)], but it is advised to choose a value in [3; len(markers) - 1].
+
+
 
     x_p:
       # AT. Add parameter description (and default?)
@@ -36,25 +64,16 @@ def check_all_subsets(max_markers, x_p, y_ns,
 
 
 
-    mat_subset: array(float)
-      2-D numpy array expression matrix, with cells in D0 and markers in D1.
-      In other words, rows contain cells and columns contain markers. This
-      matrix is a subset of the general expression matrix and contains data only
-      on the required cell label and batch.
+
+    markers: array(str)
+      1-D numpy array with markers matching each column of mat.
 
 
 
-    markers:
-      # AT. Add parameter description (and default?)
+    markers_representative: array(str)
+      1-D numpy array with markers matching each column of mat_representative.
+      # AT. Double-check this
 
-    markers_representative:
-      # AT. Add parameter description (and default?)
-
-    batches:
-      # AT. Add parameter description (and default?)
-
-    samples:
-      # AT. Add parameter description (and default?)
 
 
 
@@ -71,11 +90,6 @@ def check_all_subsets(max_markers, x_p, y_ns,
       words, by default, an annotation needs to be assigned to at least 10
       cells/sample (see description of previous parameter) in at least 50% of
       the samples within a batch to be considered.
-
-
-
-    min_cells:
-      # AT. Add parameter description (and default?)
 
     Returns:
     --------
@@ -159,7 +173,7 @@ def check_all_subsets(max_markers, x_p, y_ns,
             undefined = undefined[x_p >= percent_samplesxbatch, :]
 
             # Further constrain matrix given the minimum number of phenotype conditions
-            condi = results < min_cells
+            condi = results < min_annotations
             results[condi] = np.nan
             undefined[condi] = np.nan
             matx[condi] = np.nan
