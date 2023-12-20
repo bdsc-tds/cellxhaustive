@@ -4,14 +4,11 @@ AT. Add general description here.
 
 
 # Imports utility modules
-import itertools as ite
 import numpy as np
 
 # Imports ML modules
-from sklearn.cluster import DBSCAN
-from sklearn.decomposition import PCA
-from sklearn.feature_selection import VarianceThreshold
-from sklearn.metrics import pairwise_distances, pairwise_distances_argmin_min
+# from sklearn.cluster import DBSCAN  # AT.Remove if we decide to remove DBSCAN
+# from sklearn.metrics import pairwise_distances, pairwise_distances_argmin_min  # AT.Remove if we decide to remove DBSCAN
 
 # Imports local functions
 from cell_subdivision import cell_subdivision  # AT. Double-check path
@@ -80,7 +77,7 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
       same name, and 'midpoint', which uses markers closer to the normalized matrix
       # AT. Remove description if we decide to remove DBSCAN
 
-    knn_refine: bool (default=False)
+    knn_refine: bool (default=True)
       If True, the clustering done via permutations of relevant markers will be
       refined using a KNN classifier.
 
@@ -198,99 +195,71 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
 
         # Check bimodality of the markers and select the best ones
         marker_center_values = -np.abs(np.mean(mat_subset, axis=0) - 3)
-        marker_midpoint_value = np.sort(marker_center_values)[::-1][max_midpoint_preselection]  # Select the max_midpoint_preselection-th center value in descending order
-        # AT. max_midpoint_preselection: it looks a bit weird to always select the 15th value to test for max. Is it on purpose? Or should take something like the median value? Or something else?
-        # AT. Change name of variable max_midpoint_preselection?
-            # AT. Change max_midpoint_preselection for max_markers??
-        # AT. Change name of variable marker_midpoint_value?
-        is_center_greater = (marker_center_values > marker_midpoint_value)
-        # markers_rep = markers[np.isin(markers, markers[is_center_greater])]  # AT. Use shorter version below?
-        markers_rep = markers[is_center_greater]  # Select markers with center higher than max_midpoint_preselection-th center
+        marker_threshold_value = np.sort(marker_center_values)[::-1][max_markers]  # Select max_markers-th center value (in descending order)
+        is_center_greater = (marker_center_values > marker_threshold_value)
+        markers_rep = markers[is_center_greater]  # Select markers with center higher than max_markers-th center
 
-        # Remove invariant markers based on the known invariants
-        vt = VarianceThreshold().fit(mat_subset)
-        # AT. We could use a threshold directly in VarianceThreshold()
-
-
-
-        invariants = markers[vt.variances_ <= np.max(vt.variances_[np.isin(markers, marker_order)])]
-        # invariants = markers[vt.variances_ <= np.max(vt.variances_[np.isin(markers, markers_rep)])]
-        # AT. Problem here with marker_order missing because it was used during main gating
-            # AT. Use markers_rep instead?
-        # AT. If selecting variances smaller than the max variance, it will always select everything...
-
-        markers_rep = np.asarray(markers_rep)[np.isin(markers_rep, invariants) == False]
-
-        markers_rep = markers[np.isin(markers, markers_rep)]
-
-
-
-
-        # Generate dictionary for relevant markers
-        markers_rep_dict = dict([(mark_rep, mark_rep) for mark_rep in markers_rep])
-
-        # Store dictionary for every batch
+        # Store list of relevant markers for every batch
         try:  # To avoid problem if dict doesn't exist yet
-            markers_rep_batches[batch] = markers_rep_dict
+            markers_rep_batches[batch] = list(markers_rep)
         except NameError:
             markers_rep_batches = dict()
-            markers_rep_batches[batch] = markers_rep_dict
-        # AT. Check usage of this dict
+            markers_rep_batches[batch] = list(markers_rep)
 
-
-
-    # Select relevant markers shared across batches and slice data accordingly
-    # AT. Check part about data slicing
-
-    # Filter markers with appearences in all batches
-    # mark_uniq, mark_uniq_count = np.unique(list(ite.chain.from_iterable(
-    #     [list(markers_rep_batches[i].keys()) for idx, i in enumerate(markers_rep_batches.keys())])),
-    #     return_counts=True)
+    # Marker selection and matrix slicing: select relevant markers shared across
+    # all batches and extract related data
 
     # Extract markers present in all batches
-    mark_uniq, mark_uniq_count = np.unique(list(
-        ite.chain.from_iterable(
-            [list(markers_rep_batches[i].keys()) for i in markers_rep_batches.keys()]
-        )
-    ),
-        return_counts=True)
+    markers_rep_all = set.intersection(*map(set, markers_rep_batches.values()))
+    markers_rep_all = np.array(list(markers_rep_all))  # Converts format back to array
 
-    markers_rep_all = mark_uniq[mark_uniq_count == len(markers_rep_batches.keys())]
-
-    # Merge all batches together and extract main cell type
-    # Merge all batches together and extract main cell type
-    # AT. Select samples for this population (decided in is_label)
-    # AT. It
+    # Extract expression, batch and sample information across all batches for
+    # cell population 'label'
     mat_subset_label = mat[is_label, :]
     batches_label = batches[is_label]
     samples_label = samples[is_label]
 
-    # Slice matrix and markers using the selected markers through the main gating
-    # AT. Matrix with relevant markers only (15 markers)
-    mat_representative = mat_subset_label[:, np.isin(markers, markers_rep_all)]
-    markers_rep_all = markers[np.isin(markers, markers_rep_all)]
+    # Slice matrix to keep only expression of relevant markers
+    markers_rep_all = markers[np.isin(markers, markers_rep_all)]  # Reorders markers
+    mat_subset_rep_markers = mat_subset_label[:, np.isin(markers, markers_rep_all)]
 
-    # STUDY SUBSETS OF MARKERS: Go over every combination of markers and
-    # understand the resulting number of cell types and unidentified cells
+    # Evaluate subsets of markers: go over every combination of markers and
+    # calculate the resulting number of cell types and unidentified cells
+
+    # AT. Remove these matrices??
     x_p = np.linspace(0, 1, 101)
     y_ns = np.arange(101)
 
-    markers_rep_all_ = check_all_subsets(max_markers=max_markers,
-                                                x_p=x_p,
-                                                y_ns=y_ns,
-                                                mat_subset=mat_subset_label,
-                                                markers=markers,
-                                                markers_representative=markers_rep_all,
-                                                marker_order=marker_order,
-                                                batches=batches_label,
-                                                samples=samples_label,
-                                                min_cellxsample=min_cellxsample,
-                                                percent_samplesxbatch=percent_samplesxbatch,
-                                                min_cells=min_annotations)
+
+# AT. WHICH MATRIX SHOULD WE USE IN check_all_subsets()???
+# mat_subset_label OR mat_subset_rep_markers???
+
+
+# AT. Update variable name
+    markers_rep_all_ = check_all_subsets(mat_subset=mat_subset_label,
+                                         # mat_representative=mat_subset_rep_markers,  # AT. The sliced matrix isn't used in the former code...
+                                         batches=batches_label,
+                                         samples=samples_label,
+                                         markers=markers,
+                                         markers_representative=markers_rep_all,
+                                         max_markers=max_markers,
+                                         min_annotations=min_annotations,
+                                         x_p=x_p,
+                                         y_ns=y_ns,
+                                         min_cellxsample=min_cellxsample,
+                                         percent_samplesxbatch=percent_samplesxbatch)
+
+
+
+
+
+
+
+
 
     if len(markers_rep_all_) > 0:
         markers_rep_all = markers[np.isin(markers, markers_rep_all_)]
-        mat_representative = mat_subset_label[:, np.isin(markers, markers_rep_all_)]
+        mat_subset_rep_markers = mat_subset_label[:, np.isin(markers, markers_rep_all_)]
         # AT. Redundant?
 
         # Now let's figure out which groups of markers form relevant cell types
@@ -298,7 +267,7 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
         cell_groups, cell_groups_name, clustering_labels, mat_average, markers_average = cell_subdivision(
             # AT. CHANGE THIS IN FUNCTION
             mat=mat_subset_label,
-            mat_representative=mat_representative,
+            mat_representative=mat_subset_rep_markers,
             markers=markers,
             markers_representative=markers_rep_all,
             marker_order=marker_order,
