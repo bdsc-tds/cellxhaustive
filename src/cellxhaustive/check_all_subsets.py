@@ -15,81 +15,55 @@ from cell_subdivision_counts import cell_subdivision_counts
 
 # AT. Add description
 # AT. Check presence/absence of all parameters/variable
-def check_all_subsets(mat_subset, batches, samples,
-                      markers, markers_representative,
-                      max_markers=15, min_annotations=3,
-                      x_p, y_ns,
-                      min_cellxsample=10, percent_samplesxbatch=0.5):
+def check_all_subsets(mat_representative, batches_label, samples_label,
+                      markers_representative, max_markers=15, min_annotations=3,
+                      min_samplesxbatch=0.5, min_cellxsample=10):
     """
     # AT. Add function description
 
     Parameters:
     -----------
-
-
-    # AT. Update description
-    mat_subset: array(float)
+    mat_representative: array(float)
       2-D numpy array expression matrix, with cells in D0 and markers in D1.
       In other words, rows contain cells and columns contain markers. This
-      matrix is a subset of the general expression matrix and contains data only
-      on the required cell label and batch.
+      matrix is a subset of the general expression matrix and contains sliced
+      data matching cell label, batch, and representative markers.
 
+    batches_label: array(str)
+      1-D numpy array with batch names of each cell of 'mat_representative'.
 
-    batches: array(str)
-      1-D numpy array with batch names of each cell of 'mat'.
-      the thresholds for the new annotations.
+    samples_label: array(str)
+      1-D numpy array with sample names of each cell of 'mat_representative'.
 
-    samples: array(str)
-      1-D numpy array with sample names of each cell of 'mat'.
-      the thresholds for the new annotations.
-
-
-
+    markers_representative: array(str)
+      1-D numpy array with markers matching each column of 'mat_representative'.
 
     max_markers: int (default=15)
       Maximum number of relevant markers to select among the total list of
       markers from the markers array. Must be less than or equal to 'len(markers)'.
 
+
+
     min_annotations: int (default=3)
       Minimum number of markers used to define a cell population. Must be in
       [2; len(markers)], but it is advised to choose a value in [3; len(markers) - 1].
+      # AT. Double check description
 
 
 
-    x_p:
-      # AT. Add parameter description (and default?)
-
-    y_ns:
-      # AT. Add parameter description (and default?)
-
-
-
-
-    markers: array(str)
-      1-D numpy array with markers matching each column of mat.
-
-
-
-    markers_representative: array(str)
-      1-D numpy array with markers matching each column of mat_representative.
-      # AT. Double-check this
-
-
-
+    min_samplesxbatch: float (default=0.5)
+      Minimum proportion of samples within each batch with at least
+      'min_cellxsample' cells for a new annotation to be considered. In other
+      words, by default, an annotation needs to be assigned to at least 10
+      cells/sample (see description of previous parameter) in at least 50% of
+      the samples within a batch to be considered.
 
     min_cellxsample: float (default=10)
-      Minimum number of cells within each sample in percent_samplesxbatch % of
+      Minimum number of cells within each sample in 'min_samplesxbatch' % of
       samples within each batch for a new annotation to be considered. In other
       words, by default, an annotation needs to be assigned to at least
       10 cells/sample in at least 50% of the samples (see description of next
       parameter) within a batch to be considered.
-
-    percent_samplesxbatch: float (default=0.5)
-      Minimum proportion of samples within each batch with at least
-      min_cellxsample cells for a new annotation to be considered. In other
-      words, by default, an annotation needs to be assigned to at least 10
-      cells/sample (see description of previous parameter) in at least 50% of
-      the samples within a batch to be considered.
 
     Returns:
     --------
@@ -145,7 +119,12 @@ def check_all_subsets(mat_subset, batches, samples,
             markers_subset = markers[np.isin(markers, markers_subset)]
 
             # This variable is probably unnecessary but it's not a big deal to keep it
-            mset[index] = g
+            mset[index] = comb
+
+            # Find number of cell types and undefined cells for a given marker
+            # combination 'comb' across cellxsample and min_samplesxbatch grid
+
+
 
             # Find number of cells and undefined cells for a given marker
             # combination across the p and ns grid

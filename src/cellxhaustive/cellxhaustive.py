@@ -27,8 +27,8 @@ from identify_phenotypes import identify_phenotypes
 
 # AT. Add description
 def annotate(mat, markers, batches, samples, cell_labels,
-             max_markers=15, min_annotations=3,  # bimodality_selection_method='midpoint',  # AT. Remove parameter if we decide to remove DBSCAN
-             min_cellxsample=10, percent_samplesxbatch=0.5,
+             max_markers=15, min_annotations=3,
+             min_cellxsample=10, min_samplesxbatch=0.5,
              knn_refine=True, knn_min_probability=0.5):
     """
     Pipeline for automated gating, feature selection, and clustering to
@@ -46,11 +46,9 @@ def annotate(mat, markers, batches, samples, cell_labels,
 
     batches: array(str)
       1-D numpy array with batch names of each cell of 'mat'.
-      the thresholds for the new annotations.
 
     samples: array(str)
       1-D numpy array with sample names of each cell of 'mat'.
-      the thresholds for the new annotations.
 
     cell_labels: array(str)
       1-D numpy array with main cell labels of each cell of 'mat'.
@@ -65,24 +63,19 @@ def annotate(mat, markers, batches, samples, cell_labels,
       Minimum number of markers used to define a cell population. Must be in
       [2; len(markers)], but it is advised to choose a value in [3; len(markers) - 1].
 
-    bimodality_selection_method: str (default = 'midpoint')
-      Two possible methods: 'DBSCAN', which uses the clustering method with the
-      same name, and 'midpoint', which uses markers closer to the normalized matrix
-      # AT. Remove description if we decide to remove DBSCAN
-
-    min_cellxsample: float (default=10)
-      Minimum number of cells within each sample in 'percent_samplesxbatch' % of
-      samples within each batch for a new annotation to be considered. In other
-      words, by default, an annotation needs to be assigned to at least
-      10 cells/sample in at least 50% of the samples (see description of next
-      parameter) within a batch to be considered.
-
-    percent_samplesxbatch: float (default=0.5)
+    min_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least
       'min_cellxsample' cells for a new annotation to be considered. In other
       words, by default, an annotation needs to be assigned to at least 10
       cells/sample (see description of previous parameter) in at least 50% of
       the samples within a batch to be considered.
+
+    min_cellxsample: float (default=10)
+      Minimum number of cells within each sample in 'min_samplesxbatch' % of
+      samples within each batch for a new annotation to be considered. In other
+      words, by default, an annotation needs to be assigned to at least
+      10 cells/sample in at least 50% of the samples (see description of next
+      parameter) within a batch to be considered.
 
     knn_refine: bool (default=True)
       If True, the clustering done via permutations of relevant markers will be
@@ -104,7 +97,8 @@ def annotate(mat, markers, batches, samples, cell_labels,
         # Create boolean array to select cells matching current label
         is_label = (cell_labels == label)
 
-        cell_groups, clustering_labels, mdictA, fmarker = identify_phenotypes(  # AT. Rename mdictA and fmarker
+        # AT. Add annotations on what function does
+        is_label, cell_groups_name, clustering_labels, markers_rep_batches, markers_rep_all = identify_phenotypes(  # AT. Rename markers_rep_batches and markers_rep_all. Or remove them because they don't seem to be used anywhere. Same for is_label
             mat=mat,
             markers=markers,
             batches=batches,
@@ -112,9 +106,8 @@ def annotate(mat, markers, batches, samples, cell_labels,
             is_label=is_label,
             max_markers=max_markers,
             min_annotations=min_annotations,
-            # bimodality_selection_method=bimodality_selection_method,  # AT. Remove parameter if we decide to remove DBSCAN
             min_cellxsample=min_cellxsample,
-            percent_samplesxbatch=percent_samplesxbatch,
+            min_samplesxbatch=min_samplesxbatch,
             knn_refine=knn_refine,
             knn_min_probability=knn_min_probability,
             cell_name=label)

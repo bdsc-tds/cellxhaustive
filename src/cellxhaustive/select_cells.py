@@ -9,22 +9,22 @@ import numpy as np
 
 # Brute force way to select cells given normalized data
 # AT. Check presence/absence of all parameters/variable
-def select_cells(mat, markers,
+def select_cells(mat_comb, markers_comb,
                  positive=[], negative=[], lowpositive=[],
                  two_peak_threshold=3,
-                 three_markers=[],
+                 three_markers_comb=[],
                  three_peak_lower_threshold=2, three_peak_upper_threshold=4):
     """
     Main gating strategy. AT. Improve description
 
     Parameters:
     -----------
-    mat: array(float)
+    mat_comb: array(float)
       2-D numpy array expression matrix, with cells in D0 and markers in D1.
       In other words, rows contain cells and columns contain markers.
 
-    markers: array(str)
-      1-D numpy array with markers matching each column of mat.
+    markers_comb: array(str)
+      1-D numpy array with markers matching each column of mat_comb.
 
 
 
@@ -37,7 +37,7 @@ def select_cells(mat, markers,
     lowpositive: list(str)
       List of markers that are express a middle peak.
 
-    three_markers: list(str)
+    three_markers_comb: list(str)
       List of markers that have three peaks.
 
     two_peak_threshold: int (default=3)
@@ -58,31 +58,31 @@ def select_cells(mat, markers,
     pos = True
 
     # Find markers with two peaks and markers with three
-    three_markers = np.array(three_markers)
-    two_markers = markers[np.isin(markers, three_markers) == False]
+    # three_markers_comb = np.array(three_markers_comb)  # AT. Double-check if directly inputing an array in cell_subdivision_counts works
+    two_markers = markers_comb[np.isin(markers_comb, three_markers_comb) == False]
 
     # Start by selecting on markers with three peaks
-    if len(three_markers) > 0:
+    if len(three_markers_comb) > 0:
         # If positive, find values above the corresponding threshold
-        for i in three_markers[np.isin(three_markers, positive)]:
-            pos = np.logical_and(pos, mat[:, np.where(markers == i)[0][0]] >= three_peak_upper_threshold)
+        for i in three_markers_comb[np.isin(three_markers_comb, positive)]:
+            pos = np.logical_and(pos, mat_comb[:, np.where(markers_comb == i)[0][0]] >= three_peak_upper_threshold)
         # If middle peak, find values above and below the corresponding threshold
-        for i in three_markers[np.isin(three_markers, lowpositive)]:
+        for i in three_markers_comb[np.isin(three_markers_comb, lowpositive)]:
             pos = np.logical_and(pos,
-                                 np.logical_and(mat[:, np.where(markers == i)[0][0]] < three_peak_upper_threshold,
-                                                mat[:, np.where(markers == i)[0][0]] >= three_peak_lower_threshold)
+                                 np.logical_and(mat_comb[:, np.where(markers_comb == i)[0][0]] < three_peak_upper_threshold,
+                                                mat_comb[:, np.where(markers_comb == i)[0][0]] >= three_peak_lower_threshold)
                                  )
         # If negative, find values below the corresponding threshold
-        for i in three_markers[np.isin(three_markers, negative)]:
-            pos = np.logical_and(pos, mat[:, np.where(markers == i)[0][0]] < three_peak_lower_threshold)
+        for i in three_markers_comb[np.isin(three_markers_comb, negative)]:
+            pos = np.logical_and(pos, mat_comb[:, np.where(markers_comb == i)[0][0]] < three_peak_lower_threshold)
 
     # Process markers with two peaks if there are any
     if len(two_markers) > 0:
         # If positive, find values above the corresponding threshold
         for i in two_markers[np.isin(two_markers, positive)]:
-            pos = np.logical_and(pos, mat[:, np.where(markers == i)[0][0]] >= two_peak_threshold)
+            pos = np.logical_and(pos, mat_comb[:, np.where(markers_comb == i)[0][0]] >= two_peak_threshold)
         # If negative, find values below the corresponding threshold
         for i in two_markers[np.isin(two_markers, negative)]:
-            pos = np.logical_and(pos, mat[:, np.where(markers == i)[0][0]] < two_peak_threshold)
+            pos = np.logical_and(pos, mat_comb[:, np.where(markers_comb == i)[0][0]] < two_peak_threshold)
 
     return pos

@@ -20,9 +20,9 @@ from select_cells import select_cells  # AT. Double-check path
 def cell_subdivision(mat, mat_representative,
                      markers, markers_representative, marker_order,
                      batches, samples,
-                     min_cellxsample=10, percent_samplesxbatch=0.4,
+                     min_cellxsample=10, min_samplesxbatch=0.4,
                      three_markers=[], cell_name=None):
-    # AT. percent_samplesxbatch is different from the usual default value. Is it on purpose
+    # AT. min_samplesxbatch is different from the usual default value. Is it on purpose
     """
     Cell line subdivision.
     # AT. Add function description (use the one before?)
@@ -56,20 +56,18 @@ def cell_subdivision(mat, mat_representative,
 
     batches: array(str)
       1-D numpy array with batch names of each cell of mat.
-      the thresholds for the new annotations.
 
     samples: array(str)
       1-D numpy array with sample names of each cell of mat.
-      the thresholds for the new annotations.
 
     min_cellxsample: float (default=10)
-      Minimum number of cells within each sample in percent_samplesxbatch % of
+      Minimum number of cells within each sample in min_samplesxbatch % of
       samples within each batch for a new annotation to be considered. In other
       words, by default, an annotation needs to be assigned to at least
       10 cells/sample in at least 50% of the samples (see description of next
       parameter) within a batch to be considered.
 
-    percent_samplesxbatch: float (default=0.4)
+    min_samplesxbatch: float (default=0.4)
       Minimum proportion of samples within each batch with at least
       min_cellxsample cells for a new annotation to be considered. In other
       words, by default, an annotation needs to be assigned to at least 10
@@ -179,7 +177,7 @@ def cell_subdivision(mat, mat_representative,
             samples_ = samples[batches == b]
             keep_cell_type_ = np.asarray([np.sum(samples_[cells_] == x) > min_cellxsample for x in np.unique(samples_)])
             keep_cell_type_ = np.sum(keep_cell_type_, axis=0) / float(len(np.unique(samples_)))
-            keep_cell_type = keep_cell_type and keep_cell_type_ > percent_samplesxbatch
+            keep_cell_type = keep_cell_type and keep_cell_type_ > min_samplesxbatch
 
         if keep_cell_type:
             # To store it, let's find a name for it

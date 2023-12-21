@@ -23,12 +23,13 @@ from knn_classifier import knn_classifier  # AT. Double-check path
 # AT. Update description
 def identify_phenotypes(mat, markers, batches, samples, is_label,
                         max_markers=15, min_annotations=3,  # bimodality_selection_method='midpoint',  # AT. Remove parameter if we decide to remove DBSCAN
-                        min_cellxsample=10, percent_samplesxbatch=0.5,
+                        min_samplesxbatch=0.5, min_cellxsample=10,
                         knn_refine=True, knn_min_probability=0.5,
                         cell_name=None):
     """
     Pipeline for automated gating, feature selection, and clustering to
     generate new annotations.
+    # AT. Update description
 
     Parameters
     ----------
@@ -41,11 +42,9 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
 
     batches: array(str)
       1-D numpy array with batch names of each cell of 'mat'.
-      the thresholds for the new annotations.
 
     samples: array(str)
       1-D numpy array with sample names of each cell of 'mat'.
-      the thresholds for the new annotations.
 
     is_label: array(bool)
       1-D numpy array with booleans to indicate cells matching current cell type.
@@ -58,14 +57,7 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
       Minimum number of markers used to define a cell population. Must be in
       [2; len(markers)], but it is advised to choose a value in [3; len(markers) - 1].
 
-    min_cellxsample: float (default=10)
-      Minimum number of cells within each sample in 'percent_samplesxbatch' % of
-      samples within each batch for a new annotation to be considered. In other
-      words, by default, an annotation needs to be assigned to at least
-      10 cells/sample in at least 50% of the samples (see description of next
-      parameter) within a batch to be considered.
-
-    percent_samplesxbatch: float (default=0.5)
+    min_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least
       'min_cellxsample' cells for a new annotation to be considered. In other
       words, by default, an annotation needs to be assigned to at least 10
@@ -76,6 +68,12 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
       Two possible methods: 'DBSCAN', which uses the clustering method with the
       same name, and 'midpoint', which uses markers closer to the normalized matrix
       # AT. Remove description if we decide to remove DBSCAN
+    min_cellxsample: float (default=10)
+      Minimum number of cells within each sample in 'min_samplesxbatch' % of
+      samples within each batch for a new annotation to be considered. In other
+      words, by default, an annotation needs to be assigned to at least
+      10 cells/sample in at least 50% of the samples (see description of next
+      parameter) within a batch to be considered.
 
     knn_refine: bool (default=True)
       If True, the clustering done via permutations of relevant markers will be
@@ -274,7 +272,7 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
             batches=batches_label,
             samples=samples_label,
             min_cellxsample=min_cellxsample,
-            percent_samplesxbatch=percent_samplesxbatch,
+            min_samplesxbatch=min_samplesxbatch,
             three_markers=three_markers,
             cell_name=cell_name)
         # AT. In annotate(), only cell_groups_name and clustering_labels are used, so do we actually need to return the other elements?

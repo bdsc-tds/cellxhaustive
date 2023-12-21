@@ -15,11 +15,9 @@ from select_cells import select_cells  # AT. Double-check path
 # Permute across positive and negative expression of the relevant markers
 # and identify new cell types
 # AT. Check presence/absence of all parameters/variable
-def cell_subdivision_counts(mat_representative,
-                            markers_representative,
-                            batches, samples,
-                            min_cellxsample=np.array([5, 10]),
-                            percent_samplesxbatch=np.array([0.1, 0.2]),
+def cell_subdivision_counts(mat_comb, batches_label, samples_label, markers_comb,
+                            x_samplesxbatch_space=np.array([0.1, 0.2]),  # AT. Might have to change parameter and variable names if I adapt function to take grid as input
+                            y_cellxsample_space=np.array([5, 10]),  # AT. Might have to change parameter and variable names if I adapt function to take grid as input
                             three_markers=[]):
     """
     Cell line subdivision.
@@ -27,9 +25,6 @@ def cell_subdivision_counts(mat_representative,
 
     Parameters:
     -----------
-
-
-
     mat_subset: array(float)
       2-D numpy array expression matrix, with cells in D0 and markers in D1.
       In other words, rows contain cells and columns contain markers.
