@@ -91,7 +91,7 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
                                                            X[np.isin(markers, m_step), :])
                 markers_rep += [markers[np.isin(markers, m_step)][closest][0]]
 
-        markers_rep = np.asarray(markers_rep)[np.isin(markers_rep, invariants) == False]
+        markers_rep = np.asarray(markers_rep)[np.isin(markers_rep, invariants, invert=True)]
         markers_rep = markers[np.isin(markers, markers_rep)]
 
         # Generate dictionary for relevant markers

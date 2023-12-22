@@ -9,7 +9,6 @@ import numpy as np
 
 # Imports ML modules
 from sklearn.cluster import DBSCAN
-from sklearn.decomposition import PCA
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.metrics import pairwise_distances, pairwise_distances_argmin_min
 
@@ -24,7 +23,7 @@ from cellxhaustive.main_gating import gaussian_gating
 # AT- Check annotation
 def cell_identification(mat, markers, marker_order, batches, samples, positive,
                         three_markers=[], min_cellxsample=10, percent_samplesxbatch=0.5,
-                        max_midpoint_preselection=15, max_markers=15,
+                        max_markers=15,
                         min_annotations=3, bimodality_selection_method='midpoint',
                         mat_raw=None, knn_refine=True, knn_min_probability=0.5,
                         cell_name='None', random_state=42):
@@ -49,12 +48,10 @@ def cell_identification(mat, markers, marker_order, batches, samples, positive,
 
 
     batches: array(str)
-      1-D numpy array with batch names of each cell of mat. Useful for defining
-      the thresholds for the new annotations.
+      1-D numpy array with batch names of each cell of mat.
 
     samples: array(str)
-      1-D numpy array with sample names of each cell of mat. Useful for defining
-      the thresholds for the new annotations.
+      1-D numpy array with sample names of each cell of mat.
 
 
 
@@ -83,7 +80,7 @@ def cell_identification(mat, markers, marker_order, batches, samples, positive,
 
     max_midpoint_preselection: int (default=15)
       Number of representative markers to select among the total list of
-      markers from the markers array. Must be less than or equal to len(markers).
+      markers from the markers array. Must be less than or equal to 'len(markers)'.
 
 
 
