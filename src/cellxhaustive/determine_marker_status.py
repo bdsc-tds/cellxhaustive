@@ -31,7 +31,7 @@ def determine_marker_status(mat_comb, markers_comb, three_peak_markers,
     markers_comb: array(str)
       1-D numpy array with markers matching each column of 'mat_comb'.
 
-    three_peak_markers_comb: list(str)
+    three_peak_markers: list(str)
       List of markers that have three peaks.
 
     two_peak_threshold: float (default=3)

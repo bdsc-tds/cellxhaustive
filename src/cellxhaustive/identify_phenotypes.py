@@ -186,7 +186,7 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
             samples=samples_label,
             min_cellxsample=min_cellxsample,
             min_samplesxbatch=min_samplesxbatch,
-            three_markers=three_markers,
+            three_peak_markers=three_peak_markers,
             cell_name=cell_name)
         # AT. In annotate(), only cell_groups_name and clustering_labels are used, so do we actually need to return the other elements?
 

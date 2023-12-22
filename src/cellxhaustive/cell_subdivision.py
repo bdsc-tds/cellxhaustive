@@ -21,7 +21,7 @@ def cell_subdivision(mat, mat_representative,
                      markers, markers_representative, marker_order,
                      batches, samples,
                      min_cellxsample=10, min_samplesxbatch=0.4,
-                     three_markers=[], cell_name=None):
+                     three_peak_markers=[], cell_name=None):
     # AT. min_samplesxbatch is different from the usual default value. Is it on purpose
     """
     Cell line subdivision.
@@ -76,7 +76,7 @@ def cell_subdivision(mat, mat_representative,
 
 
 
-    three_markers: list(str) (default=[])
+    three_peak_markers: list(str) (default=[])
       List of markers with potentially three peaks.
       # AT. Improve description? Do we even keep it? Or set it as an option?
 
@@ -123,9 +123,9 @@ def cell_subdivision(mat, mat_representative,
     # Find different groups of positive cells
     # AT. CD4 has 3 peaks, so we split low and high positive. But right now it's the only one we have
     # AT. Sort this at the beginning to make it easier. When doing permutations, we need to take into account 3 peaks instead of 2!
-    three_markers_ = np.asarray(three_markers)[np.isin(three_markers, markers_representative)]
+    three_markers_ = np.asarray(three_peak_markers)[np.isin(three_peak_markers, markers_representative)]
     three_markers_low = [x + "_low" for x in three_markers_]
-    three_markers = list(three_markers_)
+    three_peak_markers = list(three_markers_)
     markers_representative_ = list(markers_representative) + list(three_markers_low)
     groups = [tuple(np.unique(i)) for i in ite.combinations_with_replacement(
         markers_representative_, len(markers_representative_))]
@@ -158,7 +158,8 @@ def cell_subdivision(mat, mat_representative,
             # The groups are defined by positive markers
             positives = np.asarray(markers_representative)[np.isin(markers_representative, iteration)]
             # The negatives should be defined easily
-            negatives = np.asarray(markers_representative)[np.isin(markers_representative, iteration) == False]
+            negatives = np.asarray(markers_representative)[np.isin(markers_representative, iteration, invert=True)]  # AT. Check it this works
+            # negatives = np.asarray(markers_representative)[np.isin(markers_representative, iteration) == False]
             # The low positives are those markers that appear in three_markers_low
             lowpositives = np.asarray(three_markers_)[np.isin(three_markers_low, iteration)]
 
@@ -168,7 +169,7 @@ def cell_subdivision(mat, mat_representative,
                              positive=positives,
                              negative=negatives,
                              lowpositive=lowpositives,
-                             three_markers=three_markers)
+                             three_peak_markers=three_peak_markers)
 
         # If there are enough cells to consider them a cell type, go ahead and store it
         keep_cell_type = True

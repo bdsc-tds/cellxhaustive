@@ -30,6 +30,9 @@ def annotate(mat, markers, batches, samples, cell_labels,
              max_markers=15, min_annotations=3,
              min_cellxsample=10, min_samplesxbatch=0.5,
              knn_refine=True, knn_min_probability=0.5):
+    # AT. Missing three_peak_markers to carry over in all functions?
+    # AT. Same for peak thresholds
+    # AT. ==> Discuss this with Bernat
     """
     Pipeline for automated gating, feature selection, and clustering to
     generate new annotations.

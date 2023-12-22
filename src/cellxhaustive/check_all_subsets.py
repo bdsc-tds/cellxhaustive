@@ -155,8 +155,9 @@ def check_all_subsets(mat_representative, batches_label, samples_label,
                 markers_comb=markers_comb,
                 x_samplesxbatch_space=x_samplesxbatch_space,  # AT. Might have to change parameter and variable names if I adapt function to take grid as input
                 y_cellxsample_space=y_cellxsample_space,  # AT. Might have to change parameter and variable names if I adapt function to take grid as input
-                three_markers=["CD4"])
+                three_peak_markers=["CD4"])
 
+            # Update function arguments
             # AT. Need to change this function to take XX and YY as arguments, i.e. apply the function directly on the whole grid
 
 
@@ -187,6 +188,9 @@ def check_all_subsets(mat_representative, batches_label, samples_label,
             undefined[condi] = np.nan
             matx[condi] = np.nan
             maty[condi] = np.nan
+
+
+# AT. Can we use 'invert=True' in np.isnan ???
 
             # If there are possible good solutions, store the results
             if np.any(np.isnan(results) == False):
