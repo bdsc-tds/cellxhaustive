@@ -8,7 +8,9 @@ import itertools as ite
 import numpy as np
 
 # Imports local functions
+from cellxhaustive.determine_marker_status import determine_marker_status  # AT. Double-check path
 from select_cells import select_cells  # AT. Double-check path
+# from determine_marker_status import determine_marker_status
 # from cellxhaustive.select_cells import select_cells
 
 
@@ -18,7 +20,7 @@ from select_cells import select_cells  # AT. Double-check path
 def cell_subdivision_counts(mat_comb, batches_label, samples_label, markers_comb,
                             x_samplesxbatch_space=np.array([0.1, 0.2]),  # AT. Might have to change parameter and variable names if I adapt function to take grid as input
                             y_cellxsample_space=np.array([5, 10]),  # AT. Might have to change parameter and variable names if I adapt function to take grid as input
-                            three_markers=[]):
+                            three_peak_markers=[]):
     """
     Cell line subdivision.
     # AT. Add function description (use the one before?)
@@ -61,7 +63,7 @@ def cell_subdivision_counts(mat_comb, batches_label, samples_label, markers_comb
 
 
 
-    three_markers: list(str) (default=[])
+    three_peak_markers: list(str) (default=[])
       List of markers with potentially three peaks.
       # AT. Improve description? Do we even keep it? Or set it as an option?
 
@@ -75,7 +77,7 @@ def cell_subdivision_counts(mat_comb, batches_label, samples_label, markers_comb
     results = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
 
     # Split positive peaks of markers with 3 peaks into normal and '_low'
-    three_markers_comb = np.asarray(three_markers)[np.isin(three_markers, markers_comb)]
+    three_markers_comb = np.asarray(three_peak_markers)[np.isin(three_peak_markers, markers_comb)]
     three_markers_low = np.char.add(three_markers_comb, '_low')
     markers_comb_with3 = np.concatenate((markers_comb, three_markers_low))
 
@@ -104,40 +106,35 @@ good solution using itertools.
 """
 
 # AT. How are identified negatively expressed markers???
-
+# AT. Negative marker = not in pos or low_pos ??
 
     # Loop over unique groups
-    for pos in pos_cells:
-        if np.any(np.isin(three_markers_comb[np.isin(three_markers_low, pos)], pos)):
-            # AT. np.isin(three_markers_low, pos): True if pos contains at least one marker_low
+    for pos_comb in pos_cells:
+        if np.any(np.isin(three_markers_comb[np.isin(three_markers_low, pos_comb)], pos_comb)):
+            # AT. np.isin(three_markers_low, pos_comb): True if pos_comb contains at least one marker_low
             continue
         else:
             # The groups are defined by positive markers
-            positives = markers_comb[np.isin(markers_comb, pos)]
+            positives = markers_comb[np.isin(markers_comb, pos_comb)]
 
             # The negatives should be defined easily
-            negatives = markers_comb[np.isin(markers_comb, pos) == False]
+            negatives = markers_comb[np.isin(markers_comb, pos_comb, invert=True)]
 
             # The low positives are those markers that appear in three_markers_low
-            lowpositives = three_markers_comb[np.isin(three_markers_low, pos)]
+            lowpositives = three_markers_comb[np.isin(three_markers_low, pos_comb)]
 
         # Figure out which cells fulfill these rules
         # AT. select_cells heavily relies on ADTnorm DEFAULT values for pos and neg peaks --> Make a note in documentation
-        # AT. Determine which cells have 'pos' combination of positive and negative markers
+        # AT. Determine which cells have 'pos_comb' combination of positive and negative markers
         cells = select_cells(mat_comb=mat_comb,
                              markers_comb=markers_comb,
-                             positive=positives,
-                             negative=negatives,
-                             lowpositive=lowpositives,
+                             positives=positives,
+                             negatives=negatives,
+                             lowpositives=lowpositives,
                              three_markers_comb=three_markers_comb)  # AT. Double-check if directly inputing an array works
-                            # three_markers_comb=list(three_markers_comb))
 
-
-
-
-
-
-
+        # AT. Cell type attribution happens here
+        # AT. x_samplesxbatch_space and y_cellxsample_space are also impacting here
 
         # If there are enough cells to consider them a cell type, go ahead and store it
         keep_cell_type = np.zeros(np.shape(results)) == 0
@@ -156,3 +153,31 @@ good solution using itertools.
     return results, undefined
 
 # Change to return only cells that are fulfilling the conditions??
+
+
+
+
+
+        # AT. Could return an array of 'cell' rows * markers_comb columns if it's easier
+        # AT. What is undefined??? Everything negative?
+        # np.unique(cell_type, return_counts=True)
+
+
+        # AT. Cell type attribution happens here
+        # AT. x_samplesxbatch_space and y_cellxsample_space are also impacting here
+
+        # If there are enough cells to consider them a cell type, go ahead and store it
+        keep_cell_type = np.zeros(np.shape(results)) == 0
+        for b in np.unique(batches_label):
+            cells_ = cells[batches_label == b]
+            samples_ = samples_label[batches_label == b]
+            keep_cell_type_ = np.asarray([np.sum(samples_[cells_] == x) for x in np.unique(samples_)])
+            keep_cell_type_ = keep_cell_type_[:, np.newaxis] > y_cellxsample_space
+            keep_cell_type_ = (np.sum(keep_cell_type_, axis=0) / float(len(np.unique(samples_))))[np.newaxis, :]
+            keep_cell_type_ = keep_cell_type_ > x_samplesxbatch_space[:, np.newaxis]
+            keep_cell_type = np.logical_and(keep_cell_type, keep_cell_type_)
+
+        results += keep_cell_type * 1
+        undefined += (keep_cell_type == False) * np.sum(cells)
+
+    return results, undefined
