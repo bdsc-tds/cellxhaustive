@@ -70,19 +70,44 @@ def check_all_subsets(mat_representative, batches_label, samples_label,
       # AT. Add what is returned by the function
     """
 
-    # Find which should be the maximum number of markers
-    max_markers = np.min([max_markers, len(markers_representative)])
+    # Create total grid of cellxsample and min_samplesxbatch axes on which
+    # to compute metrics (number of cell types and number of undefined cells)
 
-    # Start indices. Notice that here we assume that the minimum number of
-    # relevant markers is 2 (i.e. one marker alone can not define phenotypes)
-    counter = 2
-    index = 0
-    mset = dict()
+    # Create total space for each axis
+    x_samplesxbatch_space = np.arange(min_samplesxbatch, 1.01, 0.01)  # x-axis
+    y_cellxsample_space = np.arange(min_cellxsample, 101)  # y-axis
 
-    # Resmax variable is a way to avoid going through all permutations, as if
-    # the grouping is not good, we shouldn't explore further permutations
-    resmax = 0
-    resmax_ = 0
+    # Create the grid
+    XX, YY = np.meshgrid(x_samplesxbatch_space, y_cellxsample_space, indexing='ij')  # AT. Double-check what's the better indexing
+
+    # # AT. Remove when finished testing
+    # x_samplesxbatch_space = np.linspace(0, 1, 101)  # x-axis  # AT. Double-check
+    # y_cellxsample_space = np.arange(101)  # y-axis  # AT. Double-check
+
+    # XX = np.transpose(np.asarray([list(x_samplesxbatch_space) for ljh in range(len(y_cellxsample_space))])).astype(float)  # (101,101) matrix
+    # YY = np.asarray([list(y_cellxsample_space) for ljh in range(len(x_samplesxbatch_space))]).astype(float)  # (101,101) matrix
+
+    # # Slice the grid variables
+    # XX = XX[:, y_cellxsample_space >= min_cellxsample]
+    # XX = XX[x_samplesxbatch_space >= min_samplesxbatch, :]
+    # YY = YY[:, y_cellxsample_space >= min_cellxsample]
+    # YY = YY[x_samplesxbatch_space >= min_samplesxbatch, :]
+
+    # Find theoretical maximum number of markers in the combination
+    max_combination = min(max_markers, len(markers_representative))
+
+    # Initialize counters and objects to store results
+    # Note that by default, we assume that the minimum number of relevant
+    # markers is 2 (i.e. only 1 markers can not define a phenotype)
+    marker_counter = 2
+    # marker_counter = min_annotations  # AT. Check this with Bernat
+    index = 0  # AT. Double-check if interesting. If kept, rename it
+    mset = dict()  # AT. Double-check if interesting. If kept, rename it
+
+    # 'max_res' is a way to avoid going through all permutations, as if the
+    # grouping is not good, further permutations will not be explored
+    max_res = 0
+    max_res_tmp = 0
 
     # Empty vectors to store results
     best_indices = []
@@ -90,33 +115,28 @@ def check_all_subsets(mat_representative, batches_label, samples_label,
     best_cells = []
     best_matx = []
     best_maty = []
-    maty_ = np.asarray([list(y_ns) for ljh in range(len(x_p))]).astype(float)
-    matx_ = np.transpose(np.asarray([list(x_p) for ljh in range(len(y_ns))])).astype(float)
 
-    # Slice the grid variables
-    matx_ = matx_[:, y_ns >= min_cellxsample]
-    matx_ = matx_[x_p >= percent_samplesxbatch, :]
-    maty_ = maty_[:, y_ns >= min_cellxsample]
-    maty_ = maty_[x_p >= percent_samplesxbatch, :]
-
-    # We keep permuting until no better solution can be found
+    # Go through all the combinations until no better solution can be found
     while True:
 
-        # Cut the while loop if we reached the maximum number of clusters or if
-        # the possible solution using more markers will necessarily be worse
-        # than the current best
-        if counter > max_markers or resmax > resmax_:
+        # Stop the while loop if the maximum number of markers is reached or if
+        # the possible solution using more markers is worse than the current
+        # best. If the loop isn't stopped here, that means the scores can still
+        # be improved.
+        if (marker_counter > max_combination) or (max_res > max_res_tmp):
             break
         else:
-            resmax = resmax_
+            max_res = max_res_tmp
 
-        # For a given number of markers "counter", look at all possible marker combinations
-        for g in ite.combinations(markers_representative, counter):
+        # For a given number of markers, check all possible marker combinations
+        for comb in ite.combinations(markers_representative, marker_counter):
+            # AT. Opportunity to multiprocess?
 
-            # Slice data based on the current marker combination g
-            markers_subset = np.asarray(list(g))
-            mat_marker_g = mat_subset[:, np.isin(markers, markers_subset)]
-            markers_subset = markers[np.isin(markers, markers_subset)]
+            # Slice data based on the current marker combination 'comb'
+            # markers_comb = markers[np.isin(markers, np.asarray(comb))]  # AT. Double-check
+            markers_comb = markers_representative[np.isin(markers_representative, np.asarray(comb))]
+            # mat_comb = mat_representative[:, np.isin(markers, markers_comb)]  # AT. Double-check
+            mat_comb = mat_representative[:, np.isin(markers_representative, markers_comb)]
 
             # This variable is probably unnecessary but it's not a big deal to keep it
             mset[index] = comb
@@ -126,30 +146,40 @@ def check_all_subsets(mat_representative, batches_label, samples_label,
 
 
 
-            # Find number of cells and undefined cells for a given marker
-            # combination across the p and ns grid
+
+            # AT. Bernat said it would be better to have cell_subdivision_counts return one number in results and one in undefined instead of matrices
             results, undefined = cell_subdivision_counts(
-                mat_representative=mat_marker_g,
-                markers_representative=markers_subset,
-                batches=batches,
-                samples=samples,
-                min_cellxsample=y_ns,
-                percent_samplesxbatch=x_p,
-                three_marker=["CD4"])
+                mat_comb=mat_comb,
+                batches_label=batches_label,
+                samples_label=samples_label,
+                markers_comb=markers_comb,
+                x_samplesxbatch_space=x_samplesxbatch_space,  # AT. Might have to change parameter and variable names if I adapt function to take grid as input
+                y_cellxsample_space=y_cellxsample_space,  # AT. Might have to change parameter and variable names if I adapt function to take grid as input
+                three_markers=["CD4"])
+
+            # AT. Need to change this function to take XX and YY as arguments, i.e. apply the function directly on the whole grid
+
+
+
+
+
+
+            # AT. Slicing probably useless now that the constraints are included im the base grid?
+            # Slice N phenotypes matrix given the conditions min_samplesxbatch and min_cellxsample and
+            # calculate the maximum number of phenotypes for the marker combination g
+            results = results[:, y_cellxsample_space >= min_cellxsample]
+            results = results[x_samplesxbatch_space >= min_samplesxbatch, :]
+            max_res_tmp = np.max(results)
+
+            # AT. Slicing probably useless now that the constraints are included im the base grid?
+            # Slice the undefined matrix as above
+            undefined = undefined[:, y_cellxsample_space >= min_cellxsample]
+            undefined = undefined[x_samplesxbatch_space >= min_samplesxbatch, :]
 
             # Deep copy of the grid variables (potential for efficientcy)
-            matx = copy.deepcopy(matx_)
-            maty = copy.deepcopy(maty_)
-
-            # Slice N phenotypes matrix given the conditions percent_samplesxbatch and min_cellxsample and
-            # calculate the maximum number of phenotypes for the marker combination g
-            results = results[:, y_ns >= min_cellxsample]
-            results = results[x_p >= percent_samplesxbatch, :]
-            resmax_ = np.max(results)
-
-            # Slice the undefined matrix as above
-            undefined = undefined[:, y_ns >= min_cellxsample]
-            undefined = undefined[x_p >= percent_samplesxbatch, :]
+            # AT. Useless?
+            matx = copy.deepcopy(XX)
+            maty = copy.deepcopy(YY)
 
             # Further constrain matrix given the minimum number of phenotype conditions
             condi = results < min_annotations
@@ -175,7 +205,7 @@ def check_all_subsets(mat_representative, batches_label, samples_label,
 
             index += 1
 
-        counter += 1
+        marker_counter += 1
 
     best_cells = np.asarray(best_cells)
     best_undefined = np.asarray(best_undefined)

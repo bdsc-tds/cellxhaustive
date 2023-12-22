@@ -141,28 +141,24 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
     # Evaluate subsets of markers: go over every combination of markers and
     # calculate the resulting number of cell types and unidentified cells
 
-    # AT. Remove these matrices??
-    x_p = np.linspace(0, 1, 101)
-    y_ns = np.arange(101)
 
 
-# AT. WHICH MATRIX SHOULD WE USE IN check_all_subsets()???
-# mat_subset_label OR mat_subset_rep_markers???
+    # AT. WHICH MATRIX SHOULD WE USE IN check_all_subsets()???
+    # mat_subset_label OR mat_subset_rep_markers???
 
-
-# AT. Update variable name
-    markers_rep_all_ = check_all_subsets(mat_subset=mat_subset_label,
+    # AT. Update variable name x_p, y_ns
+    # AT. Update variable name markers_rep_all_
+    markers_rep_all_ = check_all_subsets(mat_subset=mat_subset_label,  # AT. Overall, we may not need 'mat_subset', rather 'mat_representative'. If so, check what's best between 'mat_subset_label' and 'mat_subset_rep_markers' (smaller one)
+    # markers_rep_all_ = check_all_subsets(mat_representative=mat_subset_rep_markers,  # AT.
                                          # mat_representative=mat_subset_rep_markers,  # AT. The sliced matrix isn't used in the former code...
-                                         batches=batches_label,
-                                         samples=samples_label,
+                                         batches_label=batches_label,
+                                         samples_label=samples_label,
                                          markers=markers,
                                          markers_representative=markers_rep_all,
                                          max_markers=max_markers,
                                          min_annotations=min_annotations,
-                                         x_p=x_p,
-                                         y_ns=y_ns,
-                                         min_cellxsample=min_cellxsample,
-                                         percent_samplesxbatch=percent_samplesxbatch)
+                                         min_samplesxbatch=min_samplesxbatch,
+                                         min_cellxsample=min_cellxsample)
 
 
 
