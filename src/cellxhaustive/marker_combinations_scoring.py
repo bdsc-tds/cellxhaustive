@@ -79,78 +79,115 @@ def marker_combinations_scoring(mat_comb, markers_comb,
 
 
 
-    # Count each cell type
-    # all_cell_type, cell_type_count = np.unique(cell_type, return_counts=True)  # AT. Use this after?
+
+# AT. Create a default matrix filled with False/True and update it along the way?
 
     # Initialize matrices to store results
     undefined = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
     results = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
 
+    # Given the definition of x and y, we can process batches separately
+    for batch in np.unique(batches_label):
+        # AT. Multithread/process here? Might be overkill?
+
+        # # Split data according to batch
+        # mat_comb_batch = mat_comb[batches_label == batch]  # Split expression data  # AT. Needed???
+        # mat_comb_samples_batch = samples_label[batches_label == batch]  # Split samples data  # AT. Needed???
+
+        # Extract cell type data
+        cell_types_batch = cell_types[batches_label == batch]  # Split cell type data
+
+        # # Count each cell type
+        # cell_types_batch_lst, cell_types_batch_count = np.unique(cell_types_batch, return_counts=True)
+
+        # Process the different marker status combinations from 'mat_comb'
+        for cell_type in np.unique(cell_types_batch):
+
+            # Split sample data, first according to batch and then cell type
+            cell_type_samples = samples_label[batches_label == batch][cell_types_batch == cell_type]  # Split samples data  # AT. Needed???
+
+            # Calculate number of unique samples in current batch and cell type
+            samples_nb = float(len(np.unique(cell_type_samples)))
+
+            # Count number of 'cell_type' cells in each sample
+            cell_count_sample = np.asarray([np.sum(cell_type_samples == smpl)
+                                            for smpl in np.unique(cell_type_samples)])
+
+            # Check whether cell counts satisfy y parameter threshold
+            keep_cell_type = cell_count_sample[:, np.newaxis] >= y_cellxsample_space
+            # Note: we use np.newaxis to add a dimension to work on the
+            # different samples at the same time
+
+            # Calculate proportion of samples in current batch satisfying the
+            # 'y_cellxsample_space' condition
+            keep_cell_type = (np.sum(keep_cell_type, axis=0) / samples_nb)  # AT. Check whether [np.newaxis, :] is needed
+            # keep_cell_type = (np.sum(keep_cell_type, axis=0) / samples_nb)[np.newaxis, :]  # AT. Check whether [np.newaxis, :] is needed
+            # Notes:
+            # - keep_cell_type is a boolean array, so we can calculate its sum
+            # - np.sum(keep_cell_type, axis=0) calculates the number of samples
+            # satisfying the y condition for a given y in the grid
+
+            # Check whether sample proportions satisfy x parameter threshold
+            keep_cell_type = keep_cell_type > x_samplesxbatch_space[:, np.newaxis]
+            # Note: [:, np.newaxis] is used to transpose the 1-D array into a 2D
+            # array to allow the comparison
+
+
+A = np.zeros(np.shape(results)) == 0
+
+A = np.logical_and(A, keep_cell_type)
+
+
+cell_type_samples = samples_label[batches_label == batch][cell_types_batch == cell_type]  # Split samples data  # AT. Needed???
+cell_type_samples_test = np.append(cell_type_samples, np.array('toto'))
+samples_nb_test = float(len(np.unique(cell_type_samples_test)))
+cell_count_sample_test = np.array([4, 1])
+keep_cell_type_test = cell_count_sample_test[:, np.newaxis] >= y_cellxsample_space
+keep_cell_type_test[0, 0:2] = True
+keep_cell_type_test[1, 0] = True
+# keep_cell_type_test = (np.sum(keep_cell_type_test, axis=0) / samples_nb_test)
+keep_cell_type_test = (np.sum(keep_cell_type_test, axis=0) / samples_nb_test)[np.newaxis, :]
+keep_cell_type_test = keep_cell_type_test >= x_samplesxbatch_space[:, np.newaxis]
+A = np.zeros(np.shape(results)) == 0
+A = np.logical_and(A, keep_cell_type_test)
+
+
+np.logical_and(keep_cell_type_test)
+
+
+A = np.logical_and(A, keep_cell_type_test)
+
+
+# AT. Test if this is needed
+# keep_cell_type = np.zeros(np.shape(results)) == 0
 
 
 
+        # AT. Loop over cell type then over batch? Or batch then cell type?
+        # for cell_type, cell_type_count in ite.zip_longest(cell_types_batch_lst, cell_types_batch_count):
+
+            # AT. 2nd way (new)
+            # # Test if 'cell_type' passes the y_cellxsample_space threshold
+            # y_test = (cell_count_sample[:, np.newaxis] >= y_cellxsample_space)
+
+            # # Test if 'cell_type' passes the y_cellxsample_space threshold
+            # x_test = (PLACEHOLDER >= y_cellxsample_space)
 
 
+            # Test if 'cell_type' passes the x_samplesxbatch_space threshold
+            # float(len(np.unique(cell_type_samples))): number of different samples in 'batch'
+            np.sum(keep_cell_type, axis=0) / float(len(np.unique(cell_type_samples)))
+            (np.sum(keep_cell_type, axis=0) / float(len(np.unique(cell_type_samples))))[np.newaxis, :]
 
-# AT. Do we actually need the minimums ?
+            # Compare results of both tests
+            np.logical_and(x_test, y_test)
 
-    # Extract minimum thresholds for x and y
-    # min_x = np.min(x_samplesxbatch_space)
-    # min_y = np.min(y_cellxsample_space)
-
-    # Keep only cells passing both minimum thresholds
-    keep_cell_type = np.logical_and(PLACEHOLDER > min_samplesxbatch, cell_type_count > min_cellxsample)
-
-    all_cell_type[cell_type_count > min_y]
-
-
-    # x_samplesxbatch_space = np.arange(min_samplesxbatch, 1.01, 0.01)  # x-axis
-    # y_cellxsample_space = np.arange(min_cellxsample, 101)  # y-axis
-
-    # # Create the grid
-    # XX, YY = np.meshgrid(x_samplesxbatch_space, y_cellxsample_space, indexing='ij')  # AT. Double-check what's the better indexing
-
-
-
-"""
-    min_samplesxbatch: float (default=0.5)
-      Minimum proportion of samples within each batch with at least
-      'min_cellxsample' cells for a new annotation to be considered. In other
-      words, by default, an annotation needs to be assigned to at least 10
-      cells/sample (see description of previous parameter) in at least 50% of
-      the samples within a batch to be considered.
-
-    min_cellxsample: float (default=10)
-      Minimum number of cells within each sample in 'min_samplesxbatch' % of
-      samples within each batch for a new annotation to be considered. In other
-      words, by default, an annotation needs to be assigned to at least
-      10 cells/sample in at least 50% of the samples (see description of next
-      parameter) within a batch to be considered.
-
-      For y:
-        - Condition of number of cells / sample (10/sample)
-
-        - Condition of number of samples / batch (50%)
-
-
-        mat_comb, batches_label, samples_label,
-"""
-
-for batch in np.unique(batches_label):
-    mat_comb_batch = mat_comb[batches_label == batch]  # Split expression data according to batch
-    mat_comb_samples = samples_label[batches_label == batch]  # Split samples data according to batch
-    cell_type_batch = cell_type[batches_label == batch]  # Split cell type data according to batch
-
-    # Count each cell type
-    cell_type_batch_all, cell_type_count = np.unique(cell_type_batch, return_counts=True)
-
-#
-for type_batch, type_count in ite.zip_longest(cell_type_batch_all, cell_type_count):
-
-
-
-
-
+            # Test if 'cell_type' passes the y_cellxsample_space threshold
+            if np.any(cell_type_count >= y_cellxsample_space):
+                # If it does, test if 'cell_type' passes the x_samplesxbatch_space threshold
+                if:
+            else:
+            # If it doesn't, change status to False and skip to next 'cell_type'
 
 
 
