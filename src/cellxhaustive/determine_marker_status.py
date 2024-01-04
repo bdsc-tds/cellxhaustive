@@ -9,7 +9,7 @@ depending on their expression.
 import numpy as np
 
 
-# Function used in marker_combination_scoring.py
+# Function used in marker_combinations_scoring.py
 def determine_marker_status(mat_comb, markers_comb, three_peak_markers,
                             two_peak_threshold=3,
                             three_peak_lower_threshold=2,
@@ -54,7 +54,7 @@ def determine_marker_status(mat_comb, markers_comb, three_peak_markers,
 
     Returns:
     --------
-    cell_type: array(list(str))
+    cell_types: array(list(str))
       1-D numpy array of lists matching order of cells in 'mat_comb'. Each list
       contains the cell marker types ('+', '-', 'low'), with markers order
       matching the one of 'markers_comb'.
@@ -62,9 +62,9 @@ def determine_marker_status(mat_comb, markers_comb, three_peak_markers,
 
     # Create an array containing empty lists to store cell types
     # Note: we can't use 'dtype=list' because it fills the array with None
-    # elements, hence the trick
-    cell_type = np.empty(mat_comb.shape[0], dtype=object)
-    cell_type[...] = [[] for _ in range(mat_comb.shape[0])]
+    # elements, hence this trick
+    cell_types = np.empty(mat_comb.shape[0], dtype=object)
+    cell_types[...] = [[] for _ in range(mat_comb.shape[0])]
 
     # Create a special array iterator
     iterator = np.nditer(mat_comb, flags=['multi_index'], order='C')
@@ -91,6 +91,9 @@ def determine_marker_status(mat_comb, markers_comb, three_peak_markers,
                 marker_type = '-'
 
         # Append current marker type to list of marker types of corresponding cell
-        cell_type[cell].append(markers_comb[marker_pos] + marker_type)
+        cell_types[cell].append(markers_comb[marker_pos] + marker_type)
 
-    return cell_type
+    # Join lists of markers in strings to make post-processing easier
+    cell_types = np.asarray(['/'.join(x) for x in cell_types])
+
+    return cell_types
