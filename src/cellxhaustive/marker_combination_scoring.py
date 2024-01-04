@@ -8,8 +8,8 @@ import itertools as ite
 import numpy as np
 
 # Imports local functions
-from cellxhaustive.determine_marker_status import determine_marker_status  # AT. Double-check path
-# from determine_marker_status import determine_marker_status
+from determine_marker_status import determine_marker_status  # AT. Double-check path
+# from cellxhaustive.determine_marker_status import cellxhaustive.determine_marker_status
 
 
 # Permute across positive and negative expression of the relevant markers
@@ -17,12 +17,10 @@ from cellxhaustive.determine_marker_status import determine_marker_status  # AT.
 # AT. Check presence/absence of all parameters/variable
 # Function used in
 # AT. Improve description
-def marker_combination_scoring(mat_comb, batches_label, samples_label,
-                               markers_comb, three_peak_markers=[],
-                               min_samplesxbatch=0.5, min_cellxsample=10):
-                               # x_samplesxbatch_space=np.array([0.1, 0.2]),  # AT. Might have to change parameter and variable names if I adapt function to take grid as input
-                               # y_cellxsample_space=np.array([5, 10]),  # AT. Might have to change parameter and variable names if I adapt function to take grid as input
-    # AT. Might need to adapt x_samplesxbatch_space and y_cellxsample_space to min values instead of spaces
+def marker_combinations_scoring(mat_comb, markers_comb,
+                                batches_label, samples_label,
+                                x_samplesxbatch_space, y_cellxsample_space,
+                                three_peak_markers=[]):
     """
     Cell line subdivision.
     # AT. Add function description (use the one before?)
@@ -36,38 +34,16 @@ def marker_combination_scoring(mat_comb, batches_label, samples_label,
       data matching cell label, batch, and a specific combination of
       representative markers.
 
+    markers_comb: array(str)
+      1-D numpy array with markers matching each column of 'mat_comb'.
+
     batches_label: array(str)
       1-D numpy array with batch names of each cell of 'mat_comb'.
 
     samples_label: array(str)
       1-D numpy array with sample names of each cell of 'mat_comb'.
 
-    markers_comb: array(str)
-      1-D numpy array with markers matching each column of 'mat_comb'.
-
-    three_peak_markers: list(str) (default=[])
-      List of markers that have three peaks.
-
-    min_samplesxbatch: float (default=0.5)
-      Minimum proportion of samples within each batch with at least
-      'min_cellxsample' cells for a new annotation to be considered. In other
-      words, by default, an annotation needs to be assigned to at least 10
-      cells/sample (see description of previous parameter) in at least 50% of
-      the samples within a batch to be considered.
-
-    min_cellxsample: float (default=10)
-      Minimum number of cells within each sample in 'min_samplesxbatch' % of
-      samples within each batch for a new annotation to be considered. In other
-      words, by default, an annotation needs to be assigned to at least
-      10 cells/sample in at least 50% of the samples (see description of next
-      parameter) within a batch to be considered.
-
-
-
-
-
-
-    x_samplesxbatch_space: array(float) (default=[0.1, 0.2])
+    x_samplesxbatch_space: array(float)
       Minimum proportion of samples within each batch with at least
       'y_cellxsample_space' cells for a new annotation to be considered. In other
       words, by default, an annotation needs to be assigned to at least 5 or 10
@@ -75,7 +51,7 @@ def marker_combination_scoring(mat_comb, batches_label, samples_label,
       of the samples within a batch to be considered.
       # AT. Update description and default if I adapt function to take grid as input
 
-    y_cellxsample_space: array(float) (default=[5, 10])
+    y_cellxsample_space: array(float)
       Minimum number of cells within each sample in 'x_samplesxbatch_space' % of
       samples within each batch for a new annotation to be considered. In other
       words, by default, an annotation needs to be assigned to at least
@@ -83,19 +59,25 @@ def marker_combination_scoring(mat_comb, batches_label, samples_label,
       description of next parameter) within a batch to be considered.
       # AT. Update description and default if I adapt function to take grid as input
 
+    three_peak_markers: list(str) (default=[])
+      List of markers that have three peaks.
+
     Returns:
     --------
       # AT. Add what is returned by the function
     """
 
-    # Determine marker status in 'markers_comb' relatively to expression
-    cell_type = determine_marker_status(mat_comb=mat_comb,
-                                        markers_comb=markers_comb,
-                                        three_peak_markers=three_peak_markers,
-                                        two_peak_threshold=3,
-                                        three_peak_lower_threshold=2,
-                                        three_peak_upper_threshold=4)
-    # AT. Could return an array of 'cell' rows * markers_comb columns if it's easier
+    # Determine markers status of 'markers_comb' using expression data
+    cell_types = determine_marker_status(mat_comb=mat_comb,
+                                         markers_comb=markers_comb,
+                                         three_peak_markers=three_peak_markers,
+                                         two_peak_threshold=3,
+                                         three_peak_lower_threshold=2,
+                                         three_peak_upper_threshold=4)
+    # AT. Could return an array of 'cell' rows * 'markers_comb' columns if it's easier
+    # AT. Or an array of array instead of an array of lists?
+
+
 
     # Count each cell type
     # all_cell_type, cell_type_count = np.unique(cell_type, return_counts=True)  # AT. Use this after?
@@ -171,20 +153,15 @@ for type_batch, type_count in ite.zip_longest(cell_type_batch_all, cell_type_cou
 
 
 
-# AT. Don't forget 50% batch comparison
 
+# Don't forget to increase undefined
 
-    # all_cell_type, cell_type_count = np.unique(cell_type, return_counts=True)
 
 
 # 1. Split by sample
 # 2. Compare split matrix to number of cells (which varies --> XX here?)
 
 # Starts with 0, adds +1 if iteration on marker sub-combination satisfies conditions
-
-    # x_samplesxbatch_space
-    # y_cellxsample_space
-
 
         # AT. undefined is what doesn't pass the 2 thresholds
 
@@ -215,3 +192,7 @@ GOAL: RETURN 2 MATRICES
 - 1 WITH THE CELL TYPE RESULTS ACROSS THE 2 PARAMETER VARIATIONS
 - 1 WITH THE NUMBER OF UNDEFINED CELLS (OR % OF UNDEFINED CELLS) ACROSS THE 2 PARAMETER VARIATIONS
 """
+
+
+
+# OR RETUN BEST CELL TYPE FOR ALL THE MATRIX ?

@@ -8,9 +8,7 @@ import itertools as ite
 import numpy as np
 
 # Imports local functions
-from cellxhaustive.determine_marker_status import determine_marker_status  # AT. Double-check path
 from select_cells import select_cells  # AT. Double-check path
-# from determine_marker_status import determine_marker_status
 # from cellxhaustive.select_cells import select_cells
 
 
@@ -86,27 +84,26 @@ def cell_subdivision_counts(mat_comb, batches_label, samples_label, markers_comb
                  for group in ite.combinations_with_replacement(markers_comb_with3, len(markers_comb_with3))]
     pos_cells = set([tuple()] + pos_cells)  # tuple(): case with only negative markers
 
+    # AT. Rework this to have both positive and negative here ?
 
-# AT. Rework this to have both positive and negative here ?
+    # AT. Why do we skip iteration containing markers with a low positive peak??
 
-# AT. Why do we skip iteration containing markers with a low positive peak??
+    """
+    I think that I am generating the different groupings with itertools because it’s
+    faster. When you have three peaks, however, I consider marker A and marker A_low
+    as two independent markers (one reflecting the low peak and the other the high one).
+    Now, the itertools function will give me groupings like (A, D) or (A_low, B). The
+    first example reflects a phenotype with A and D as positive peaks, while the second
+    example represents a phenotype with A middle peak and B positive peak. The problem
+    with the itertools function that I have is that it might also give me a grouping
+    like (A, A_low, B). This does not make sense because A can’t be positive AND middle
+    peak. So I am trying to correct for that. The truth is that there is probably a better
+    way to generate the grouping in the first place to avoid that, but I couldn’t find a
+    good solution using itertools.
+    """
 
-"""
-I think that I am generating the different groupings with itertools because it’s
-faster. When you have three peaks, however, I consider marker A and marker A_low
-as two independent markers (one reflecting the low peak and the other the high one).
-Now, the itertools function will give me groupings like (A, D) or (A_low, B). The
-first example reflects a phenotype with A and D as positive peaks, while the second
-example represents a phenotype with A middle peak and B positive peak. The problem
-with the itertools function that I have is that it might also give me a grouping
-like (A, A_low, B). This does not make sense because A can’t be positive AND middle
-peak. So I am trying to correct for that. The truth is that there is probably a better
-way to generate the grouping in the first place to avoid that, but I couldn’t find a
-good solution using itertools.
-"""
-
-# AT. How are identified negatively expressed markers???
-# AT. Negative marker = not in pos or low_pos ??
+    # AT. How are identified negatively expressed markers???
+    # AT. Negative marker = not in pos or low_pos ??
 
     # Loop over unique groups
     for pos_comb in pos_cells:
@@ -139,12 +136,19 @@ good solution using itertools.
         # If there are enough cells to consider them a cell type, go ahead and store it
         keep_cell_type = np.zeros(np.shape(results)) == 0
         for b in np.unique(batches_label):
+            # Take cells with 'pos_comb' combination of positive and negative markers from batch b
+            # cells is a boolean array, so cells_ will also be one
             cells_ = cells[batches_label == b]
-            samples_ = samples_label[batches_label == b]
+            samples_ = samples_label[batches_label == b]  # Take samples of all cells from batch b
+            # Count the number of 'mat_comb' cells in each sample
             keep_cell_type_ = np.asarray([np.sum(samples_[cells_] == x) for x in np.unique(samples_)])
+            # Check whether this counts satisfy the y parameter grid
             keep_cell_type_ = keep_cell_type_[:, np.newaxis] > y_cellxsample_space
+            # Count the proportion of samples within each batch with at least 50% cells
             keep_cell_type_ = (np.sum(keep_cell_type_, axis=0) / float(len(np.unique(samples_))))[np.newaxis, :]
+            # Check whether this counts satisfy the x parameter grid
             keep_cell_type_ = keep_cell_type_ > x_samplesxbatch_space[:, np.newaxis]
+            # Update cell type status
             keep_cell_type = np.logical_and(keep_cell_type, keep_cell_type_)
 
         results += keep_cell_type * 1
@@ -152,32 +156,8 @@ good solution using itertools.
 
     return results, undefined
 
-# Change to return only cells that are fulfilling the conditions??
+    # Change to return only cells that are fulfilling the conditions??
 
-
-
-
-
-        # AT. Could return an array of 'cell' rows * markers_comb columns if it's easier
-        # AT. What is undefined??? Everything negative?
-        # np.unique(cell_type, return_counts=True)
-
-
-        # AT. Cell type attribution happens here
-        # AT. x_samplesxbatch_space and y_cellxsample_space are also impacting here
-
-        # If there are enough cells to consider them a cell type, go ahead and store it
-        keep_cell_type = np.zeros(np.shape(results)) == 0
-        for b in np.unique(batches_label):
-            cells_ = cells[batches_label == b]
-            samples_ = samples_label[batches_label == b]
-            keep_cell_type_ = np.asarray([np.sum(samples_[cells_] == x) for x in np.unique(samples_)])
-            keep_cell_type_ = keep_cell_type_[:, np.newaxis] > y_cellxsample_space
-            keep_cell_type_ = (np.sum(keep_cell_type_, axis=0) / float(len(np.unique(samples_))))[np.newaxis, :]
-            keep_cell_type_ = keep_cell_type_ > x_samplesxbatch_space[:, np.newaxis]
-            keep_cell_type = np.logical_and(keep_cell_type, keep_cell_type_)
-
-        results += keep_cell_type * 1
-        undefined += (keep_cell_type == False) * np.sum(cells)
-
-    return results, undefined
+    # AT. Could return an array of 'cell' rows * markers_comb columns if it's easier
+    # AT. What is undefined??? Everything negative?
+    # np.unique(cell_type, return_counts=True)

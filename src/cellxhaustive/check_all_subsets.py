@@ -131,7 +131,8 @@ def check_all_subsets(mat_representative, batches_label, samples_label,
 
         # For a given number of markers, check all possible marker combinations
         for comb in ite.combinations(markers_representative, marker_counter):
-            # AT. Opportunity to multiprocess?
+            # AT. Opportunity to multiprocess? Or not because we need to test 2
+            # markers first, then 3, then 4... And stop if nothing better is found
 
             # Slice data based on the current marker combination 'comb'
             # markers_comb = markers[np.isin(markers, np.asarray(comb))]  # AT. Double-check
@@ -161,7 +162,7 @@ def check_all_subsets(mat_representative, batches_label, samples_label,
             # Update function arguments
             # AT. Need to change this function to take XX and YY as arguments, i.e. apply the function directly on the whole grid
 
-
+            # marker_combinations_scoring()  # AT. Use this function now
 
 
 
