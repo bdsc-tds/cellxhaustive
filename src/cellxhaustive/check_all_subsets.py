@@ -74,7 +74,8 @@ def check_all_subsets(mat_representative, batches_label, samples_label,
     # to compute metrics (number of cell types and number of undefined cells)
 
     # Create total space for each axis
-    x_samplesxbatch_space = np.arange(min_samplesxbatch, 1.01, 0.01)  # x-axis
+    x_samplesxbatch_space = np.round(np.arange(min_samplesxbatch, 1.01, 0.01), 2)  # x-axis
+    # Note: we use np.round() to avoid floating point problem
     y_cellxsample_space = np.arange(min_cellxsample, 101)  # y-axis
 
     # Create the grid
