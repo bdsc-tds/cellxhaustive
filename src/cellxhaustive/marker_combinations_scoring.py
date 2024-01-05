@@ -4,7 +4,6 @@ AT. Add general description here.
 
 
 # Imports utility modules
-import itertools as ite
 import numpy as np
 
 # Imports local functions
@@ -19,7 +18,8 @@ from determine_marker_status import determine_marker_status  # AT. Double-check 
 # AT. Improve description
 def marker_combinations_scoring(mat_comb, markers_comb,
                                 batches_label, samples_label,
-                                x_samplesxbatch_space, y_cellxsample_space,
+                                x_samplesxbatch_space=np.round(np.arange(0.5, 1.01, 0.1), 1),
+                                y_cellxsample_space=np.arange(10, 101, 10),
                                 three_peak_markers=[]):
     """
     Cell line subdivision.
@@ -83,52 +83,58 @@ def marker_combinations_scoring(mat_comb, markers_comb,
 # AT. Create a default matrix filled with False/True and update it along the way?
 
     # Initialize matrices to store results
-    undefined = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
-    results = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
+    nb_cell_types = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
+    nb_undefined_cells = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
 
-    # Given the definition of x and y, we can process batches separately
-    for batch in np.unique(batches_label):
-        # AT. Multithread/process here? Might be overkill?
+    # Process marker status combinations returned by previous function
+    # 'determine_marker_status()' and check whether they are worth keeping
+    for cell_type in np.unique(cell_types):
+        # AT. Multithread/process here? Conflict between batches?
 
-        # # Split data according to batch
-        # mat_comb_batch = mat_comb[batches_label == batch]  # Split expression data  # AT. Needed???
-        # mat_comb_samples_batch = samples_label[batches_label == batch]  # Split samples data  # AT. Needed???
+        ###### AT. Discuss with Bernat about the importance of 'cell_type' presence in all batches (np.logical_and vs np.logical_or)
+        # Initialise temporary array to store 'cell_type' results
+        keep_cell_type = np.full(np.shape(nb_cell_types), False)
 
-        # Extract cell type data
-        cell_types_batch = cell_types[batches_label == batch]  # Split cell type data
+        ##### AT. Former code
+        # # Initialise temporary array to store 'cell_type' results
+        # keep_cell_type = np.full(np.shape(nb_cell_types), True)
 
-        # # Count each cell type
-        # cell_types_batch_lst, cell_types_batch_count = np.unique(cell_types_batch, return_counts=True)
+        # Process batches separately
+        for batch in np.unique(batches_label):
+            # AT. Multithread/process here?
 
-        # Process the different marker status combinations from 'mat_comb'
-        for cell_type in np.unique(cell_types_batch):
+            # Split cell type data according to batch
+            cell_types_batch = cell_types[batches_label == batch]
 
             # Split sample data, first according to batch and then cell type
             cell_type_samples = samples_label[batches_label == batch][cell_types_batch == cell_type]  # Split samples data  # AT. Needed???
 
-            # Calculate number of unique samples in current batch and cell type
+            # If there are no cells of type 'cell_type' in 'batch', skip
+            if cell_type_samples.size == 0:
+                continue
+
+            # Calculate number of different samples in current batch and cell type
             samples_nb = float(len(np.unique(cell_type_samples)))
 
-            # Count number of 'cell_type' cells in each sample
+            # Count number of cells with 'cell_type' marker combination in each sample
             cell_count_sample = np.asarray([np.sum(cell_type_samples == smpl)
                                             for smpl in np.unique(cell_type_samples)])
 
-            # Check whether cell counts satisfy y parameter threshold
-            keep_cell_type = cell_count_sample[:, np.newaxis] >= y_cellxsample_space
-            # Note: we use np.newaxis to add a dimension to work on the
-            # different samples at the same time
+            # Check whether cell counts satisfy y threshold
+            keep_cell_type_batch = cell_count_sample[:, np.newaxis] >= y_cellxsample_space
+            # Note: we use np.newaxis to add a dimension to work on different
+            # samples concurrently
 
             # Calculate proportion of samples in current batch satisfying the
             # 'y_cellxsample_space' condition
-            keep_cell_type = (np.sum(keep_cell_type, axis=0) / samples_nb)  # AT. Check whether [np.newaxis, :] is needed
-            # keep_cell_type = (np.sum(keep_cell_type, axis=0) / samples_nb)[np.newaxis, :]  # AT. Check whether [np.newaxis, :] is needed
+            keep_cell_type_batch = (np.sum(keep_cell_type_batch, axis=0) / samples_nb)
             # Notes:
-            # - keep_cell_type is a boolean array, so we can calculate its sum
-            # - np.sum(keep_cell_type, axis=0) calculates the number of samples
-            # satisfying the y condition for a given y in the grid
+            # - keep_cell_type_batch is a boolean array, so we can calculate its sum
+            # - np.sum(keep_cell_type_batch, axis=0) calculates the number of samples
+            # satisfying y condition for a given y in the grid
 
-            # Check whether sample proportions satisfy x parameter threshold
-            keep_cell_type = keep_cell_type > x_samplesxbatch_space[:, np.newaxis]
+            # Check whether sample proportions satisfy x threshold
+            keep_cell_type_batch = keep_cell_type_batch >= x_samplesxbatch_space[:, np.newaxis]
             # Note: [:, np.newaxis] is used to transpose the 1-D array into a 2D
             # array to allow the comparison
 
@@ -156,12 +162,19 @@ np.logical_and(keep_cell_type_test)
 
 
 A = np.logical_and(A, keep_cell_type_test)
+            # array to allow comparison
 
+            ###### AT. Discuss with Bernat about the importance of 'cell_type' presence in all batches (np.logical_and vs np.logical_or)
+            # Add nummber of undefined cells to counter
+            nb_undefined_cells += (keep_cell_type_batch == False) * np.sum(cell_count_sample)
 
-# AT. Test if this is needed
-# keep_cell_type = np.zeros(np.shape(results)) == 0
+            # Intersect batch results with general results
+            keep_cell_type = np.logical_or(keep_cell_type, keep_cell_type_batch)
 
+        # Add cell_type presence to cell type counter
+        nb_cell_types += keep_cell_type * 1
 
+    return nb_cell_types, nb_undefined_cells
 
         # AT. Loop over cell type then over batch? Or batch then cell type?
         # for cell_type, cell_type_count in ite.zip_longest(cell_types_batch_lst, cell_types_batch_count):
