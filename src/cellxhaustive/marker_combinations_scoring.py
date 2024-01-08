@@ -91,13 +91,8 @@ def marker_combinations_scoring(mat_comb, markers_comb,
     for phenotype in np.unique(phenotypes):
         # AT. Multithread/process here? Conflict between batches?
 
-        ###### AT. Discuss with Bernat about the importance of 'phenotype' presence in all batches (np.logical_and vs np.logical_or)
         # Initialise temporary array to store 'phenotype' results
-        keep_phenotype = np.full(np.shape(nb_phenotypes), False)
-
-        ##### AT. Former code
-        # # Initialise temporary array to store 'phenotype' results
-        # keep_phenotype = np.full(np.shape(nb_phenotypes), True)
+        keep_phenotype = np.full(np.shape(nb_phenotypes), True)
 
         # Process batches separately
         for batch in np.unique(batches_label):
@@ -109,9 +104,11 @@ def marker_combinations_scoring(mat_comb, markers_comb,
             # Split sample data, first according to batch and then cell type
             phenotype_samples = samples_label[batches_label == batch][phenotypes_batch == phenotype]
 
-            # If there are no cells of type 'phenotype' in 'batch', skip
+            # If there are no cells of type 'phenotype' in 'batch', that means
+            # 'phenotype' will not be present in all batches, so we stop now
             if phenotype_samples.size == 0:
-                continue
+                keep_phenotype = np.logical_and(keep_phenotype, False)
+                break
 
             # Calculate number of different samples in current batch and cell type
             samples_nb = float(len(np.unique(phenotype_samples)))
@@ -138,39 +135,18 @@ def marker_combinations_scoring(mat_comb, markers_comb,
             # Note: [:, np.newaxis] is used to transpose the 1-D array into a 2D
             # array to allow comparison
 
-            ###### AT. Discuss with Bernat about the importance of 'phenotype' presence in all batches (np.logical_and vs np.logical_or)
-            # Add number of undefined cells to counter
-            nb_undefined_cells += (keep_phenotype_batch == False) * np.sum(cell_count_sample)
-
             # Intersect batch results with general results
-            keep_phenotype = np.logical_or(keep_phenotype, keep_phenotype_batch)
+            keep_phenotype = np.logical_and(keep_phenotype, keep_phenotype_batch)
+            # Note: for consistency, phenotypes have to be present in all batches,
+            # hence the use of np.logical_and()
 
         # Add 'phenotype' presence/absence to cell type counter
         nb_phenotypes += keep_phenotype * 1
 
+        # Add number of undefined cells to counter
+        nb_undefined_cells += np.logical_not(keep_phenotype) * np.sum(phenotypes == phenotype)
+
     return nb_phenotypes, nb_undefined_cells
 
-    #         ###### AT. Former code
-    #         # Intersect batch results with general results
-    #         keep_phenotype = np.logical_and(keep_phenotype, keep_phenotype_batch)
 
-    #     nb_phenotypes += keep_phenotype * 1
-    #     nb_undefined_cells += (keep_phenotype == False) * np.sum(cell_count_sample)  # AT. Rework this to count 'phenotype' cells in all batches
-
-    # return nb_phenotypes, nb_undefined_cells
-
-
-
-
-
-
-
-
-"""
-GOAL: RETURN 2 MATRICES
-- 1 WITH THE CELL TYPE RESULTS ACROSS THE 2 PARAMETER VARIATIONS
-- 1 WITH THE NUMBER OF UNDEFINED CELLS (OR % OF UNDEFINED CELLS) ACROSS THE 2 PARAMETER VARIATIONS
-"""
-
-
-# OR RETUN BEST CELL TYPE FOR ALL THE MATRIX ?
+# AT. OR RETUN BEST CELL TYPE FOR ALL THE MATRIX ?
