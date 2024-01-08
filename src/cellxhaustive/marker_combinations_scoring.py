@@ -1,5 +1,7 @@
 """
-AT. Add general description here.
+Function that determines the number of unique cell phenotypes (combination of
+positive and negative markers) and number of cells without phenotype in an
+expression matrix across different parameters thresholds.
 """
 
 
@@ -11,19 +13,16 @@ from determine_marker_status import determine_marker_status  # AT. Double-check 
 # from cellxhaustive.determine_marker_status import cellxhaustive.determine_marker_status
 
 
-# Permute across positive and negative expression of the relevant markers
-# and identify new cell types
-# AT. Check presence/absence of all parameters/variable
-# Function used in
-# AT. Improve description
+# Function used in check_all_subsets.py # AT. Update script name if needed
 def marker_combinations_scoring(mat_comb, markers_comb,
                                 batches_label, samples_label,
                                 three_peak_markers=[],
                                 x_samplesxbatch_space=np.round(np.arange(0.5, 1.01, 0.1), 1),
                                 y_cellxsample_space=np.arange(10, 101, 10)):
     """
-    Cell line subdivision.
-    # AT. Add function description (use the one before?)
+    Function that determines the number of unique cell phenotypes (combination
+    of positive and negative markers) and number of cells without phenotype in
+    an expression matrix across different parameters thresholds.
 
     Parameters:
     -----------
@@ -62,7 +61,15 @@ def marker_combinations_scoring(mat_comb, markers_comb,
 
     Returns:
     --------
-      # AT. Add what is returned by the function
+    nb_phenotypes: array(float)
+      2-D numpy array showing the number of unique cell phenotypes (combinations
+      of positive and negative markers from 'markers_comb') identified in
+      'mat_comb' across the grid composed of parameters 'x_samplesxbatch_space'
+      in D0 and 'y_cellxsample_space' in D1.
+    nb_undefined_cells: array(float)
+      2-D numpy array showing the number of undefined cells (cells without a
+      phenotype) in 'mat_comb' across the grid composed of parameters
+      'x_samplesxbatch_space' in D0 and 'y_cellxsample_space' in D1.
     """
 
     # Determine markers status of 'markers_comb' using expression data
