@@ -4,7 +4,6 @@ AT. Add general description here.
 
 
 # Imports utility modules
-import copy
 import itertools as ite
 import numpy as np
 
@@ -78,8 +77,6 @@ def check_all_subsets(mat_representative, batches_label, samples_label,
     # Note: we use np.round() to avoid floating point problem
     y_cellxsample_space = np.arange(min_cellxsample, 101)  # y-axis
 
-    # Create the grid
-    XX, YY = np.meshgrid(x_samplesxbatch_space, y_cellxsample_space, indexing='ij')  # AT. Double-check what's the better indexing
 
     # # AT. Remove when finished testing
     # x_samplesxbatch_space = np.linspace(0, 1, 101)  # x-axis  # AT. Double-check
@@ -101,144 +98,135 @@ def check_all_subsets(mat_representative, batches_label, samples_label,
     # Note that by default, we assume that the minimum number of relevant
     # markers is 2 (i.e. only 1 markers can not define a phenotype)
     marker_counter = 2
-    # marker_counter = min_annotations  # AT. Check this with Bernat
-    index = 0  # AT. Double-check if interesting. If kept, rename it
-    mset = dict()  # AT. Double-check if interesting. If kept, rename it
+    comb_idx = 0
+    comb_dict = dict()
+    max_nb_phntp = 0
+    max_nb_phntp_comb = 0
 
-    # 'max_res' is a way to avoid going through all permutations, as if the
-    # grouping is not good, further permutations will not be explored
-    max_res = 0
-    max_res_tmp = 0
+    # Empty arrays to store results and find best marker combinations
+    best_comb_idx = np.empty(0)
+    best_nb_phntp = np.empty(0)
+    best_nb_undefined = np.empty(0)
+    best_x_values = np.empty(0)
+    best_y_values = np.empty(0)
 
-    # Empty vectors to store results
-    best_indices = []
-    best_undefined = []
-    best_cells = []
-    best_matx = []
-    best_maty = []
+    # Go through all combinations until no better solution can be found: stop
+    # while loop if maximum number of markers is reached or if possible solution
+    # using more markers are worse than current best. If loop isn't stopped, it
+    # means scores can still be improved
+    while (marker_counter <= max_combination) and (max_nb_phntp <= max_nb_phntp_comb):
 
-    # Go through all the combinations until no better solution can be found
-    while True:
-
-        # Stop the while loop if the maximum number of markers is reached or if
-        # the possible solution using more markers is worse than the current
-        # best. If the loop isn't stopped here, that means the scores can still
-        # be improved.
-        if (marker_counter > max_combination) or (max_res > max_res_tmp):
-            break
-        else:
-            max_res = max_res_tmp
+        # Save new higher (or equal) maximum number of phenoytypes
+        max_nb_phntp = max_nb_phntp_comb
 
         # For a given number of markers, check all possible marker combinations
         for comb in ite.combinations(markers_representative, marker_counter):
             # AT. Opportunity to multiprocess? Or not because we need to test 2
             # markers first, then 3, then 4... And stop if nothing better is found
 
-            # Slice data based on the current marker combination 'comb'
-            # markers_comb = markers[np.isin(markers, np.asarray(comb))]  # AT. Double-check
+            # Slice data based on current marker combination 'comb'
             markers_comb = markers_representative[np.isin(markers_representative, np.asarray(comb))]
-            # mat_comb = mat_representative[:, np.isin(markers, markers_comb)]  # AT. Double-check
             mat_comb = mat_representative[:, np.isin(markers_representative, markers_comb)]
 
-            # This variable is probably unnecessary but it's not a big deal to keep it
-            mset[index] = comb
-
-            # Find number of cell types and undefined cells for a given marker
-            # combination 'comb' across cellxsample and min_samplesxbatch grid
-
-
-
-
-            # AT. Bernat said it would be better to have cell_subdivision_counts return one number in results and one in undefined instead of matrices
-            results, undefined = cell_subdivision_counts(
+            # Find number of phenotypes and undefined cells for a given marker
+            # combination 'comb' across 'samplesxbatch' and 'cellxsample' grid
+            nb_phntp, nb_undef_cells = marker_combinations_scoring(
                 mat_comb=mat_comb,
+                markers_comb=markers_comb,
                 batches_label=batches_label,
                 samples_label=samples_label,
-                markers_comb=markers_comb,
-                x_samplesxbatch_space=x_samplesxbatch_space,  # AT. Might have to change parameter and variable names if I adapt function to take grid as input
-                y_cellxsample_space=y_cellxsample_space,  # AT. Might have to change parameter and variable names if I adapt function to take grid as input
-                three_peak_markers=["CD4"])
+                x_samplesxbatch_space=x_samplesxbatch_space,
+                y_cellxsample_space=y_cellxsample_space,
+                three_peak_markers=['CD4'])
 
-            # Update function arguments
-            # AT. Need to change this function to take XX and YY as arguments, i.e. apply the function directly on the whole grid
+            # Constrain matrix given minimum number of phenotype conditions
+            mask = (nb_phntp < min_annotations)
+            nb_phntp = np.where(mask, np.nan, nb_phntp)
+            nb_undef_cells = np.where(mask, np.nan, nb_undef_cells)
 
-            # marker_combinations_scoring()  # AT. Use this function now
+            # If there are possible good solutions, store results
+            if np.any(np.isfinite(nb_phntp)):
+                # If there are interesting phenotypes, store marker combination
+                comb_dict[comb_idx] = comb
 
+                # Create parameter grid matching x and y space
+                x_values, y_values = np.meshgrid(x_samplesxbatch_space,
+                                                 y_cellxsample_space,
+                                                 indexing='ij')
 
+                # Constrain grid
+                x_values = np.where(mask, np.nan, x_values)
+                y_values = np.where(mask, np.nan, y_values)
 
+                # Calculate maximum number of phenotypes for marker combination 'comb'
+                max_nb_phntp_comb = np.nanmax(nb_phntp)
 
-            # AT. Slicing probably useless now that the constraints are included im the base grid?
-            # Slice N phenotypes matrix given the conditions min_samplesxbatch and min_cellxsample and
-            # calculate the maximum number of phenotypes for the marker combination g
-            results = results[:, y_cellxsample_space >= min_cellxsample]
-            results = results[x_samplesxbatch_space >= min_samplesxbatch, :]
-            max_res_tmp = np.max(results)
+                # Calculate minimum number of undefined cells for marker combination 'comb'
+                min_nb_undefined = np.nanmin(nb_undef_cells)
 
-            # AT. Slicing probably useless now that the constraints are included im the base grid?
-            # Slice the undefined matrix as above
-            undefined = undefined[:, y_cellxsample_space >= min_cellxsample]
-            undefined = undefined[x_samplesxbatch_space >= min_samplesxbatch, :]
+                # Best solution has maximum number of new phenotypes...
+                best_comb_idx = np.append(best_comb_idx, comb_idx)  # Index of comb to use in 'comb_dict'
+                best_nb_phntp = np.append(best_nb_phntp, max_nb_phntp_comb)
 
-            # Deep copy of the grid variables (potential for efficientcy)
-            # AT. Useless?
-            matx = copy.deepcopy(XX)
-            maty = copy.deepcopy(YY)
+                # ... and minimum number of undefined cells
+                nb_undef_cells[nb_phntp != max_nb_phntp_comb] = np.nan
+                best_nb_undefined = np.append(best_nb_undefined, min_nb_undefined)
 
-            # Further constrain matrix given the minimum number of phenotype conditions
-            condi = results < min_annotations
-            results[condi] = np.nan
-            undefined[condi] = np.nan
-            matx[condi] = np.nan
-            maty[condi] = np.nan
+                # ... and maximum percentage within batch
+                x_values[nb_undef_cells != min_nb_undefined] = np.nan
+                best_x_values = np.append(best_x_values, np.nanmax(x_values))
 
+                # ... and maximum cells per sample
+                y_values[x_values != np.nanmax(x_values)] = np.nan
+                best_y_values = np.append(best_y_values, np.nanmax(y_values))
 
-# AT. Can we use 'invert=True' in np.isnan ???
-
-            # If there are possible good solutions, store the results
-            if np.any(np.isnan(results) == False):
-                # The best solution will have the maximum number of new phenotypes...
-                best_indices += [index]
-                best_cells += [np.max(results[np.isnan(results) == False])]
-                # ...and the minimum number of undefined cells...
-                undefined[results != np.max(results[np.isnan(results) == False])] = np.nan
-                best_undefined += [np.min(undefined[np.isnan(undefined) == False])]
-                # and the maximum percentage within batch
-                matx[undefined != np.min(undefined[np.isnan(undefined) == False])] = np.nan
-                best_matx += [np.max(matx[np.isnan(matx) == False])]
-                # and the maximum cells per sample
-                maty[matx != np.max(matx[np.isnan(matx) == False])] = np.nan
-                best_maty += [np.max(maty[np.isnan(maty) == False])]
-
-            index += 1
+            comb_idx += 1
 
         marker_counter += 1
 
-    best_cells = np.asarray(best_cells)
-    best_undefined = np.asarray(best_undefined)
-    best_indices = np.asarray(best_indices)
-    best_matx = np.asarray(best_matx)
-    best_maty = np.asarray(best_maty)
+    # Further refine possible best marker combination(s) according to metrics we
+    # chose previously: number of phenotypes, number of undefined cells, x and y values
 
-    if len(best_cells) > 0:
-        # Filter based on total number of new phenotypes
-        best_indices = best_indices[best_cells == np.max(best_cells)]
-        best_matx = best_matx[best_cells == np.max(best_cells)]
-        best_maty = best_maty[best_cells == np.max(best_cells)]
-        best_undefined = best_undefined[best_cells == np.max(best_cells)]
-        best_cells = best_cells[best_cells == np.max(best_cells)]
+    # Find combination(s) with maximum number of phenotypes
+    max_phntp_idx = np.where(best_nb_phntp == np.max(best_nb_phntp))[0]
 
-    # AT. Add if/else block description
-    if len(best_indices) > 1:
-        i = np.where(best_undefined == np.min(best_undefined))[0]
+    # Further refine results according to number of phntp
+    if len(max_phntp_idx) > 1:  # Several combinations with maximum number of phenotypes
+        # Subset arrays to keep combination(s) with maximum number of phenotypes
+        best_comb_idx = best_comb_idx[max_phntp_idx]
+        best_nb_undefined = best_nb_undefined[max_phntp_idx]
+        # Find combination(s) with minimum number of undefined cells
+        min_undefined_idx = np.where(best_nb_undefined == np.min(best_nb_undefined))[0]
 
-        if len(i) > 1:
-            best_indices = best_indices[i]
-            best_matx = best_matx[i]
-            j = np.where(best_matx == np.max(best_matx))[0]
-            return list(mset[best_indices[j[0]]])
-        else:
-            return list(mset[best_indices[i[0]]])
-    elif len(best_indices) == 0:
-        return []
-    else:
-        return list(mset[best_indices[0]])
+        # Further refine results according to number of undefined cells
+        if len(min_undefined_idx) > 1:  # Several combinations with minimum number of undefined cells
+            # Subset arrays to keep combination(s) with minimum number of undefined cells
+            best_comb_idx = best_comb_idx[min_undefined_idx]
+            best_x_values = best_x_values[max_phntp_idx][min_undefined_idx]
+            # Find combination(s) with maximum x value
+            max_xvalues_idx = np.where(best_x_values == np.max(best_x_values))[0]
+
+            # Further refine results according to x value
+            if len(max_xvalues_idx) > 1:  # Several combinations with maximum x value
+                # Subset arrays to keep combination(s) with maximum x value
+                best_comb_idx = best_comb_idx[max_xvalues_idx]
+                best_y_values = best_y_values[max_phntp_idx][min_undefined_idx][max_xvalues_idx]
+                # Find combination(s) with maximum y value
+                max_yvalues_idx = np.where(best_y_values == np.max(best_y_values))[0]
+
+                # Even if there are still several combinations, we keep all of them
+                best_marker_comb = list(comb_dict.get(key) for key in best_comb_idx[max_yvalues_idx])
+
+            else:  # Only one combination with maximum x value
+                best_marker_comb = list(comb_dict[best_comb_idx[max_xvalues_idx[0]]])
+
+        else:  # Only one combination with minimum number of undefined cells
+            best_marker_comb = list(comb_dict[best_comb_idx[min_undefined_idx[0]]])
+
+    elif len(max_phntp_idx) == 1:  # Only one combination with maximum number of phenotypes
+        best_marker_comb = list(comb_dict[best_comb_idx[max_phntp_idx[0]]])
+
+    else:  # No combination satisfying number of phenotypes condition was found
+        best_marker_comb = []
+
+    return best_marker_comb
