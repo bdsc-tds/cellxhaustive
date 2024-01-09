@@ -1,5 +1,8 @@
 """
-AT. Add general description here.
+Function that determines the best marker combinations representing a cell type
+by maximizing the number of phenotypes detected, the proportion of samples
+within a batch containing the phenotypes, the number of cells within each sample
+containing the phenotypes and minimizing the number of cells without phenotypes.
 """
 
 
@@ -8,17 +11,20 @@ import itertools as ite
 import numpy as np
 
 # Imports local functions
-from cell_subdivision_counts import cell_subdivision_counts
-# from cellxhaustive.cell_subdivision_counts import cell_subdivision_counts  # AT. Double-check path
+from marker_combinations_scoring import marker_combinations_scoring  # AT. Double-check path
+# from cellxhaustive.marker_combinations_scoring import marker_combinations_scoring
 
 
-# AT. Add description
-# AT. Check presence/absence of all parameters/variable
-def check_all_subsets(mat_representative, batches_label, samples_label,
-                      markers_representative, max_markers=15, min_annotations=3,
-                      min_samplesxbatch=0.5, min_cellxsample=10):
+# Function used in identify_phenotypes.py  # AT. Update script name if needed
+def check_all_combinations(mat_representative, batches_label, samples_label,
+                           markers_representative, max_markers=15, min_annotations=3,
+                           min_samplesxbatch=0.5, min_cellxsample=10):
     """
-    # AT. Add function description
+    Function that determines the best marker combinations representing a cell
+    type by maximizing the number of phenotypes detected, the proportion of
+    samples within a batch containing the phenotypes, the number of cells
+    within each sample containing the phenotypes and minimizing the number of
+    cells without phenotypes.
 
     Parameters:
     -----------
@@ -41,14 +47,10 @@ def check_all_subsets(mat_representative, batches_label, samples_label,
       Maximum number of relevant markers to select among the total list of
       markers from the markers array. Must be less than or equal to 'len(markers)'.
 
-
-
     min_annotations: int (default=3)
-      Minimum number of markers used to define a cell population. Must be in
-      [2; len(markers)], but it is advised to choose a value in [3; len(markers) - 1].
-      # AT. Double check description
-
-
+      Minimum number of phenotypes for a combination of markers to be taken into
+      account as a potential cell population. Must be in [2; len(markers)], but
+      it is advised to choose a value in [3; len(markers) - 1].
 
     min_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least
@@ -66,37 +68,22 @@ def check_all_subsets(mat_representative, batches_label, samples_label,
 
     Returns:
     --------
-      # AT. Add what is returned by the function
+      best_marker_comb: list(tuple)
+        List of tuples containing the best marker combinations representing a
+        cell type. Each tuple is a combination.
     """
 
-    # Create total grid of cellxsample and min_samplesxbatch axes on which
-    # to compute metrics (number of cell types and number of undefined cells)
-
-    # Create total space for each axis
+    # Create total space for each metrics (samplesxbatch and cellxsample)
     x_samplesxbatch_space = np.round(np.arange(min_samplesxbatch, 1.01, 0.01), 2)  # x-axis
     # Note: we use np.round() to avoid floating point problem
     y_cellxsample_space = np.arange(min_cellxsample, 101)  # y-axis
 
-
-    # # AT. Remove when finished testing
-    # x_samplesxbatch_space = np.linspace(0, 1, 101)  # x-axis  # AT. Double-check
-    # y_cellxsample_space = np.arange(101)  # y-axis  # AT. Double-check
-
-    # XX = np.transpose(np.asarray([list(x_samplesxbatch_space) for ljh in range(len(y_cellxsample_space))])).astype(float)  # (101,101) matrix
-    # YY = np.asarray([list(y_cellxsample_space) for ljh in range(len(x_samplesxbatch_space))]).astype(float)  # (101,101) matrix
-
-    # # Slice the grid variables
-    # XX = XX[:, y_cellxsample_space >= min_cellxsample]
-    # XX = XX[x_samplesxbatch_space >= min_samplesxbatch, :]
-    # YY = YY[:, y_cellxsample_space >= min_cellxsample]
-    # YY = YY[x_samplesxbatch_space >= min_samplesxbatch, :]
-
-    # Find theoretical maximum number of markers in the combination
+    # Find theoretical maximum number of markers in combination
     max_combination = min(max_markers, len(markers_representative))
 
-    # Initialize counters and objects to store results
-    # Note that by default, we assume that the minimum number of relevant
-    # markers is 2 (i.e. only 1 markers can not define a phenotype)
+    # Initialize counters and objects to store results. Note that by default, we
+    # assume that the minimum number of relevant markers is 2 (i.e. only 1 marker
+    # can not define a phenotype)
     marker_counter = 2
     comb_idx = 0
     comb_dict = dict()
