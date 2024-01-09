@@ -13,7 +13,7 @@ from determine_marker_status import determine_marker_status  # AT. Double-check 
 # from cellxhaustive.determine_marker_status import cellxhaustive.determine_marker_status
 
 
-# Function used in check_all_subsets.py # AT. Update script name if needed
+# Function used in check_all_subsets.py  # AT. Update script name if needed
 def marker_combinations_scoring(mat_comb, markers_comb,
                                 batches_label, samples_label,
                                 three_peak_markers=[],
@@ -61,12 +61,12 @@ def marker_combinations_scoring(mat_comb, markers_comb,
 
     Returns:
     --------
-    nb_phenotypes: array(float)
+    nb_phntp: array(float)
       2-D numpy array showing the number of unique cell phenotypes (combinations
       of positive and negative markers from 'markers_comb') identified in
       'mat_comb' across the grid composed of parameters 'x_samplesxbatch_space'
       in D0 and 'y_cellxsample_space' in D1.
-    nb_undefined_cells: array(float)
+    nb_undef_cells: array(float)
       2-D numpy array showing the number of undefined cells (cells without a
       phenotype) in 'mat_comb' across the grid composed of parameters
       'x_samplesxbatch_space' in D0 and 'y_cellxsample_space' in D1.
@@ -79,12 +79,10 @@ def marker_combinations_scoring(mat_comb, markers_comb,
                                          two_peak_threshold=3,
                                          three_peak_lower_threshold=2,
                                          three_peak_upper_threshold=4)
-    # AT. Could return an array of 'cell' rows * 'markers_comb' columns if it's easier
-    # AT. Or an array of array instead of an array of lists?
 
     # Initialize arrays to store results
-    nb_phenotypes = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
-    nb_undefined_cells = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
+    nb_phntp = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
+    nb_undef_cells = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
 
     # Process marker status combinations returned by 'determine_marker_status()'
     # and check whether they are worth keeping
@@ -92,7 +90,7 @@ def marker_combinations_scoring(mat_comb, markers_comb,
         # AT. Multithread/process here? Conflict between batches?
 
         # Initialise temporary array to store 'phenotype' results
-        keep_phenotype = np.full(np.shape(nb_phenotypes), True)
+        keep_phenotype = np.full(np.shape(nb_phntp), True)
 
         # Process batches separately
         for batch in np.unique(batches_label):
@@ -141,12 +139,9 @@ def marker_combinations_scoring(mat_comb, markers_comb,
             # hence the use of np.logical_and()
 
         # Add 'phenotype' presence/absence to cell type counter
-        nb_phenotypes += keep_phenotype * 1
+        nb_phntp += keep_phenotype * 1
 
         # Add number of undefined cells to counter
-        nb_undefined_cells += np.logical_not(keep_phenotype) * np.sum(phenotypes == phenotype)
+        nb_undef_cells += np.logical_not(keep_phenotype) * np.sum(phenotypes == phenotype)
 
-    return nb_phenotypes, nb_undefined_cells
-
-
-# AT. OR RETUN BEST CELL TYPE FOR ALL THE MATRIX ?
+    return nb_phntp, nb_undef_cells
