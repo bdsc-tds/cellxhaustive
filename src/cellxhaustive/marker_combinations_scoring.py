@@ -124,19 +124,19 @@ def marker_combinations_scoring(mat_comb, markers_comb,
             # 'y_cellxsample_space' condition
             keep_phenotype_batch = (np.sum(keep_phenotype_batch, axis=0) / samples_nb)
             # Notes:
-            # - keep_phenotype_batch is a boolean array, so we can calculate its sum
-            # - np.sum(keep_phenotype_batch, axis=0) calculates the number of samples
-            # satisfying y condition for a given y in the grid
+            # - 'keep_phenotype_batch' is a boolean array, so we can sum it
+            # - 'np.sum(keep_phenotype_batch, axis=0)' calculates the number of
+            # samples satisfying y condition for a given y in the grid
 
             # Check whether sample proportions satisfy x threshold
             keep_phenotype_batch = keep_phenotype_batch >= x_samplesxbatch_space[:, np.newaxis]
-            # Note: [:, np.newaxis] is used to transpose the 1-D array into a 2D
-            # array to allow comparison
+            # Note: '[:, np.newaxis]' is used to transpose the 1-D array into a
+            # 2-D array to allow comparison
 
             # Intersect batch results with general results
             keep_phenotype = np.logical_and(keep_phenotype, keep_phenotype_batch)
             # Note: for consistency, phenotypes have to be present in all batches,
-            # hence the use of np.logical_and()
+            # hence the use of 'np.logical_and()'
 
         # Add 'phenotype' presence/absence to cell type counter
         nb_phntp += keep_phenotype * 1

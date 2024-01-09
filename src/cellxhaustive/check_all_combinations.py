@@ -49,8 +49,8 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
 
     min_annotations: int (default=3)
       Minimum number of phenotypes for a combination of markers to be taken into
-      account as a potential cell population. Must be in [2; len(markers)], but
-      it is advised to choose a value in [3; len(markers) - 1].
+      account as a potential cell population. Must be in '[2; len(markers)]',
+      but it is advised to choose a value in '[3; len(markers) - 1]'.
 
     min_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least
@@ -73,17 +73,17 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
         cell type. Each tuple is a combination.
     """
 
-    # Create total space for each metrics (samplesxbatch and cellxsample)
+    # Create total space for each metrics ('samplesxbatch' and 'cellxsample')
     x_samplesxbatch_space = np.round(np.arange(min_samplesxbatch, 1.01, 0.01), 2)  # x-axis
-    # Note: we use np.round() to avoid floating point problem
+    # Note: we use 'np.round()' to avoid floating point problem
     y_cellxsample_space = np.arange(min_cellxsample, 101)  # y-axis
 
     # Find theoretical maximum number of markers in combination
     max_combination = min(max_markers, len(markers_representative))
 
     # Initialize counters and objects to store results. Note that by default, we
-    # assume that the minimum number of relevant markers is 2 (i.e. only 1 marker
-    # can not define a phenotype)
+    # assume that the minimum number of relevant markers is 2 (only 1 marker can
+    # not define a phenotype)
     marker_counter = 2
     comb_idx = 0
     comb_dict = dict()
@@ -103,7 +103,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     # means scores can still be improved
     while (marker_counter <= max_combination) and (max_nb_phntp <= max_nb_phntp_comb):
 
-        # Save new higher (or equal) maximum number of phenoytypes
+        # Save new higher (or equal) maximum number of phenotypes
         max_nb_phntp = max_nb_phntp_comb
 
         # For a given number of markers, check all possible marker combinations
@@ -131,7 +131,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
             nb_phntp = np.where(mask, np.nan, nb_phntp)
             nb_undef_cells = np.where(mask, np.nan, nb_undef_cells)
 
-            # If there are possible good solutions, store results
+            # If there are possible good solutions, further process them
             if np.any(np.isfinite(nb_phntp)):
                 # If there are interesting phenotypes, store marker combination
                 comb_dict[comb_idx] = comb

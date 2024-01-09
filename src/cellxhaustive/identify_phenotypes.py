@@ -50,8 +50,9 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
       markers from the markers array. Must be less than or equal to 'len(markers)'.
 
     min_annotations: int (default=3)
-      Minimum number of markers used to define a cell population. Must be in
-      [2; len(markers)], but it is advised to choose a value in [3; len(markers) - 1].
+      Minimum number of phenotypes for a combination of markers to be taken into
+      account as a potential cell population. Must be in '[2; len(markers)]',
+      but it is advised to choose a value in '[3; len(markers) - 1]'.
 
     min_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least
@@ -99,13 +100,13 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
     # AT. Might be a bit of an overkill. Do we need it?
     for batch in np.unique(batches):
 
-        # Create boolean array to select cells matching current batch
+        # Create boolean array to select cells matching current 'batch'
         is_batch = (batches == batch)
 
-        # Create boolean array to select cells matching current label and batch
+        # Create boolean array to select cells matching current 'label' and 'batch'
         is_label_batch = np.logical_and(is_batch, is_label)
 
-        # Subset expression matrix to cells of current batch and label only
+        # Subset expression matrix to cells of current 'batch' and 'label' only
         mat_subset = mat[is_label_batch, :]
 
         # Check bimodality of the markers and select the best ones
@@ -115,7 +116,8 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
         markers_rep = markers[is_center_greater]  # Select markers with center higher than max_markers-th center
 
         # Store list of relevant markers for every batch
-        try:  # To avoid problem if dict doesn't exist yet
+        # Note: we use try/except to avoid problem if dict doesn't exist yet
+        try:
             markers_rep_batches[batch] = list(markers_rep)
         except NameError:
             markers_rep_batches = dict()
