@@ -87,8 +87,8 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     marker_counter = 2
     comb_idx = 0
     comb_dict = dict()
-    max_nb_phntp = 0
-    max_nb_phntp_comb = 0
+    max_nb_phntp_marker = 0
+    max_nb_phntp_tot = 0
 
     # Empty arrays to store results and find best marker combinations
     best_comb_idx = np.empty(0)
@@ -101,10 +101,15 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     # while loop if maximum number of markers is reached or if possible solution
     # using more markers are worse than current best. If loop isn't stopped, it
     # means scores can still be improved
-    while (marker_counter <= max_combination) and (max_nb_phntp <= max_nb_phntp_comb):
+    while ((marker_counter <= max_combination)
+           and (max_nb_phntp_tot <= max_nb_phntp_marker)):
 
         # Save new higher (or equal) maximum number of phenotypes
-        max_nb_phntp = max_nb_phntp_comb
+        max_nb_phntp_tot = max_nb_phntp_marker
+
+        # Re-initialise counter of maximum phenotypes for combinations with
+        # 'marker_counter' elements
+        max_nb_phntp_marker = 0
 
         # For a given number of markers, check all possible marker combinations
         for comb in ite.combinations(markers_representative, marker_counter):
@@ -133,6 +138,21 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
 
             # If there are possible good solutions, further process them
             if np.any(np.isfinite(nb_phntp)):
+
+                # Calculate maximum number of phenotypes for marker combination
+                # 'comb'. This counter is useful for two things. 1. Determine the
+                # maximum number of phenotypes found across all combinations with
+                # 'marker_counter' elements. 2. It avoids processing and keeping
+                # 'comb' with a poor score: if 'comb' max is worse than the
+                # than the recorded best overall (meaning all 'comb' previously
+                # analysed), it isn't worth keeping.
+                max_nb_phntp = np.nanmax(nb_phntp)
+                if ((max_nb_phntp >= max_nb_phntp_marker)
+                        and (max_nb_phntp >= max_nb_phntp_tot)):
+                    max_nb_phntp_marker = max_nb_phntp
+                else:
+                    continue
+
                 # If there are interesting phenotypes, store marker combination
                 comb_dict[comb_idx] = comb
 
@@ -145,18 +165,15 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                 x_values = np.where(mask, np.nan, x_values)
                 y_values = np.where(mask, np.nan, y_values)
 
-                # Calculate maximum number of phenotypes for marker combination 'comb'
-                max_nb_phntp_comb = np.nanmax(nb_phntp)
-
                 # Calculate minimum number of undefined cells for marker combination 'comb'
                 min_nb_undefined = np.nanmin(nb_undef_cells)
 
                 # Best solution has maximum number of new phenotypes...
                 best_comb_idx = np.append(best_comb_idx, comb_idx)  # Index of comb to use in 'comb_dict'
-                best_nb_phntp = np.append(best_nb_phntp, max_nb_phntp_comb)
+                best_nb_phntp = np.append(best_nb_phntp, max_nb_phntp)
 
                 # ... and minimum number of undefined cells
-                nb_undef_cells[nb_phntp != max_nb_phntp_comb] = np.nan
+                nb_undef_cells[nb_phntp != max_nb_phntp] = np.nan
                 best_nb_undefined = np.append(best_nb_undefined, min_nb_undefined)
 
                 # ... and maximum percentage within batch
@@ -173,7 +190,6 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
 
     # If no marker combination was found, stop now
     if len(best_nb_phntp) == 0:
-        print(f'best_nb_phntp is empty: {best_nb_phntp}')
         return []
 
     # If several possible marker combinations were found, further refine the
