@@ -8,10 +8,11 @@ import numpy as np
 
 # Imports local functions
 from cell_subdivision import cell_subdivision  # AT. Double-check path
-from check_all_subsets import check_all_subsets  # AT. Double-check path
+# from cell_subdivision import cell_subdivision  # AT. Double-check path
+from check_all_combinations import check_all_combinations  # AT. Double-check path
 from knn_classifier import knn_classifier  # AT. Double-check path
 # from cellxhaustive.cell_subdivision import cell_subdivision
-# from cellxhaustive.check_all_subsets import check_all_subsets
+# from cellxhaustive.check_all_combinations import check_all_combinations
 # from cellxhaustive.knn_classifier import knn_classifier
 
 
@@ -141,26 +142,21 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
     mat_subset_rep_markers = mat_subset_label[:, np.isin(markers, markers_rep_all)]
 
     # Evaluate subsets of markers: go over every combination of markers and
-    # calculate the resulting number of cell types and unidentified cells
+    # calculate the resulting number of phenotypes and unidentified cells
+    best_marker_comb = check_all_combinations(mat_representative=mat_subset_rep_markers,
+                                              batches_label=batches_label,
+                                              samples_label=samples_label,
+                                              markers_representative=markers_rep_all,
+                                              max_markers=max_markers,
+                                              min_annotations=min_annotations,
+                                              min_samplesxbatch=min_samplesxbatch,
+                                              min_cellxsample=min_cellxsample)
 
 
 
     # AT. WHICH MATRIX SHOULD WE USE IN check_all_subsets()???
     # mat_subset_label OR mat_subset_rep_markers???
 
-    # AT. Update variable name x_p, y_ns
-    # AT. Update variable name markers_rep_all_
-    markers_rep_all_ = check_all_subsets(mat_subset=mat_subset_label,  # AT. Overall, we may not need 'mat_subset', rather 'mat_representative'. If so, check what's best between 'mat_subset_label' and 'mat_subset_rep_markers' (smaller one)
-    # markers_rep_all_ = check_all_subsets(mat_representative=mat_subset_rep_markers,  # AT.
-                                         # mat_representative=mat_subset_rep_markers,  # AT. The sliced matrix isn't used in the former code...
-                                         batches_label=batches_label,
-                                         samples_label=samples_label,
-                                         markers=markers,
-                                         markers_representative=markers_rep_all,
-                                         max_markers=max_markers,
-                                         min_annotations=min_annotations,
-                                         min_samplesxbatch=min_samplesxbatch,
-                                         min_cellxsample=min_cellxsample)
 
 
 
@@ -168,11 +164,9 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
 
 
 
-
-
-    if len(markers_rep_all_) > 0:
-        markers_rep_all = markers[np.isin(markers, markers_rep_all_)]
-        mat_subset_rep_markers = mat_subset_label[:, np.isin(markers, markers_rep_all_)]
+    if len(best_marker_comb) > 0:
+        markers_rep_all = markers[np.isin(markers, best_marker_comb)]
+        mat_subset_rep_markers = mat_subset_label[:, np.isin(markers, best_marker_comb)]
         # AT. Redundant?
 
         # Now let's figure out which groups of markers form relevant cell types
