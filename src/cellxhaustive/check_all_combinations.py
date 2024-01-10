@@ -171,8 +171,14 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
 
         marker_counter += 1
 
-    # Further refine possible best marker combination(s) according to metrics we
-    # chose previously: number of phenotypes, number of undefined cells, x and y values
+    # If no marker combination was found, stop now
+    if len(best_nb_phntp) == 0:
+        print(f'best_nb_phntp is empty: {best_nb_phntp}')
+        return []
+
+    # If several possible marker combinations were found, further refine the
+    # results according to metrics we defined previously: number of phenotypes,
+    # number of undefined cells, x and y values
 
     # Find combination(s) with maximum number of phenotypes
     max_phntp_idx = np.where(best_nb_phntp == np.max(best_nb_phntp))[0]
@@ -210,10 +216,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
         else:  # Only one combination with minimum number of undefined cells
             best_marker_comb = list(comb_dict[best_comb_idx[min_undefined_idx[0]]])
 
-    elif len(max_phntp_idx) == 1:  # Only one combination with maximum number of phenotypes
+    else:  # Only one combination with maximum number of phenotypes
         best_marker_comb = list(comb_dict[best_comb_idx[max_phntp_idx[0]]])
-
-    else:  # No combination satisfying number of phenotypes condition was found
-        best_marker_comb = []
 
     return best_marker_comb
