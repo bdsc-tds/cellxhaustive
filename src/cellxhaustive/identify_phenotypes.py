@@ -141,16 +141,17 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
     markers_rep_all = markers[np.isin(markers, markers_rep_all)]  # Reorders markers
     mat_subset_rep_markers = mat_subset_label[:, np.isin(markers, markers_rep_all)]
 
-    # Evaluate subsets of markers: go over every combination of markers and
-    # calculate the resulting number of phenotypes and unidentified cells
-    best_marker_comb = check_all_combinations(mat_representative=mat_subset_rep_markers,
-                                              batches_label=batches_label,
-                                              samples_label=samples_label,
-                                              markers_representative=markers_rep_all,
-                                              max_markers=max_markers,
-                                              min_annotations=min_annotations,
-                                              min_samplesxbatch=min_samplesxbatch,
-                                              min_cellxsample=min_cellxsample)
+    # Evaluate combinations of markers: go over every combination and calculate
+    # the resulting number of phenotypes and unidentified cells
+    best_marker_comb = check_all_combinations(
+        mat_representative=mat_subset_rep_markers,
+        batches_label=batches_label,
+        samples_label=samples_label,
+        markers_representative=markers_rep_all,
+        max_markers=max_markers,
+        min_annotations=min_annotations,
+        min_samplesxbatch=min_samplesxbatch,
+        min_cellxsample=min_cellxsample)
 
 
 
@@ -188,9 +189,10 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
 
         # Try to classify undefined cells using a KNN classifier
         if knn_refine:
-            clustering_labels = knn_classifier(mat_representative=mat_subset_rep_markers,
-                                               clustering_labels=clustering_labels,
-                                               knn_min_probability=knn_min_probability)
+            clustering_labels = knn_classifier(
+                mat_representative=mat_subset_rep_markers,
+                clustering_labels=clustering_labels,
+                knn_min_probability=knn_min_probability)
 
         return is_label, cell_groups_name, clustering_labels, markers_rep_batches, markers_rep_all
 

@@ -101,19 +101,21 @@ def annotate(mat, markers, batches, samples, cell_labels,
         is_label = (cell_labels == label)
 
         # AT. Add annotations on what function does
-        is_label, cell_groups_name, clustering_labels, markers_rep_batches, markers_rep_all = identify_phenotypes(  # AT. Rename markers_rep_batches and markers_rep_all. Or remove them because they don't seem to be used anywhere. Same for is_label
-            mat=mat,
-            markers=markers,
-            batches=batches,
-            samples=samples,
-            is_label=is_label,
-            max_markers=max_markers,
-            min_annotations=min_annotations,
-            min_cellxsample=min_cellxsample,
-            min_samplesxbatch=min_samplesxbatch,
-            knn_refine=knn_refine,
-            knn_min_probability=knn_min_probability,
-            cell_name=label)
+        cell_groups_name, clustering_labels = identify_phenotypes(
+        # AT. Some variables are not used anymore, so no point in assigning them: is_label, markers_rep_batches, markers_rep_all
+        # is_label, cell_groups_name, clustering_labels, markers_rep_batches, markers_rep_all = identify_phenotypes(
+                  mat=mat,
+                  markers=markers,
+                  batches=batches,
+                  samples=samples,
+                  is_label=is_label,
+                  max_markers=max_markers,
+                  min_annotations=min_annotations,
+                  min_cellxsample=min_cellxsample,
+                  min_samplesxbatch=min_samplesxbatch,
+                  knn_refine=knn_refine,
+                  knn_min_probability=knn_min_probability,
+                  cell_name=label)
 
         cell_dict = dict([tuple([x, cell_groups_name[x].split(" (")[0]])
                           for x in cell_groups_name])

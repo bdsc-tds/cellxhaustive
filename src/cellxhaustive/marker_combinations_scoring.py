@@ -73,12 +73,13 @@ def marker_combinations_scoring(mat_comb, markers_comb,
     """
 
     # Determine markers status of 'markers_comb' using expression data
-    phenotypes = determine_marker_status(mat_comb=mat_comb,
-                                         markers_comb=markers_comb,
-                                         three_peak_markers=three_peak_markers,
-                                         two_peak_threshold=3,
-                                         three_peak_lower_threshold=2,
-                                         three_peak_upper_threshold=4)
+    phenotypes = determine_marker_status(
+        mat_comb=mat_comb,
+        markers_comb=markers_comb,
+        three_peak_markers=three_peak_markers,
+        two_peak_threshold=3,
+        three_peak_lower_threshold=2,
+        three_peak_upper_threshold=4)
 
     # Initialize arrays to store results
     nb_phntp = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
