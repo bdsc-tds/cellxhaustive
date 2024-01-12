@@ -95,6 +95,12 @@ def annotate(mat, markers, batches, samples, cell_labels,
 
     annotations = np.asarray(['undefined'] * len(cell_labels)).astype('U100')
 
+    # AT. Import cell_ontology here? To import it once instead of several times in
+    # scripts further down in the workflow?
+    # AT. Make this path more flexible, maybe with a default value in argument parsing?
+    with open('../data/config/major_cell_types.json') as in_cell_types:
+        cell_types_dict = json.load(in_cell_types)
+
     for label in np.unique(cell_labels):
 
         # Create boolean array to select cells matching current label
@@ -113,6 +119,7 @@ def annotate(mat, markers, batches, samples, cell_labels,
                   min_annotations=min_annotations,
                   min_cellxsample=min_cellxsample,
                   min_samplesxbatch=min_samplesxbatch,
+                  cell_types_dict=cell_types_dict,
                   knn_refine=knn_refine,
                   knn_min_probability=knn_min_probability,
                   cell_name=label)

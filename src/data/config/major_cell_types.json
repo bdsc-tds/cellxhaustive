@@ -1,0 +1,274 @@
+{
+    "T cell": [
+        "CD3+"
+    ],
+    "B cell": [
+        "CD19+",
+        "CD20+",
+        "CD3-"
+    ],
+    "dendritic cell": [
+        "HLA-DR+",
+        "CD3-",
+        "CD19-",
+        "CD20-",
+        "CD14-",
+        "CD16-",
+        "CD56-"
+    ],
+    "Th1 CD4+ T cell": [
+        "CD3+",
+        "CD4+",
+        "CXCR3+",
+        "CCR6-",
+        "CD8-"
+    ],
+    "non-Th1/Th17 CD4+ T cell": [
+        "CD3+",
+        "CD4+",
+        "CD8-",
+        "CXCR3-"
+    ],
+    "monocyte": [
+        "CD14+",
+        "CD3-",
+        "CD19-",
+        "CD20-"
+    ],
+    "NK cell": [
+        "CD56+",
+        "CD3-"
+    ],
+    "CD4+ T cell": [
+        "CD3+",
+        "CD4+"
+    ],
+    "CD8+ T cell": [
+        "CD3+",
+        "CD8+"
+    ],
+    "myeloid dendritic cell": [
+        "HLA-DR+",
+        "CD11c+",
+        "CD3-",
+        "CD19-",
+        "CD20-",
+        "CD14-",
+        "CD16-",
+        "CD56-"
+    ],
+    "plasmacytoid dendritic cell": [
+        "HLA-DR+",
+        "CD123+",
+        "CD3-",
+        "CD19-",
+        "CD20-",
+        "CD14-",
+        "CD16-",
+        "CD56-",
+        "CD11c-"
+    ],
+    "memory B cell": [
+        "CD19+",
+        "CD20+",
+        "CD27+",
+        "CD3-"
+    ],
+    "naive B cell": [
+        "CD19+",
+        "CD20+",
+        "IgD+",
+        "CD3-",
+        "CD27-"
+    ],
+    "Treg": [
+        "CD3+",
+        "CD4+",
+        "CD127+-",
+        "CD25+"
+    ],
+    "NK T cell": [
+        "CD3+",
+        "CD56+",
+        "CD14-",
+        "CD33-"
+    ],
+    "transitional B cell": [
+        "CD19+",
+        "CD20+",
+        "CD24++",
+        "CD38++",
+        "CD3-"
+    ],
+    "naive CD4+ T cell": [
+        "CD3+",
+        "CD4+",
+        "CCR7+",
+        "CD45RA+",
+        "CD8-"
+    ],
+    "Th17 CD4+ T cell": [
+        "CD3+",
+        "CD4+",
+        "CCR6+",
+        "CXCR3-",
+        "CD8-"
+    ],
+    "naive CD8+ T cell": [
+        "CD3+",
+        "CD8+",
+        "CCR7+",
+        "CD45RA+",
+        "CD4-"
+    ],
+    "central memory CD4+ T cell": [
+        "CD3+",
+        "CD4+",
+        "CCR7+",
+        "CD8-",
+        "CD45RA-"
+    ],
+    "effector memory CD4+ T cell": [
+        "CD3+",
+        "CD4+",
+        "CD8-",
+        "CCR7-",
+        "CD45RA-"
+    ],
+    "central memory CD8+ T cell": [
+        "CD3+",
+        "CD8+",
+        "CCR7+",
+        "CD4-",
+        "CD45RA-"
+    ],
+    "effector memory CD8+ T cell": [
+        "CD3+",
+        "CD8+",
+        "CD4-",
+        "CCR7-",
+        "CD45RA-"
+    ],
+    "Tc1 CD8+ T cell": [
+        "CD3+",
+        "CD8+",
+        "CXCR3+"
+    ],
+    "CD16- CD56bright NK cell": [
+        "CD56++",
+        "CD3-",
+        "CD19-",
+        "CD20-",
+        "CD14-",
+        "HLA-DR-",
+        "CD16-"
+    ],
+    "CD16+ CD56+ NK cell": [
+        "CD16+",
+        "CD56+",
+        "CD3-",
+        "CD19-",
+        "CD20-",
+        "CD14-",
+        "HLA-DR-"
+    ],
+    "IgD+ memory B cell": [
+        "CD19+",
+        "CD20+",
+        "CD27+",
+        "IgD+",
+        "CD3-"
+    ],
+    "plasmablast": [
+        "CD19+",
+        "CD27++",
+        "CD38++",
+        "CD3-",
+        "CD20-"
+    ],
+    "activated CD4+ T cell": [
+        "CD3+",
+        "CD4+",
+        "CD38+",
+        "HLA-DR+",
+        "CD8-"
+    ],
+    "effector CD4+ T cell": [
+        "CD3+",
+        "CD4+",
+        "CD45RA+",
+        "CD8-",
+        "CCR7-"
+    ],
+    "naive CCR4+ Treg": [
+        "CD3+",
+        "CD4+",
+        "CD127+-",
+        "CD25+",
+        "CCR4+",
+        "CD45RO-"
+    ],
+    "memory CCR4+ Treg": [
+        "CD3+",
+        "CD4+",
+        "CD127+-",
+        "CD25+",
+        "CCR4+",
+        "CD45RO+"
+    ],
+    "activated CCR4+ Treg": [
+        "CD3+",
+        "CD4+",
+        "CD127+-",
+        "CD25+",
+        "CCR4+",
+        "HLA-DR+"
+    ],
+    "activated CD8+ T cell": [
+        "CD3+",
+        "CD8+",
+        "CD38+",
+        "HLA-DR+",
+        "CD4-"
+    ],
+    "effector CD8+ T cell": [
+        "CD3+",
+        "CD8+",
+        "CD45RA+",
+        "CD4-",
+        "CCR7-"
+    ],
+    "non-Tc1/Tc17 CD8+ T cell": [
+        "CD3+",
+        "CD4-",
+        "CD8+",
+        "CXCR3-",
+        "CCR6-"
+    ],
+    "IgD- memory B cell": [
+        "CD19+",
+        "CD20+",
+        "CD27+",
+        "CD3-",
+        "IgD-"
+    ],
+    "CD16- monocyte": [
+        "CD14+",
+        "CD3-",
+        "CD19-",
+        "CD20-",
+        "CD16-"
+    ],
+    "Tc17 CD8+ T cell": [
+        "CD3+",
+        "CD8+",
+        "CCR6+"
+    ],
+    "CD16+ monocyte": [
+        "CD14+",
+        "CD16+",
+        "CD3-",
+        "CD19-",
+        "CD20-"
+    ]
+}

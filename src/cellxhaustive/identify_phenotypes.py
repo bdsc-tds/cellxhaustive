@@ -19,7 +19,7 @@ from knn_classifier import knn_classifier  # AT. Double-check path
 # Function to identify the cell type of
 # AT. Update description
 def identify_phenotypes(mat, markers, batches, samples, is_label,
-                        max_markers=15, min_annotations=3,  # bimodality_selection_method='midpoint',  # AT. Remove parameter if we decide to remove DBSCAN
+                        cell_types_dict, max_markers=15, min_annotations=3,
                         min_samplesxbatch=0.5, min_cellxsample=10,
                         knn_refine=True, knn_min_probability=0.5,
                         cell_name=None):
@@ -45,6 +45,10 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
 
     is_label: array(bool)
       1-D numpy array with booleans to indicate cells matching current cell type.
+
+    cell_types_dict
+        # AT. Add argument description
+
 
     max_markers: int (default=15)
       Maximum number of relevant markers to select among the total list of
