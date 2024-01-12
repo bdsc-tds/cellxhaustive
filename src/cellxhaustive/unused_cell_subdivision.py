@@ -17,11 +17,19 @@ from select_cells import select_cells  # AT. Double-check path
 # Permute across positive and negative expression of the relevant markers, and
 # identify new cell types
 # AT. Check presence/absence of all parameters/variable
-def cell_subdivision(mat, mat_representative,
-                     markers, markers_representative, marker_order,
-                     batches, samples,
-                     min_cellxsample=10, min_samplesxbatch=0.4,
-                     three_peak_markers=[], cell_name=None):
+def cell_subdivision(mat,
+                     mat_representative,
+                     markers,
+                     markers_representative,
+                     marker_order,
+                     batches,
+                     samples,
+                     min_samplesxbatch=0.5,
+                     min_cellxsample=10,
+                     three_peak_markers=[],
+                     cell_name=None):
+    # AT. Could be removed: mat, marker_order
+    # AT. Renaming? 'batches' --> 'batches_label', 'samples' --> 'samples_label'
     # AT. min_samplesxbatch is different from the usual default value. Is it on purpose
     """
     Cell line subdivision.
@@ -60,19 +68,23 @@ def cell_subdivision(mat, mat_representative,
     samples: array(str)
       1-D numpy array with sample names of each cell of mat.
 
+
+
+
+    min_samplesxbatch: float (default=0.5)
+      Minimum proportion of samples within each batch with at least
+      'min_cellxsample' cells for a new annotation to be considered. In other
+      words, by default, an annotation needs to be assigned to at least 10
+      cells/sample (see description of previous parameter) in at least 50% of
+      the samples within a batch to be considered.
+
     min_cellxsample: float (default=10)
-      Minimum number of cells within each sample in min_samplesxbatch % of
+      Minimum number of cells within each sample in 'min_samplesxbatch' % of
       samples within each batch for a new annotation to be considered. In other
       words, by default, an annotation needs to be assigned to at least
       10 cells/sample in at least 50% of the samples (see description of next
       parameter) within a batch to be considered.
 
-    min_samplesxbatch: float (default=0.4)
-      Minimum proportion of samples within each batch with at least
-      min_cellxsample cells for a new annotation to be considered. In other
-      words, by default, an annotation needs to be assigned to at least 10
-      cells/sample (see description of previous parameter) in at least 50% of
-      the samples within a batch to be considered.
 
 
 
@@ -94,6 +106,9 @@ def cell_subdivision(mat, mat_representative,
     # AT. Remove cell ontologies that have no markers we can use
     # AT. Take cell type with the fewer number of markers (example with 2 cell type with same markers +1 that is missing)
     # AT. Add cell ontology names here ?
+
+
+    # AT. major_cell_types doesn't exist!!!
 
     major_cell_types_ = dict()
     for i in major_cell_types:
@@ -130,7 +145,7 @@ def cell_subdivision(mat, mat_representative,
     groups = [tuple(np.unique(i)) for i in ite.combinations_with_replacement(
         markers_representative_, len(markers_representative_))]
     groups = [tuple([])] + groups
-    # AT. This only names with positive markers, which is why we need to add the empty tuple for the case with only negative markers
+    # AT. The combinations only contain positive markers, which is why we need to add the empty tuple for the case with only negative markers
 
     # Start dictionaries to store results
     cell_groups_renaming = {}
@@ -176,9 +191,9 @@ def cell_subdivision(mat, mat_representative,
         for b in np.unique(batches):
             cells_ = cells[batches == b]
             samples_ = samples[batches == b]
-            keep_cell_type_ = np.asarray([np.sum(samples_[cells_] == x) > min_cellxsample for x in np.unique(samples_)])
+            keep_cell_type_ = np.asarray([np.sum(samples_[cells_] == x) >= min_cellxsample for x in np.unique(samples_)])
             keep_cell_type_ = np.sum(keep_cell_type_, axis=0) / float(len(np.unique(samples_)))
-            keep_cell_type = keep_cell_type and keep_cell_type_ > min_samplesxbatch
+            keep_cell_type = keep_cell_type and keep_cell_type_ >= min_samplesxbatch
 
         if keep_cell_type:
             # To store it, let's find a name for it
@@ -221,8 +236,8 @@ def cell_subdivision(mat, mat_representative,
     # It is useful to generate a dictionary with the clustering index and the
     # different positive/negative sequence of markers
     cell_groups[-1] = f'{cell_groups[-1]} ({unidentified} cells)'
-    mat_average = mat[:, np.isin(markers, marker_order + list(markers_representative))]
-    markers_average = markers[np.isin(markers, marker_order + list(markers_representative))]
+    # mat_average = mat[:, np.isin(markers, marker_order + list(markers_representative))]
+    # markers_average = markers[np.isin(markers, marker_order + list(markers_representative))]
 
     for repeated_x in repeated_names:
         x = find_set_differences({k: cell_groups_renaming[k]
@@ -240,4 +255,5 @@ def cell_subdivision(mat, mat_representative,
     if all(clustering_labels == -1):
         cell_groups_[-1] = cell_name
 
-    return cell_groups_renaming, cell_groups_, clustering_labels, mat_average, markers_average
+    return cell_groups_renaming, cell_groups_, clustering_labels
+    # return cell_groups_renaming, cell_groups_, clustering_labels, mat_average, markers_average  # AT. What was returned before

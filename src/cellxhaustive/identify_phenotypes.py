@@ -7,11 +7,10 @@ AT. Add general description here.
 import numpy as np
 
 # Imports local functions
-from cell_subdivision import cell_subdivision  # AT. Double-check path
-# from cell_subdivision import cell_subdivision  # AT. Double-check path
+from assign_cell_types import assign_cell_types  # AT. Double-check path
 from check_all_combinations import check_all_combinations  # AT. Double-check path
 from knn_classifier import knn_classifier  # AT. Double-check path
-# from cellxhaustive.cell_subdivision import cell_subdivision
+# from cellxhaustive.assign_cell_types import assign_cell_types  # AT. Double-check path
 # from cellxhaustive.check_all_combinations import check_all_combinations
 # from cellxhaustive.knn_classifier import knn_classifier
 
@@ -189,7 +188,9 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
             min_samplesxbatch=min_samplesxbatch,
             three_peak_markers=three_peak_markers,
             cell_name=cell_name)
-        # AT. In annotate(), only cell_groups_name and clustering_labels are used, so do we actually need to return the other elements?
+
+
+# AT. Use assign_cell_types() here instead of cell_subdivision()
 
         # Try to classify undefined cells using a KNN classifier
         if knn_refine:
