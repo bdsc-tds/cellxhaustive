@@ -63,8 +63,9 @@ def annotate(mat, markers, batches, samples, cell_labels,
       the 'markers' array. Must be less than or equal to 'len(markers)'.
 
     min_annotations: int (default=3)
-      Minimum number of markers used to define a cell population. Must be in
-      [2; len(markers)], but it is advised to choose a value in [3; len(markers) - 1].
+      Minimum number of phenotypes for a combination of markers to be taken into
+      account as a potential cell population. Must be in '[2; len(markers)]',
+      but it is advised to choose a value in '[3; len(markers) - 1]'.
 
     min_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least
@@ -129,3 +130,6 @@ def annotate(mat, markers, batches, samples, cell_labels,
         # AT. Because cell numbers is inside the name in (), we have to use .split() here --> Better to change the name in a function before
 
         annotations[is_label] = np.vectorize(cell_dict.get)(clustering_labels)
+
+
+# What is the output format? tsv, table, object... ???

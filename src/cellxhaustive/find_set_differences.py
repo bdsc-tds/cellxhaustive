@@ -35,10 +35,10 @@ def find_set_differences(cell_groups_renaming, baseline_name='baseline'):
     {'CD4 T': 'CD4+', 'CD8 T': 'CD8+', 'DCs': 'CD3-'}
     """
 
-    markers, cnts = np.unique([y for x in cell_groups_renaming.keys()
+    markers, counts = np.unique([y for x in cell_groups_renaming.keys()
                                for y in list(cell_groups_renaming[x])],
                               return_counts=True)
-    common_markers = markers[np.flip(np.argsort(cnts))]
+    common_markers = markers[np.flip(np.argsort(counts))]
 
     # Identify what are the key markers that distinguish the different groups
     # and define the baseline based on the shortest combination

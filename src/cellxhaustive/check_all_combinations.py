@@ -122,7 +122,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
 
             # Find number of phenotypes and undefined cells for a given marker
             # combination 'comb' across 'samplesxbatch' and 'cellxsample' grid
-            nb_phntp, nb_undef_cells = marker_combinations_scoring(
+            nb_phntp, phntp_to_keep, nb_undef_cells, phntp_per_cell = marker_combinations_scoring(
                 mat_comb=mat_comb,
                 markers_comb=markers_comb,
                 batches_label=batches_label,

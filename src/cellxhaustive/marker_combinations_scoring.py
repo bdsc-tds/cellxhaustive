@@ -73,7 +73,7 @@ def marker_combinations_scoring(mat_comb, markers_comb,
     """
 
     # Determine markers status of 'markers_comb' using expression data
-    phenotypes = determine_marker_status(
+    phntp_per_cell = determine_marker_status(
         mat_comb=mat_comb,
         markers_comb=markers_comb,
         three_peak_markers=three_peak_markers,
@@ -87,7 +87,7 @@ def marker_combinations_scoring(mat_comb, markers_comb,
 
     # Process marker status combinations returned by 'determine_marker_status()'
     # and check whether they are worth keeping
-    for phenotype in np.unique(phenotypes):
+    for phenotype in np.unique(phntp_per_cell):
         # AT. Multithread/process here? Conflict between batches?
 
         # Initialise temporary array to store 'phenotype' results
@@ -98,7 +98,7 @@ def marker_combinations_scoring(mat_comb, markers_comb,
             # AT. Multithread/process here?
 
             # Split cell type data according to batch
-            phenotypes_batch = phenotypes[batches_label == batch]
+            phenotypes_batch = phntp_per_cell[batches_label == batch]
 
             # Split sample data, first according to batch and then cell type
             phenotype_samples = samples_label[batches_label == batch][phenotypes_batch == phenotype]
@@ -143,6 +143,6 @@ def marker_combinations_scoring(mat_comb, markers_comb,
         nb_phntp += keep_phenotype * 1
 
         # Add number of undefined cells to counter
-        nb_undef_cells += np.logical_not(keep_phenotype) * np.sum(phenotypes == phenotype)
+        nb_undef_cells += np.logical_not(keep_phenotype) * np.sum(phntp_per_cell == phenotype)
 
     return nb_phntp, nb_undef_cells

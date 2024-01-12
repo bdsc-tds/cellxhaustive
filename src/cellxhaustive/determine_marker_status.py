@@ -61,7 +61,7 @@ def determine_marker_status(mat_comb, markers_comb, two_peak_threshold=3,
     """
 
     # Create an array containing empty strings to store cell types
-    phenotypes = np.empty(mat_comb.shape[0], dtype=np.dtype('U100'))
+    phntp_per_cell = np.empty(mat_comb.shape[0], dtype=np.dtype('U100'))
 
     # Create a special array iterator
     iterator = np.nditer(mat_comb, flags=['multi_index'], order='C')
@@ -90,9 +90,9 @@ def determine_marker_status(mat_comb, markers_comb, two_peak_threshold=3,
 
         # Append current marker type to string of marker types of corresponding
         # cell. Separate markers with a '/' if required
-        if not phenotypes[cell]:  # String is empty
-            phenotypes[cell] += f'{markers_comb[marker_pos]}{marker_type}'
+        if not phntp_per_cell[cell]:  # String is empty
+            phntp_per_cell[cell] += f'{markers_comb[marker_pos]}{marker_type}'
         else:  # String is not empty, so we separate markers with '/'
-            phenotypes[cell] += f'/{markers_comb[marker_pos]}{marker_type}'
+            phntp_per_cell[cell] += f'/{markers_comb[marker_pos]}{marker_type}'
 
-    return phenotypes
+    return phntp_per_cell
