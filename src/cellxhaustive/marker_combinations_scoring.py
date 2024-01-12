@@ -84,6 +84,20 @@ def marker_combinations_scoring(mat_comb, markers_comb,
     # Initialize arrays to store results
     nb_phntp = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
     nb_undef_cells = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
+    phntp_to_keep = np.empty(len(x_samplesxbatch_space) * len(y_cellxsample_space),
+                             dtype=object)
+    phntp_to_keep[...] = [[] for _ in range(len(phntp_to_keep))]
+    phntp_to_keep = np.reshape(phntp_to_keep, (len(x_samplesxbatch_space),
+                                               len(y_cellxsample_space)))
+    # Note: we can't use 'dtype=list' because it fills the array with None
+    # elements, hence this trick
+
+    # Wrapper function of 'list.append()'
+    def append_wrapper(lst, elt):
+        return lst.append(elt)
+
+    # Vectorized version of append wrapper
+    array_appending = np.vectorize(append_wrapper, otypes=[str])
 
     # Process marker status combinations returned by 'determine_marker_status()'
     # and check whether they are worth keeping
@@ -145,4 +159,9 @@ def marker_combinations_scoring(mat_comb, markers_comb,
         # Add number of undefined cells to counter
         nb_undef_cells += np.logical_not(keep_phenotype) * np.sum(phntp_per_cell == phenotype)
 
-    return nb_phntp, nb_undef_cells
+        # Add 'phenotype' to elements passing thresholds if there are any
+        if np.any(keep_phenotype):
+            _ = array_appending(phntp_to_keep[keep_phenotype], phenotype)
+        # '_' is used to avoid 'array_appending' printing something to stdout
+
+    return nb_phntp, phntp_to_keep, nb_undef_cells, phntp_per_cell

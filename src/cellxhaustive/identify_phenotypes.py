@@ -146,7 +146,7 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
 
     # Evaluate combinations of markers: go over every combination and calculate
     # the resulting number of phenotypes and unidentified cells
-    best_marker_comb = check_all_combinations(
+    nb_solution, best_marker_comb, cell_phntp_comb, best_phntp_comb = check_all_combinations(
         mat_representative=mat_subset_rep_markers,
         batches_label=batches_label,
         samples_label=samples_label,
@@ -158,25 +158,30 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
 
 
 
-    # AT. WHICH MATRIX SHOULD WE USE IN check_all_subsets()???
-    # mat_subset_label OR mat_subset_rep_markers???
 
+# AT. Do nb_solution == 1 first, this will make nb_solution == 0 easier to code
+# AT. Checked presence of null variables until here
 
+    if nb_solution == 0:
+        # 'best_marker_comb' is empty, which means that no marker combination
+        # was found to properly represent cell type 'label' (from annotate()
+        # function), so we keep the original annotation
+        return {-1: cell_name}, np.zeros(np.sum(is_label)) - 1
+        # return is_label, {-1: cell_name}, np.zeros(np.sum(is_label)) - 1, markers_rep_batches, []  # AT. What was returned before
+        # AT. If there is no 'best set' and more specialized annotation, keep the parent one (more general)
+        # AT. DIRTY!
 
-
-
-
-
-
-    if len(best_marker_comb) > 0:
+    elif nb_solution == 1:
         markers_rep_all = markers[np.isin(markers, best_marker_comb)]
         mat_subset_rep_markers = mat_subset_label[:, np.isin(markers, best_marker_comb)]
         # AT. Redundant?
 
+
         # Now let's figure out which groups of markers form relevant cell types
         # AT. Assign the annotations to the cells using the best set of markers defined before
-        cell_groups, cell_groups_name, clustering_labels, mat_average, markers_average = cell_subdivision(
-            # AT. CHANGE THIS IN FUNCTION
+        # AT. Some variables are not used anymore, so no point in assigning them: cell_groups, mat_average, markers_average
+        # cell_groups, cell_groups_name, clustering_labels, mat_average, markers_average = cell_subdivision(
+        cell_groups_name, clustering_labels = cell_subdivision(
             mat=mat_subset_label,
             mat_representative=mat_subset_rep_markers,
             markers=markers,
@@ -199,11 +204,31 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
                 clustering_labels=clustering_labels,
                 knn_min_probability=knn_min_probability)
 
-        return is_label, cell_groups_name, clustering_labels, markers_rep_batches, markers_rep_all
+        return cell_groups_name, clustering_labels
+        # return is_label, cell_groups_name, clustering_labels, markers_rep_batches, markers_rep_all  # AT. What was returned before
 
-    else:
-        # AT. If there is no 'best set' and more specialized annotation, keep the parent one (more general)
-        # AT. DIRTY!
-        return is_label, {-1: cell_name}, np.zeros(np.sum(is_label)) - 1, markers_rep_batches, []
+        else:
+            pass
+
+
+
 
 # AT. In annotate(), only cell_groups_name and clustering_labels are used, so do we actually need to return the other elements?
+
+
+# cell_groups, cell_groups_name, clustering_labels, mat_average, markers_average = cell_subdivision()
+# is_label, cell_groups_name, clustering_labels, markers_rep_batches, markers_rep_all = identify_phenotypes()
+
+
+# What is the output format? tsv, table, object... ???
+
+
+
+
+# nb_solution = float
+# best_marker_comb = tuple or list of tuples
+# cell_phntp_comb = array or list of arrays
+# best_phntp_comb = array or list of arrays
+
+# What do we do when there are several combinations?
+# Problem of several combination with markers in common?
