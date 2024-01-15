@@ -89,7 +89,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     # Find theoretical maximum number of markers in combination
     max_combination = min(max_markers, len(markers_representative))
 
-    # Initialize counters and objects to store results. Note that by default, we
+    # Initialise counters and objects to store results. Note that by default, we
     # assume that the minimum number of relevant markers is 2 (only 1 marker can
     # not define a phenotype)
     marker_counter = 2
