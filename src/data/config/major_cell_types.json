@@ -1,3 +1,4 @@
+/*Note: this file was created using data from https://github.com/RGLab/rcellontologymapping/blob/main/src/src/ImmportDefinitions.hs*/
 {
     "T cell": [
         "CD3+"
@@ -8,7 +9,7 @@
         "CD3-"
     ],
     "dendritic cell": [
-        "HLA-DR+",
+        "HLA.DR+",
         "CD3-",
         "CD19-",
         "CD20-",
@@ -48,7 +49,7 @@
         "CD8+"
     ],
     "myeloid dendritic cell": [
-        "HLA-DR+",
+        "HLA.DR+",
         "CD11c+",
         "CD3-",
         "CD19-",
@@ -58,7 +59,7 @@
         "CD56-"
     ],
     "plasmacytoid dendritic cell": [
-        "HLA-DR+",
+        "HLA.DR+",
         "CD123+",
         "CD3-",
         "CD19-",
@@ -160,7 +161,7 @@
         "CD19-",
         "CD20-",
         "CD14-",
-        "HLA-DR-",
+        "HLA.DR-",
         "CD16-"
     ],
     "CD16+ CD56+ NK cell": [
@@ -170,7 +171,7 @@
         "CD19-",
         "CD20-",
         "CD14-",
-        "HLA-DR-"
+        "HLA.DR-"
     ],
     "IgD+ memory B cell": [
         "CD19+",
@@ -190,7 +191,7 @@
         "CD3+",
         "CD4+",
         "CD38+",
-        "HLA-DR+",
+        "HLA.DR+",
         "CD8-"
     ],
     "effector CD4+ T cell": [
@@ -222,13 +223,13 @@
         "CD127+-",
         "CD25+",
         "CCR4+",
-        "HLA-DR+"
+        "HLA.DR+"
     ],
     "activated CD8+ T cell": [
         "CD3+",
         "CD8+",
         "CD38+",
-        "HLA-DR+",
+        "HLA.DR+",
         "CD4-"
     ],
     "effector CD8+ T cell": [
