@@ -67,15 +67,16 @@ def score_marker_combinations(mat_comb, markers_comb,
       'mat_comb' across the grid composed of parameters 'x_samplesxbatch_space'
       in D0 and 'y_cellxsample_space' in D1.
     phntp_to_keep: array(list(str))
-      2-D numpy array showing the number significant phenotypes in 'mat_comb'
-      across the grid composed of parameters 'x_samplesxbatch_space' in D0 and
-      'y_cellxsample_space' in D1.
+      2-D numpy array showing lists of significant phenotypes across the grid
+      composed of parameters 'x_samplesxbatch_space' in D0 and 'y_cellxsample_space'
+      in D1. In each element, len(phntp_to_keep[i, j]) = nb_phntp[i, j].
     nb_undef_cells: array(float)
       2-D numpy array showing the number of undefined cells (cells without a
       phenotype) in 'mat_comb' across the grid composed of parameters
       'x_samplesxbatch_space' in D0 and 'y_cellxsample_space' in D1.
     phntp_per_cell: array(str)
-      1-D numpy array showing the best phenotype determined for each cell.
+      1-D numpy array showing the best phenotype determined for each cell using
+      markers from 'markers_comb'.
     """
 
     # Determine markers status of 'markers_comb' using expression data
