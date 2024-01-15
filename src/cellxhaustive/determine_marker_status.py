@@ -9,7 +9,7 @@ depending on their expression.
 import numpy as np
 
 
-# Function used in marker_combinations_scoring.py
+# Function used in score_marker_combinations.py
 def determine_marker_status(mat_comb, markers_comb, two_peak_threshold=3,
                             three_peak_markers=[],
                             three_peak_lower_threshold=2,

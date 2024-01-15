@@ -14,11 +14,11 @@ from determine_marker_status import determine_marker_status  # AT. Double-check 
 
 
 # Function used in check_all_subsets.py  # AT. Update script name if needed
-def marker_combinations_scoring(mat_comb, markers_comb,
-                                batches_label, samples_label,
-                                three_peak_markers=[],
-                                x_samplesxbatch_space=np.round(np.arange(0.5, 1.01, 0.1), 1),
-                                y_cellxsample_space=np.arange(10, 101, 10)):
+def score_marker_combinations(mat_comb, markers_comb,
+                              batches_label, samples_label,
+                              three_peak_markers=[],
+                              x_samplesxbatch_space=np.round(np.arange(0.5, 1.01, 0.1), 1),
+                              y_cellxsample_space=np.arange(10, 101, 10)):
     """
     Function that determines the number of unique cell phenotypes (combination
     of positive and negative markers) and number of cells without phenotype in
