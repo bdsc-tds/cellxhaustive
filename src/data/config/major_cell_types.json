@@ -1,4 +1,3 @@
-/*Note: this file was created using data from https://github.com/RGLab/rcellontologymapping/blob/main/src/src/ImmportDefinitions.hs*/
 {
     "T cell": [
         "CD3+"
@@ -155,7 +154,7 @@
         "CD8+",
         "CXCR3+"
     ],
-    "CD16- CD56bright NK cell": [
+    "CD16- CD56 NK cell": [
         "CD56++",
         "CD3-",
         "CD19-",

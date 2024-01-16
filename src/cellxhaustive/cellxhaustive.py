@@ -99,6 +99,8 @@ def annotate(mat, markers, batches, samples, cell_labels,
     # AT. Import cell_ontology here? To import it once instead of several times in
     # scripts further down in the workflow?
     # AT. Make this path more flexible, maybe with a default value in argument parsing?
+    # Note: this file was created using data from
+    # https://github.com/RGLab/rcellontologymapping/blob/main/src/src/ImmportDefinitions.hs
     with open('../data/config/major_cell_types.json') as in_cell_types:
         cell_types_dict = json.load(in_cell_types)
 
