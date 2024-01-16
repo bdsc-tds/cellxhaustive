@@ -99,8 +99,7 @@ def score_marker_combinations(mat_comb, markers_comb,
     phntp_to_keep[...] = [[] for _ in range(len(phntp_to_keep))]
     phntp_to_keep = np.reshape(phntp_to_keep, (len(x_samplesxbatch_space),
                                                len(y_cellxsample_space)))
-    # Note: we can't use 'dtype=list' because it fills the array with None
-    # elements, hence this trick
+    # Note: using 'dtype=list' fills the array with None, hence this trick
 
     # Wrapper function of 'list.append()'
     def append_wrapper(lst, elt):
@@ -128,7 +127,7 @@ def score_marker_combinations(mat_comb, markers_comb,
             phenotype_samples = samples_label[batches_label == batch][phenotypes_batch == phenotype]
 
             # If there are no cells of type 'phenotype' in 'batch', that means
-            # 'phenotype' will not be present in all batches, so we stop now
+            # 'phenotype' will not be present in all batches, so stop now
             if phenotype_samples.size == 0:
                 keep_phenotype = np.logical_and(keep_phenotype, False)
                 break
@@ -142,14 +141,14 @@ def score_marker_combinations(mat_comb, markers_comb,
 
             # Check whether cell counts satisfy y threshold
             keep_phenotype_batch = cell_count_sample[:, np.newaxis] >= y_cellxsample_space
-            # Note: we use np.newaxis to add a dimension to work on different
+            # Note: np.newaxis is used to add a dimension to work on different
             # samples concurrently
 
             # Calculate proportion of samples in current batch satisfying
             # 'y_cellxsample_space' condition
             keep_phenotype_batch = (np.sum(keep_phenotype_batch, axis=0) / samples_nb)
             # Notes:
-            # - 'keep_phenotype_batch' is a boolean array, so we can sum it
+            # - 'keep_phenotype_batch' is a boolean array, so it can be summed
             # - 'np.sum(keep_phenotype_batch, axis=0)' calculates the number of
             # samples satisfying y condition for a given y in the grid
 

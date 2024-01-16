@@ -98,15 +98,15 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
 
     # Create total space for each metrics ('samplesxbatch' and 'cellxsample')
     x_samplesxbatch_space = np.round(np.arange(min_samplesxbatch, 1.01, 0.01), 2)  # x-axis
-    # Note: we use 'np.round()' to avoid floating point problem
+    # Note: 'np.round()' is used to avoid floating point problem
     y_cellxsample_space = np.arange(min_cellxsample, 101)  # y-axis
 
     # Find theoretical maximum number of markers in combination
     max_combination = min(max_markers, len(markers_representative))
 
-    # Initialise counters and objects to store results. Note that by default, we
-    # assume that the minimum number of relevant markers is 2 (only 1 marker can
-    # not define a phenotype)
+    # Initialise counters and objects to store results. Note that by default, it
+    # is assumed that the minimum number of relevant markers is 2 (only 1 marker
+    # can not define a phenotype)
     marker_counter = 2
     comb_idx = 0
     comb_dict = dict()
@@ -228,7 +228,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
         return nb_solution, best_marker_comb, cell_phntp_comb, best_phntp_comb
 
     # If several possible marker combinations were found, further refine the
-    # results according to metrics we defined previously: number of phenotypes,
+    # results according to metrics previously defined: number of phenotypes,
     # number of undefined cells, x and y values
 
     # Find combination(s) with maximum number of phenotypes
@@ -270,8 +270,9 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                                                                                         best_comb_idx,
                                                                                         max_yvalues_idx)
 
-                    # Note: we use 'np.concatenate' to convert an array of list into an array
-                else:  # If there are several combinations, we keep all of them
+                    # Note: 'np.concatenate' is used to convert an array of list
+                    # into an array
+                else:  # If there are several combinations, keep all of them
                     best_marker_comb = list(comb_dict.get(key) for key in best_comb_idx[max_yvalues_idx])
                     cell_phntp_comb = list(cell_phntp_dict.get(key) for key in best_comb_idx[max_yvalues_idx])
                     best_phntp_comb = list(np.concatenate(phntp_list_dict.get(key)) for key in best_comb_idx[max_yvalues_idx])

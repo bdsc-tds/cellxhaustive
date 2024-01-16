@@ -92,7 +92,7 @@ def determine_marker_status(mat_comb, markers_comb, two_peak_threshold=3,
         # cell. Separate markers with a '/' if required
         if not phntp_per_cell[cell]:  # String is empty
             phntp_per_cell[cell] += f'{markers_comb[marker_pos]}{marker_type}'
-        else:  # String is not empty, so we separate markers with '/'
+        else:  # String is not empty, so markers are separated with '/'
             phntp_per_cell[cell] += f'/{markers_comb[marker_pos]}{marker_type}'
 
     return phntp_per_cell
