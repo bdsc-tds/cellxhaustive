@@ -124,7 +124,7 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
         try:
             markers_rep_batches[batch] = list(markers_rep)
         except NameError:
-            markers_rep_batches = dict()
+            markers_rep_batches = {}
             markers_rep_batches[batch] = list(markers_rep)
 
     # Marker selection and matrix slicing: select relevant markers shared across

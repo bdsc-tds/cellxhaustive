@@ -109,9 +109,9 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     # can not define a phenotype)
     marker_counter = 2
     comb_idx = 0
-    comb_dict = dict()
-    cell_phntp_dict = dict()
-    phntp_list_dict = dict()
+    comb_dict = {}
+    cell_phntp_dict = {}
+    phntp_list_dict = {}
     max_nb_phntp_marker = 0
     max_nb_phntp_tot = 0
 
