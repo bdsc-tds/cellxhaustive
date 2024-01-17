@@ -22,9 +22,10 @@ def knn_classifier(mat_representative,
     Parameters:
     -----------
     mat_representative: array(float)
-      2-D numpy array expression matrix of the representative markers, with
-      cells in D0 and markers in D1. In other words, rows contain cells and
-      columns contain markers.
+      2-D numpy array expression matrix, with cells in D0 and markers in D1.
+      In other words, rows contain cells and columns contain markers. This
+      matrix is a subset of the general expression matrix and contains sliced
+      data matching cell label, batch, and representative markers.
 
 
 
@@ -35,7 +36,7 @@ def knn_classifier(mat_representative,
 
 
     knn_min_probability: float (default=0.5)
-      Confidence threshold for the KNN classifier to reassign a new cell type
+      Confidence threshold for KNN classifier to reassign a new cell type
       to previously undefined cells.
 
     Returns:
@@ -53,7 +54,7 @@ def knn_classifier(mat_representative,
         # Start KNN classifier
         clf = KNeighborsClassifier(n_neighbors=20)
 
-        # Find cells that were classified and train the classifier
+        # Find cells that were classified and train classifier
         mat_representative_scaled_train = mat_representative_scaled[undefined == False, :]
         y_train = clustering_labels[undefined == False]
         clf.fit(mat_representative_scaled_train, y_train)
@@ -62,7 +63,7 @@ def knn_classifier(mat_representative,
         y_test = clf.predict_proba(mat_representative_scaled[undefined, :])
 
         # Figure out which cells should be left undefined and which ones should
-        # be reclassified based on the model's ability to classify cells with
+        # be reclassified based on model's ability to classify cells with
         # confidence (p > 0.5)
         newclustering_label = np.argmax(y_test, axis=1)
         newclustering_label[np.sum(y_test > knn_min_probability, axis=1) == 0] = -1

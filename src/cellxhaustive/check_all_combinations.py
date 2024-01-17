@@ -1,14 +1,15 @@
 """
-Function that determines the best marker combinations representing a cell type
-by maximizing the number of phenotypes detected, the proportion of samples
-within a batch containing the phenotypes, the number of cells within each sample
-containing the phenotypes and minimizing the number of cells without phenotypes.
+Function that determines best marker combinations representing a cell type by
+maximizing number of phenotypes detected, proportion of samples within a batch
+containing the phenotypes, number of cells within each sample containing the
+phenotypes and minimizing number of cells without phenotypes.
 """
 
 
 # Imports utility modules
 import itertools as ite
 import numpy as np
+
 
 # Imports local functions
 from score_marker_combinations import score_marker_combinations  # AT. Double-check path
@@ -28,11 +29,10 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                            markers_representative, max_markers=15, min_annotations=3,
                            min_samplesxbatch=0.5, min_cellxsample=10):
     """
-    Function that determines the best marker combinations representing a cell
-    type by maximizing the number of phenotypes detected, the proportion of
-    samples within a batch containing the phenotypes, the number of cells
-    within each sample containing the phenotypes and minimizing the number of
-    cells without phenotypes.
+    Function that determines best marker combinations representing a cell type by
+    maximizing number of phenotypes detected, proportion of samples within a batch
+    containing the phenotypes, number of cells within each sample containing the
+    phenotypes and minimizing number of cells without phenotypes.
 
     Parameters:
     -----------
@@ -52,8 +52,8 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
       1-D numpy array with markers matching each column of 'mat_representative'.
 
     max_markers: int (default=15)
-      Maximum number of relevant markers to select among the total list of
-      markers from the markers array. Must be less than or equal to 'len(markers)'.
+      Maximum number of relevant markers to select among total list of markers
+      from total markers array. Must be less than or equal to 'len(markers)'.
 
     min_annotations: int (default=3)
       Minimum number of phenotypes for a combination of markers to be taken into
@@ -61,39 +61,38 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
       but it is advised to choose a value in '[3; len(markers) - 1]'.
 
     min_samplesxbatch: float (default=0.5)
-      Minimum proportion of samples within each batch with at least
-      'min_cellxsample' cells for a new annotation to be considered. In other
-      words, by default, an annotation needs to be assigned to at least 10
-      cells/sample (see description of previous parameter) in at least 50% of
-      the samples within a batch to be considered.
+      Minimum proportion of samples within each batch with at least 'min_cellxsample'
+      cells for a new annotation to be considered. In other words, by default, an
+      annotation needs to be assigned to at least 10 cells/sample (see description
+      of next parameter) in at least 50% of samples within a batch to be considered.
 
     min_cellxsample: float (default=10)
-      Minimum number of cells within each sample in 'min_samplesxbatch' % of
-      samples within each batch for a new annotation to be considered. In other
-      words, by default, an annotation needs to be assigned to at least
-      10 cells/sample in at least 50% of the samples (see description of next
-      parameter) within a batch to be considered.
+      Minimum number of cells within each sample in 'min_samplesxbatch' % of samples
+      within each batch for a new annotation to be considered. In other words, by
+      default, an annotation needs to be assigned to at least 10 cells/sample in at
+      least 50% of samples (see description of previous parameter) within a batch
+      to be considered.
 
     Returns:
     --------
     nb_solution: int
-      Number of optimal phenotypes found when checking and comparing all
-      possible marker combinations.
+      Number of optimal phenotypes found when checking and comparing all possible
+      marker combinations.
 
     best_marker_comb: tuple or list(tuple)
-      Tuple or list of tuples containing the optimal marker phenotypes found
-      during the comparison process. Each tuple contains one phenotype. The
-      number of tuples in 'best_marker_comb' is equal to 'nb_solution'.
+      Tuple or list of tuples containing optimal phenotypes found during comparison
+      process. Each tuple contains one phenotype. Number of tuples in
+      'best_marker_comb' is equal to 'nb_solution'.
 
     cell_phntp_comb: array or list(array)
-      1-D numpy array or list of 1-D numpy arrays showing the best phenotype
-      determined for each cell using markers from the associated 'best_marker_comb'
-      tuple. The number of arrays in 'cell_phntp_comb' is equal to 'nb_solution'.
+      1-D numpy array or list of 1-D numpy arrays showing phenotype found for
+      each cell using markers from associated 'best_marker_comb' tuple. Number
+      of arrays in 'cell_phntp_comb' is equal to 'nb_solution'.
 
     best_phntp_comb: array or list(array)
-      1-D numpy array or list of 1-D numpy arrays showing the 'significant'
-      phenotypes among all possible phenotypes from 'best_marker_comb'. The
-      number of arrays in 'best_phntp_comb' is equal to 'nb_solution'.
+      1-D numpy array or list of 1-D numpy arrays showing representative phenotypes
+      among all possible phenotypes from 'best_marker_comb'. Number of arrays in
+      'best_phntp_comb' is equal to 'nb_solution'.
     """
 
     # Create total space for each metrics ('samplesxbatch' and 'cellxsample')
@@ -105,8 +104,8 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     max_combination = min(max_markers, len(markers_representative))
 
     # Initialise counters and objects to store results. Note that by default, it
-    # is assumed that the minimum number of relevant markers is 2 (only 1 marker
-    # can not define a phenotype)
+    # is assumed that minimum number of relevant markers is 2 (only 1 marker can
+    # not define a phenotype)
     marker_counter = 2
     comb_idx = 0
     comb_dict = {}
@@ -163,14 +162,13 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
 
             # If there are possible good solutions, further process them
             if np.any(np.isfinite(nb_phntp)):
-
                 # Calculate maximum number of phenotypes for marker combination
-                # 'comb'. This counter is useful for two things. 1. Determine the
+                # 'comb'. This counter is useful for two things. 1. Determine
                 # maximum number of phenotypes found across all combinations with
-                # 'marker_counter' elements. 2. It avoids processing and keeping
-                # 'comb' with a poor score: if 'comb' max is worse than the
-                # than the recorded best overall (meaning all 'comb' previously
-                # analysed), it isn't worth keeping.
+                # 'marker_counter' elements. 2. Avoid processing and keeping
+                # 'comb' with a poor score: if 'comb' max is worse than recorded
+                # best overall (meaning all 'comb' previously analysed), it
+                # isn't worth keeping.
                 max_nb_phntp = np.nanmax(nb_phntp)
                 if ((max_nb_phntp >= max_nb_phntp_marker)
                         and (max_nb_phntp >= max_nb_phntp_tot)):
@@ -192,7 +190,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                 x_values = np.where(mask, np.nan, x_values)
                 y_values = np.where(mask, np.nan, y_values)
 
-                # Calculate minimum number of undefined cells for marker combination 'comb'
+                # Calculate minimum number of undefined cells for 'comb'
                 min_nb_undefined = np.nanmin(nb_undef_cells)
 
                 # Best solution has maximum number of new phenotypes...
@@ -211,7 +209,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                 y_values[x_values != np.nanmax(x_values)] = np.nan
                 best_y_values = np.append(best_y_values, np.nanmax(y_values))
 
-                # Keep the best phenotypes list
+                # Keep best phenotypes list
                 best_phntp_lst = phntp_to_keep[y_values == np.nanmax(y_values)]
                 phntp_list_dict[comb_idx] = best_phntp_lst
 
@@ -227,9 +225,9 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
         best_phntp_comb = np.empty(0)
         return nb_solution, best_marker_comb, cell_phntp_comb, best_phntp_comb
 
-    # If several possible marker combinations were found, further refine the
-    # results according to metrics previously defined: number of phenotypes,
-    # number of undefined cells, x and y values
+    # If several possible marker combinations were found, further refine results
+    # according to metrics previously defined: number of phenotypes, number of
+    # undefined cells, x and y values
 
     # Find combination(s) with maximum number of phenotypes
     max_phntp_idx = np.where(best_nb_phntp == np.max(best_nb_phntp))[0]
@@ -273,9 +271,9 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                     # Note: 'np.concatenate' is used to convert an array of list
                     # into an array
                 else:  # If there are several combinations, keep all of them
-                    best_marker_comb = list(comb_dict.get(key) for key in best_comb_idx[max_yvalues_idx])
-                    cell_phntp_comb = list(cell_phntp_dict.get(key) for key in best_comb_idx[max_yvalues_idx])
-                    best_phntp_comb = list(np.concatenate(phntp_list_dict.get(key)) for key in best_comb_idx[max_yvalues_idx])
+                    best_marker_comb = list(comb_dict.get(k) for k in best_comb_idx[max_yvalues_idx])
+                    cell_phntp_comb = list(cell_phntp_dict.get(k) for k in best_comb_idx[max_yvalues_idx])
+                    best_phntp_comb = list(np.concatenate(phntp_list_dict.get(k)) for k in best_comb_idx[max_yvalues_idx])
 
             else:  # Only one combination with maximum x value
                 best_marker_comb, cell_phntp_comb, best_phntp_comb = return_outputs(comb_dict,

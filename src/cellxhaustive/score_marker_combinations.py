@@ -1,12 +1,13 @@
 """
-Function that determines the number of unique cell phenotypes (combination of
-positive and negative markers) and number of cells without phenotype in an
-expression matrix across different parameters thresholds.
+Function that determines number of unique cell phenotypes (combination of positive
+and negative markers) and number of cells without phenotype in an expression matrix
+across different parameters thresholds.
 """
 
 
 # Imports utility modules
 import numpy as np
+
 
 # Imports local functions
 from determine_marker_status import determine_marker_status  # AT. Double-check path
@@ -14,15 +15,15 @@ from determine_marker_status import determine_marker_status  # AT. Double-check 
 
 
 # Function used in check_all_subsets.py  # AT. Update script name if needed
-def score_marker_combinations(mat_comb, markers_comb,
-                              batches_label, samples_label,
+def score_marker_combinations(mat_comb, batches_label, samples_label,
+                              markers_comb,
                               three_peak_markers=[],
                               x_samplesxbatch_space=np.round(np.arange(0.5, 1.01, 0.1), 1),
                               y_cellxsample_space=np.arange(10, 101, 10)):
     """
-    Function that determines the number of unique cell phenotypes (combination
-    of positive and negative markers) and number of cells without phenotype in
-    an expression matrix across different parameters thresholds.
+    Function that determines number of unique cell phenotypes (combination of
+    positive and negative markers) and number of cells without phenotype in an
+    expression matrix across different parameters thresholds.
 
     Parameters:
     -----------
@@ -30,17 +31,16 @@ def score_marker_combinations(mat_comb, markers_comb,
       2-D numpy array expression matrix, with cells in D0 and markers in D1.
       In other words, rows contain cells and columns contain markers. This
       matrix is a subset of the general expression matrix and contains sliced
-      data matching cell label, batch, and a specific combination of
-      representative markers.
-
-    markers_comb: array(str)
-      1-D numpy array with markers matching each column of 'mat_comb'.
+      data matching cell label, batch, and representative markers.
 
     batches_label: array(str)
       1-D numpy array with batch names of each cell of 'mat_comb'.
 
     samples_label: array(str)
       1-D numpy array with sample names of each cell of 'mat_comb'.
+
+    markers_comb: array(str)
+      1-D numpy array with markers matching each column of 'mat_comb'.
 
     three_peak_markers: list(str) (default=[])
       List of markers that have three peaks.
@@ -62,24 +62,24 @@ def score_marker_combinations(mat_comb, markers_comb,
     Returns:
     --------
     nb_phntp: array(float)
-      2-D numpy array showing the number of unique cell phenotypes (combinations
-      of positive and negative markers from 'markers_comb') identified in
-      'mat_comb' across the grid composed of parameters 'x_samplesxbatch_space'
-      in D0 and 'y_cellxsample_space' in D1.
+      2-D numpy array showing number of unique cell phenotypes (combinations of
+      positive and negative markers from 'markers_comb') identified in 'mat_comb'
+      across grid composed of parameters 'x_samplesxbatch_space' in D0 and
+      'y_cellxsample_space' in D1.
 
     phntp_to_keep: array(list(str))
-      2-D numpy array showing lists of significant phenotypes across the grid
-      composed of parameters 'x_samplesxbatch_space' in D0 and 'y_cellxsample_space'
-      in D1. In each element, len(phntp_to_keep[i, j]) = nb_phntp[i, j].
+      2-D numpy array showing lists of significant phenotypes across grid composed
+      of parameters 'x_samplesxbatch_space' in D0 and 'y_cellxsample_space' in D1.
+      In each element, len(phntp_to_keep[i, j]) = nb_phntp[i, j].
 
     nb_undef_cells: array(float)
-      2-D numpy array showing the number of undefined cells (cells without a
-      phenotype) in 'mat_comb' across the grid composed of parameters
-      'x_samplesxbatch_space' in D0 and 'y_cellxsample_space' in D1.
+      2-D numpy array showing number of undefined cells (cells without a phenotype)
+      in 'mat_comb' across grid composed of parameters 'x_samplesxbatch_space' in
+      D0 and 'y_cellxsample_space' in D1.
 
     phntp_per_cell: array(str)
-      1-D numpy array showing the best phenotype determined for each cell using
-      markers from 'markers_comb'.
+      1-D numpy array showing best phenotype determined for each cell using markers
+      from 'markers_comb'.
     """
 
     # Determine markers status of 'markers_comb' using expression data
@@ -99,7 +99,7 @@ def score_marker_combinations(mat_comb, markers_comb,
     phntp_to_keep[...] = [[] for _ in range(len(phntp_to_keep))]
     phntp_to_keep = np.reshape(phntp_to_keep, (len(x_samplesxbatch_space),
                                                len(y_cellxsample_space)))
-    # Note: using 'dtype=list' fills the array with None, hence this trick
+    # Note: using 'dtype=list' fills array with None, hence this trick
 
     # Wrapper function of 'list.append()'
     def append_wrapper(lst, elt):
@@ -108,8 +108,8 @@ def score_marker_combinations(mat_comb, markers_comb,
     # Vectorized version of append wrapper
     array_appending = np.vectorize(append_wrapper, otypes=[str])
 
-    # Process marker status combinations returned by 'determine_marker_status()'
-    # and check whether they are worth keeping
+    # Process marker phenotypes returned by 'determine_marker_status()' and
+    # check whether they are worth keeping
     for phenotype in np.unique(phntp_per_cell):
         # AT. Multithread/process here? Conflict between batches?
 
@@ -135,7 +135,7 @@ def score_marker_combinations(mat_comb, markers_comb,
             # Calculate number of different samples in current batch and cell type
             samples_nb = float(len(np.unique(phenotype_samples)))
 
-            # Count number of cells with 'phenotype' marker combination in each sample
+            # Count number of cells per phenotype in each sample
             cell_count_sample = np.asarray([np.sum(phenotype_samples == smpl)
                                             for smpl in np.unique(phenotype_samples)])
 
@@ -149,18 +149,18 @@ def score_marker_combinations(mat_comb, markers_comb,
             keep_phenotype_batch = (np.sum(keep_phenotype_batch, axis=0) / samples_nb)
             # Notes:
             # - 'keep_phenotype_batch' is a boolean array, so it can be summed
-            # - 'np.sum(keep_phenotype_batch, axis=0)' calculates the number of
-            # samples satisfying y condition for a given y in the grid
+            # - 'np.sum(keep_phenotype_batch, axis=0)' calculates number of samples
+            # satisfying y condition for a given y in grid
 
             # Check whether sample proportions satisfy x threshold
             keep_phenotype_batch = keep_phenotype_batch >= x_samplesxbatch_space[:, np.newaxis]
-            # Note: '[:, np.newaxis]' is used to transpose the 1-D array into a
-            # 2-D array to allow comparison
+            # Note: '[:, np.newaxis]' is used to transpose 1-D array into a 2-D
+            # array to allow comparison
 
             # Intersect batch results with general results
             keep_phenotype = np.logical_and(keep_phenotype, keep_phenotype_batch)
             # Note: for consistency, phenotypes have to be present in all batches,
-            # hence the use of 'np.logical_and()'
+            # hence usage of 'np.logical_and()'
 
         # Add 'phenotype' presence/absence to cell type counter
         nb_phntp += keep_phenotype * 1

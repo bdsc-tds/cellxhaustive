@@ -2,7 +2,7 @@
 AT. Improve general description.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- Utility functions to run the pipeline for phenotype identification
+ Utility functions to run pipeline for phenotype identification
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 --------------------------------------------------------------------
@@ -26,10 +26,10 @@ from identify_phenotypes import identify_phenotypes
 
 
 # AT. Add description
-def annotate(mat, markers, batches, samples, cell_labels,
-             max_markers=15, min_annotations=3,
-             min_cellxsample=10, min_samplesxbatch=0.5,
-             knn_refine=True, knn_min_probability=0.5):
+def cellxhaustive(mat, markers, batches, samples, cell_labels,
+                  max_markers=15, min_annotations=3,
+                  min_cellxsample=10, min_samplesxbatch=0.5,
+                  knn_refine=True, knn_min_probability=0.5):
     # AT. Missing three_peak_markers to carry over in all functions?
     # AT. Same for peak thresholds
     # AT. ==> Discuss this with Bernat
@@ -59,8 +59,8 @@ def annotate(mat, markers, batches, samples, cell_labels,
       # AT. Problem with annotations ontology/vocabulary?
 
     max_markers: int (default=15)
-      Maximum number of markers to select among the total list of markers from
-      the 'markers' array. Must be less than or equal to 'len(markers)'.
+      Maximum number of relevant markers to select among total list of markers
+      from total markers array. Must be less than or equal to 'len(markers)'.
 
     min_annotations: int (default=3)
       Minimum number of phenotypes for a combination of markers to be taken into
@@ -68,25 +68,24 @@ def annotate(mat, markers, batches, samples, cell_labels,
       but it is advised to choose a value in '[3; len(markers) - 1]'.
 
     min_samplesxbatch: float (default=0.5)
-      Minimum proportion of samples within each batch with at least
-      'min_cellxsample' cells for a new annotation to be considered. In other
-      words, by default, an annotation needs to be assigned to at least 10
-      cells/sample (see description of previous parameter) in at least 50% of
-      the samples within a batch to be considered.
+      Minimum proportion of samples within each batch with at least 'min_cellxsample'
+      cells for a new annotation to be considered. In other words, by default, an
+      annotation needs to be assigned to at least 10 cells/sample (see description
+      of next parameter) in at least 50% of samples within a batch to be considered.
 
     min_cellxsample: float (default=10)
-      Minimum number of cells within each sample in 'min_samplesxbatch' % of
-      samples within each batch for a new annotation to be considered. In other
-      words, by default, an annotation needs to be assigned to at least
-      10 cells/sample in at least 50% of the samples (see description of next
-      parameter) within a batch to be considered.
+      Minimum number of cells within each sample in 'min_samplesxbatch' % of samples
+      within each batch for a new annotation to be considered. In other words, by
+      default, an annotation needs to be assigned to at least 10 cells/sample in at
+      least 50% of samples (see description of previous parameter) within a batch
+      to be considered.
 
     knn_refine: bool (default=True)
-      If True, the clustering done via permutations of relevant markers will be
-      refined using a KNN classifier.
+      If True, clustering done via permutations of relevant markers will be refined
+      using a KNN classifier.
 
     knn_min_probability: float (default=0.5)
-      Confidence threshold for the KNN classifier to reassign a new cell type
+      Confidence threshold for KNN classifier to reassign a new cell type
       to previously undefined cells.
 
     Returns:
@@ -134,4 +133,9 @@ def annotate(mat, markers, batches, samples, cell_labels,
         annotations[is_label] = np.vectorize(cell_dict.get)(clustering_labels)
 
 
-# What is the output format? tsv, table, object... ???
+# AT. What is the output format? tsv, table, object... ???
+
+# AT. Copy everything from identify_phenotypes.py here?
+
+# if __name__ == '__main__':
+#     cellxhaustive()

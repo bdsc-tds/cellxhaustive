@@ -1,114 +1,90 @@
 """
-AT. Add general description here.
+Function that searches for matches between combinations of markers and a list of
+markers-defined cell types (i.e: cell type 1 is A+, B-, C-, cell type 2 is A-,
+C+, D+...). If one or several match(es) is(are) found, marker combination(s) will
+be assigned corresponding cell type(s) from list and other combinations will be
+assigned names derived from exact match(es). If no match is found, combination
+with most cells will be used as base name and other combinations will be assigned
+names derived from this base name.
 """
 
 
 # Imports utility modules
-import itertools as ite
 import numpy as np
+
 
 # Imports local functions
 from find_set_differences import find_set_differences  # AT. Double-check path
-from select_cells import select_cells  # AT. Double-check path
 # from cellxhaustive.find_set_differences import find_set_differences
-# from cellxhaustive.select_cells import select_cells
 
 
-# Permute across positive and negative expression of the relevant markers, and
-# identify new cell types
 # AT. Check presence/absence of all parameters/variable
-def assign_cell_types(mat,
-                     mat_representative,
-                     markers,
-                     markers_representative,
-                     marker_order,
-                     batches,
-                     samples,
-                     min_samplesxbatch=0.5,
-                     min_cellxsample=10,
-                     three_peak_markers=[],
-                     cell_name=None):
-    # AT. Could be removed: mat, marker_order
-    # AT. Renaming? 'batches' --> 'batches_label', 'samples' --> 'samples_label'
-    # AT. min_samplesxbatch is different from the usual default value. Is it on purpose
+# Function used in identify_phenotypes.py  # AT. Update script name if needed
+def assign_cell_types(mat_representative,
+                      batches_label,
+                      samples_label,
+                      markers_representative,
+                      cell_phntp,
+                      best_phntp,
+                      cell_types_dict,
+                      cell_name=None):
     """
-    Cell line subdivision.
-    # AT. Add function description (use the one before?)
-    # We need the representative matrix but also the full matrix with the proper ontology
-    # Take cell-naming outside from this function
+    Function that searches for matches between combinations of markers and a list
+    of markers-defined cell types (i.e: cell type 1 is A+, B-, C-, cell type 2
+    is A-, C+, D+...). If one or several match(es) is(are) found, marker
+    combination(s) will be assigned corresponding cell type(s) from list and other
+    combinations will be assigned names derived from exact match(es). If no match
+    is found, combination with most cells will be used as base name and other
+    combinations will be assigned names derived from this base name.
 
     Parameters:
     -----------
-    mat: array(float)
-      2-D numpy array expression matrix, with cells in D0 and markers in D1.
-      In other words, rows contain cells and columns contain markers.
-
     mat_representative: array(float)
-      2-D numpy array expression matrix of the representative markers, with
-      cells in D0 and markers in D1. In other words, rows contain cells and
-      columns contain markers.
+      2-D numpy array expression matrix, with cells in D0 and markers in D1.
+      In other words, rows contain cells and columns contain markers. This
+      matrix is a subset of the general expression matrix and contains sliced
+      data matching cell label, batch, and representative markers.
 
-    markers: array(str)
-      1-D numpy array with markers matching each column of mat.
+    batches_label: array(str)
+      1-D numpy array with batch names of each cell of 'mat_representative'.
+
+    samples_label: array(str)
+      1-D numpy array with sample names of each cell of 'mat_representative'.
 
     markers_representative: array(str)
-      1-D numpy array with markers matching each column of mat_representative.
+      1-D numpy array with markers matching each column of 'mat_representative'.
 
+    cell_phntp_comb: array or list(array)
+      1-D numpy array or list of 1-D numpy arrays showing phenotype found for
+      each cell using markers from associated 'markers_representative' tuple.
 
+    best_phntp_comb: array or list(array)
+      1-D numpy array or list of 1-D numpy arrays showing representative phenotypes
+      among all possible phenotypes from 'markers_representative'.
 
-    marker_order: list(str)
-      List of markers used in the gating strategy ordered accordingly.
-      # AT. Check parameter description (and default?). Do we even keep it? Or set it as an option?
-
-
-
-    batches: array(str)
-      1-D numpy array with batch names of each cell of mat.
-
-    samples: array(str)
-      1-D numpy array with sample names of each cell of mat.
-
-
-
-
-    min_samplesxbatch: float (default=0.5)
-      Minimum proportion of samples within each batch with at least
-      'min_cellxsample' cells for a new annotation to be considered. In other
-      words, by default, an annotation needs to be assigned to at least 10
-      cells/sample (see description of previous parameter) in at least 50% of
-      the samples within a batch to be considered.
-
-    min_cellxsample: float (default=10)
-      Minimum number of cells within each sample in 'min_samplesxbatch' % of
-      samples within each batch for a new annotation to be considered. In other
-      words, by default, an annotation needs to be assigned to at least
-      10 cells/sample in at least 50% of the samples (see description of next
-      parameter) within a batch to be considered.
-
-
-
-
-    three_peak_markers: list(str) (default=[])
-      List of markers with potentially three peaks.
-      # AT. Improve description? Do we even keep it? Or set it as an option?
+    cell_types_dict: {str: list()}
+      Dictionary with cell types as keys and list of cell-type defining markers
+      as values.
 
     cell_name: str or None (default=None)
       Base name for cell types (e.g. CD4 T-cells for 'CD4T').
-      # AT. None is automatically converted to str and always appears in f-string
-
-    Returns:
-    --------
-      # AT. Add what is returned by the function
-    """
-
-    # Trim down the cell classification to remove any protein that is not
-    # present (major cell types to renaming)
-    # AT. Remove cell ontologies that have no markers we can use
-    # AT. Take cell type with the fewer number of markers (example with 2 cell type with same markers +1 that is missing)
-    # AT. Add cell ontology names here ?
 
 
-    # AT. major_cell_types doesn't exist!!!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     cell_types_dict_ = dict()
     for i in cell_types_dict:
