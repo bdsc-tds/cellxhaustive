@@ -76,23 +76,23 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     Returns:
     --------
     nb_solution: int
-      Number of optimal phenotypes found when checking and comparing all possible
+      Number of optimal combinations found when checking and comparing all possible
       marker combinations.
 
     best_marker_comb: tuple or list(tuple)
-      Tuple or list of tuples containing optimal phenotypes found during comparison
-      process. Each tuple contains one phenotype. Number of tuples in
+      Tuple or list of tuples containing optimal combinations found during comparison
+      process. Each tuple contains one combination. Number of tuples in
       'best_marker_comb' is equal to 'nb_solution'.
 
-    cell_phntp_comb: array or list(array)
-      1-D numpy array or list of 1-D numpy arrays showing phenotype found for
-      each cell using markers from associated 'best_marker_comb' tuple. Number
-      of arrays in 'cell_phntp_comb' is equal to 'nb_solution'.
+    cell_phntp_comb: array(str) or list(array(str))
+      1-D numpy array of strings or list of 1-D numpy arrays of strings showing
+      phenotype found for each cell using markers from associated 'best_marker_comb'
+      tuple. Number of arrays in 'cell_phntp_comb' is equal to 'nb_solution'.
 
-    best_phntp_comb: array or list(array)
-      1-D numpy array or list of 1-D numpy arrays showing representative phenotypes
-      among all possible phenotypes from 'best_marker_comb'. Number of arrays in
-      'best_phntp_comb' is equal to 'nb_solution'.
+    best_phntp_comb: array(str) or list(array(str))
+      1-D numpy array of strings or list of 1-D numpy arrays of strings showing
+      representative phenotypes among all possible phenotypes from 'best_marker_comb'.
+      Number of arrays in 'best_phntp_comb' is equal to 'nb_solution'.
     """
 
     # Create total space for each metrics ('samplesxbatch' and 'cellxsample')

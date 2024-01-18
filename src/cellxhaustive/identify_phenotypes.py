@@ -1,4 +1,5 @@
 """
+# Function that identifies the cell type of
 AT. Add general description here.
 """
 
@@ -163,36 +164,39 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
         # 'best_marker_comb' is empty, which means that no marker combination
         # was found to properly represent cell type 'label' (from annotate()
         # function), so keep original annotation
-        return {-1: cell_name}, np.zeros(np.sum(is_label)) - 1
-        # return is_label, {-1: cell_name}, np.zeros(np.sum(is_label)) - 1, markers_rep_batches, []  # AT. What was returned before
-        # AT. If there is no 'best set' and more specialized annotation, keep the parent one (more general)
-        # AT. DIRTY!
+        new_names = np.full(cell_phntp_comb.shape, f'Other {cell_name}')
 
     elif nb_solution == 1:
-        markers_rep_all = markers[np.isin(markers, best_marker_comb)]
-        mat_subset_rep_markers = mat_subset_label[:, np.isin(markers, best_marker_comb)]
-        # AT. Redundant?
+        # Slice matrix to keep only expression of best combination
+        markers_rep_comb = markers[np.isin(markers, best_marker_comb)]
+        mat_subset_rep_markers_comb = mat_subset_label[:, np.isin(markers, best_marker_comb)]
 
-
-        # Now let's figure out which groups of markers form relevant cell types
-        # AT. Assign the annotations to the cells using the best set of markers defined before
-        # AT. Some variables are not used anymore, so no point in assigning them: cell_groups, mat_average, markers_average
-        # cell_groups, cell_groups_name, clustering_labels, mat_average, markers_average = cell_subdivision(
-        cell_groups_name, clustering_labels = cell_subdivision(
-            mat=mat_subset_label,
-            mat_representative=mat_subset_rep_markers,
-            markers=markers,
-            markers_representative=markers_rep_all,
-            marker_order=marker_order,
-            batches=batches_label,
-            samples=samples_label,
-            min_cellxsample=min_cellxsample,
-            min_samplesxbatch=min_samplesxbatch,
-            three_peak_markers=three_peak_markers,
+        # Assign cell type using only markers from 'best_marker_comb'
+        new_names = assign_cell_types(
+            mat_representative=mat_subset_rep_markers_comb,
+            batches_label=batches_label,
+            samples_label=samples_label,
+            markers_representative=markers_rep_comb,
+            cell_phntp=cell_phntp_comb,
+            best_phntp=best_phntp_comb,
+            cell_types_dict=cell_types_dict,
             cell_name=cell_name)
 
+        """
+        AT. In assign_cell_types(), adapt definitions of:
+        - cell_phntp_comb
+        - best_phntp_comb
+        - new_names
+        Array vs list of arrays
+        """
 
-# AT. Use assign_cell_types() here instead of cell_subdivision()
+
+
+
+
+
+# AT. Problem with 3 peaks markers --> How to deal with them in major_cell_type dict?
+
 
         # Try to classify undefined cells using a KNN classifier
         if knn_refine:
@@ -201,13 +205,15 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
                 clustering_labels=clustering_labels,
                 knn_min_probability=knn_min_probability)
 
-        return cell_groups_name, clustering_labels
+        # return cell_groups_name, clustering_labels
         # return is_label, cell_groups_name, clustering_labels, markers_rep_batches, markers_rep_all  # AT. What was returned before
 
-        else:
-            pass
 
 
+    else:  # Several solutions
+        pass
+
+    return new_names
 
 
 # AT. In annotate(), only cell_groups_name and clustering_labels are used, so do we actually need to return the other elements?
