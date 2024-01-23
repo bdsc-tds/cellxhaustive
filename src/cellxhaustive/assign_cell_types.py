@@ -9,11 +9,11 @@ names derived from this base name.
 """
 
 
-# Imports utility modules
+# Import utility modules
 import numpy as np
 
 
-# Imports local functions
+# Import local functions
 from find_name_difference import find_name_difference  # AT. Double-check path
 # from cellxhaustive.find_name_difference import find_name_difference
 
@@ -53,6 +53,13 @@ def assign_cell_types(mat_representative,
     markers_representative: array(str)
       1-D numpy array with markers matching each column of 'mat_representative'.
 
+    cell_types_dict: dict {str: list()}
+      Dictionary with cell types as keys and list of cell-type defining markers
+      as values.
+
+    cell_name: str or None
+      Base name for cell types (e.g. CD4 T-cells for 'CD4T').
+
     cell_phntp_comb: array(str) or list(array(str))
       1-D numpy array of strings or list of 1-D numpy arrays of strings showing
       phenotype found for each cell using markers from associated
@@ -62,16 +69,9 @@ def assign_cell_types(mat_representative,
       1-D numpy array of strings or list of 1-D numpy arrays of strings showing
       representative phenotypes among all possible phenotypes from 'markers_representative'.
 
-    cell_types_dict: dict {str: list()}
-      Dictionary with cell types as keys and list of cell-type defining markers
-      as values.
-
-    cell_name: str or None (default=None)
-      Base name for cell types (e.g. CD4 T-cells for 'CD4T').
-
     Returns:
     --------
-      new_names: array(str) or list(array(str))
+      new_labels: array(str) or list(array(str))
         1-D numpy array of strings or list of 1-D numpy arrays of strings containing
         new names for each cell of 'mat_representative'.
     """
@@ -145,17 +145,18 @@ def assign_cell_types(mat_representative,
         base_name = cell_types_match
 
     # Get mapping dictionary to convert names
-    names_conv = find_name_difference(base_comb=base_comb,
-                                      base_name=base_name,
-                                      best_phntp=best_phntp)
+    names_conv = find_name_difference(
+        base_comb=base_comb,
+        base_name=base_name,
+        best_phntp=best_phntp)
 
     # Convert phenotypes array to new names
-    new_names = np.vectorize(names_conv.get)(cell_phntp)
+    new_labels = np.vectorize(names_conv.get)(cell_phntp)
     # Note: by using dict.get method, non-representative phenotypes (missing
     # from 'names_conv') are converted to 'None' (str), which make converting
     # those remaining names much easier
 
     # Rename undefined non-representative phenotypes
-    new_names[new_names == 'None'] = f'Other {cell_name}'
+    new_labels[new_labels == 'None'] = f'Other {cell_name}'
 
-    return new_names
+    return new_labels

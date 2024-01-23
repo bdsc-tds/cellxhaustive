@@ -6,12 +6,12 @@ phenotypes and minimizing number of cells without phenotypes.
 """
 
 
-# Imports utility modules
+# Import utility modules
 import itertools as ite
 import numpy as np
 
 
-# Imports local functions
+# Import local functions
 from score_marker_combinations import score_marker_combinations  # AT. Double-check path
 # from cellxhaustive.score_marker_combinations import score_marker_combinations
 
@@ -168,7 +168,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                 # 'marker_counter' elements. 2. Avoid processing and keeping
                 # 'comb' with a poor score: if 'comb' max is worse than recorded
                 # best overall (meaning all 'comb' previously analysed), it
-                # isn't worth keeping.
+                # isn't worth keeping
                 max_nb_phntp = np.nanmax(nb_phntp)
                 if ((max_nb_phntp >= max_nb_phntp_marker)
                         and (max_nb_phntp >= max_nb_phntp_tot)):

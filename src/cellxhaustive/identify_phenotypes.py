@@ -4,11 +4,11 @@ AT. Add general description here.
 """
 
 
-# Imports utility modules
+# Import utility modules
 import numpy as np
 
 
-# Imports local functions
+# Import local functions
 from assign_cell_types import assign_cell_types  # AT. Double-check path
 from check_all_combinations import check_all_combinations  # AT. Double-check path
 from knn_classifier import knn_classifier  # AT. Double-check path
@@ -76,10 +76,10 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
 
     knn_refine: bool (default=True)
       If True, clustering done via permutations of relevant markers will be
-      refined using a KNN classifier.
+      refined using a KNN-classifier.
 
     knn_min_probability: float (default=0.5)
-      Confidence threshold for KNN classifier to reassign a new cell type
+      Confidence threshold for KNN-classifier to reassign a new cell type
       to previously undefined cells.
 
     Returns:
@@ -154,17 +154,11 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
         min_samplesxbatch=min_samplesxbatch,
         min_cellxsample=min_cellxsample)
 
-
-
-
-# AT. Do nb_solution == 1 first, this will make nb_solution == 0 easier to code
-# AT. Checked presence of null variables until here
-
     if nb_solution == 0:
         # 'best_marker_comb' is empty, which means that no marker combination
         # was found to properly represent cell type 'label' (from annotate()
         # function), so keep original annotation
-        new_names = np.full(cell_phntp_comb.shape, f'Other {cell_name}')
+        new_labels = np.full(cell_phntp_comb.shape, f'Other {cell_name}')
 
     elif nb_solution == 1:
         # Slice matrix to keep only expression of best combination
@@ -172,7 +166,7 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
         mat_subset_rep_markers_comb = mat_subset_label[:, np.isin(markers, best_marker_comb)]
 
         # Assign cell type using only markers from 'best_marker_comb'
-        new_names = assign_cell_types(
+        new_labels = assign_cell_types(
             mat_representative=mat_subset_rep_markers_comb,
             batches_label=batches_label,
             samples_label=samples_label,
@@ -198,11 +192,13 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
 # AT. Problem with 3 peaks markers --> How to deal with them in major_cell_type dict?
 
 
-        # Try to classify undefined cells using a KNN classifier
+
+        # Try to classify undefined cells using a KNN-classifier
         if knn_refine:
             clustering_labels = knn_classifier(
                 mat_representative=mat_subset_rep_markers_comb,
-                clustering_labels=clustering_labels,
+
+                clustering_labels=new_labels,
                 knn_min_probability=knn_min_probability)
 
         # return cell_groups_name, clustering_labels
@@ -212,15 +208,12 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
 
     else:  # Several solutions
         pass
+        # Do for loop to try and select best
 
-    return new_names
+    return new_labels
 
 
 # AT. In annotate(), only cell_groups_name and clustering_labels are used, so do we actually need to return the other elements?
-
-
-# cell_groups, cell_groups_name, clustering_labels, mat_average, markers_average = cell_subdivision()
-# is_label, cell_groups_name, clustering_labels, markers_rep_batches, markers_rep_all = identify_phenotypes()
 
 
 # What is the output format? tsv, table, object... ???

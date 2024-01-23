@@ -5,11 +5,11 @@ across different parameters thresholds.
 """
 
 
-# Imports utility modules
+# Import utility modules
 import numpy as np
 
 
-# Imports local functions
+# Import local functions
 from determine_marker_status import determine_marker_status  # AT. Double-check path
 # from cellxhaustive.determine_marker_status import cellxhaustive.determine_marker_status
 

@@ -1,23 +1,25 @@
 """
+Reclassify unidentified cells (cells called 'Other cell_type') based on a KNN-classifier.
 AT. Add general description here.
 """
 
 
-# Imports utility modules
+# Import utility modules
 import numpy as np
 
-# Imports ML modules
+
+# Import ML modules
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 
 
 # AT. Check presence/absence of all parameters/variable
-# Reclassify undefined cells with KNN classifier
 def knn_classifier(mat_representative,
                    clustering_labels,
                    knn_min_probability=0.5):
     """
-    Reclassify cells based on KNN classifier
+    Reclassify unidentified cells (cells called 'Other cell_type') based on a
+    KNN classifier.
 
     Parameters:
     -----------
@@ -36,7 +38,7 @@ def knn_classifier(mat_representative,
 
 
     knn_min_probability: float (default=0.5)
-      Confidence threshold for KNN classifier to reassign a new cell type
+      Confidence threshold for KNN-classifier to reassign a new cell type
       to previously undefined cells.
 
     Returns:
@@ -51,7 +53,7 @@ def knn_classifier(mat_representative,
         scaler = StandardScaler()
         mat_representative_scaled = scaler.fit_transform(mat_representative)
 
-        # Start KNN classifier
+        # Initialise KNN-classifier
         clf = KNeighborsClassifier(n_neighbors=20)
 
         # Find cells that were classified and train classifier

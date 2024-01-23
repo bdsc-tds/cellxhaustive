@@ -5,7 +5,7 @@ depending on their expression.
 """
 
 
-# Imports utility modules
+# Import utility modules
 import numpy as np
 
 
