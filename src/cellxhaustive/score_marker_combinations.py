@@ -114,7 +114,7 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
         # AT. Multithread/process here? Conflict between batches?
 
         # Initialise temporary array to store 'phenotype' results
-        keep_phenotype = np.full(np.shape(nb_phntp), True)
+        keep_phenotype = np.full(nb_phntp.shape, True)
 
         # Process batches separately
         for batch in np.unique(batches_label):
