@@ -18,7 +18,7 @@ from find_name_difference import find_name_difference  # AT. Double-check path
 # from cellxhaustive.find_name_difference import find_name_difference
 
 
-# Function used in identify_phenotypes.py  # AT. Update script name if needed
+# Function used in identify_phenotypes.py
 def assign_cell_types(mat_representative,
                       batches_label,
                       samples_label,

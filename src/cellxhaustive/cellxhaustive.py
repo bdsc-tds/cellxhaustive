@@ -94,12 +94,10 @@ args = parser.parse_args()
 if __name__ == '__main__':
 
     # Get 1-D array for markers
-    markers = pd.read_csv(args.marker_path, sep='\t', header=None).to_numpy().flatten()  # AT. Delete in prod
-    # markers = pd.read_csv('data/markers.txt', sep='\t', header=None).to_numpy().flatten()  # AT. Delete in prod
+    markers = pd.read_csv(args.marker_path, sep='\t', header=None).to_numpy().flatten()
 
     # Parse general input files into several arrays
-    input_table = pd.read_csv(args.input_path, sep='\t', header=0, index_col=0)  # AT. Delete in prod
-    # input_table = pd.read_csv('data/complete_table.tsv', sep='\t', header=0)  # AT. Delete in prod
+    input_table = pd.read_csv(args.input_path, sep='\t', header=0, index_col=0)
 
     # Get 2-D array for expression using 'markers'
     mat = input_table.loc[: , markers].to_numpy()
@@ -128,8 +126,7 @@ if __name__ == '__main__':
         three_peak_markers = args.three_peak_markers
 
     # Import cell types definitions
-    with open(args.cell_type_path) as in_cell_types:  # AT. Delete in prod
-    # with open('../data/config/major_cell_types.json') as in_cell_types:  # AT. Delete in prod
+    with open(args.cell_type_path) as in_cell_types:
         cell_types_dict = json.load(in_cell_types)
     # Note: this file was created using data from
     # https://github.com/RGLab/rcellontologymapping/blob/main/src/src/ImmportDefinitions.hs
@@ -144,8 +141,6 @@ if __name__ == '__main__':
 
     # Initialise empty array to store new annotations
     annotations = np.asarray(['undefined'] * len(cell_labels)).astype('U100')
-
-# AT. Double-check what follows
 
     # Process cells by pre-annotations
     for label in np.unique(cell_labels):
@@ -162,7 +157,6 @@ if __name__ == '__main__':
             is_label=is_label,
             cell_types_dict=cell_types_dict,
             three_peak_markers=three_peak_markers,
-            # three_peak_markers=['CD4'],  # AT. Remove in prod
             cell_name=label,
             max_markers=max_markers,
             min_annotations=min_annotations,
@@ -176,22 +170,3 @@ if __name__ == '__main__':
         # AT. Because cell numbers is inside the name in (), we have to use .split() here --> Better to change the name in a function before
 
         annotations[is_label] = np.vectorize(cell_dict.get)(clustering_labels)
-
-
-
-
-    # Parse markers as well or ask for a specific file?
-
-
-
-    # # Create output directory if it doesn't exist
-    # output_dir = os.path.dirname(args.output_path)
-    # os.makedirs(output_dir, exist_ok=True)
-
-
-    # adt_cell_type = cellxhaustive()
-    # with open(args.output_path, 'w') as output:
-    # Or pd.to_csv/pd.to_table
-    # Check if I need to create the output dir when using pd.to_csv()
-
-# AT. What is the output format? tsv, table, object... ???

@@ -14,7 +14,7 @@ from determine_marker_status import determine_marker_status  # AT. Double-check 
 # from cellxhaustive.determine_marker_status import cellxhaustive.determine_marker_status
 
 
-# Function used in check_all_subsets.py  # AT. Update script name if needed
+# Function used in check_all_subsets.py
 def score_marker_combinations(mat_comb, batches_label, samples_label,
                               markers_comb, three_peak_markers=[],
                               x_samplesxbatch_space=np.round(np.arange(0.5, 1.01, 0.1), 1),

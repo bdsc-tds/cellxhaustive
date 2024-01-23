@@ -5,7 +5,7 @@ name and creates new names by minimising name differences.
 """
 
 
-# Function used in assign_cell_types.py  # AT. Update script name if needed
+# Function used in assign_cell_types.py
 def find_name_difference(base_comb, base_name, best_phntp):
     """
     Function that computes new names for lists of markers based on differences

@@ -1,5 +1,5 @@
 """
-Reclassify unidentified cells (cells called 'Other cell_type') based on a KNN-classifier.
+Reclassify unidentified cells using a KNN-classifier.
 AT. Add general description here.
 """
 
@@ -18,8 +18,7 @@ def knn_classifier(mat_representative,
                    clustering_labels,
                    knn_min_probability=0.5):
     """
-    Reclassify unidentified cells (cells called 'Other cell_type') based on a
-    KNN classifier.
+    Reclassify unidentified cells using a KNN-classifier.
 
     Parameters:
     -----------
@@ -35,7 +34,7 @@ def knn_classifier(mat_representative,
       Clustering indices, where -1 is assigned to undefined nodes/cells.
       # AT. Improve description
 
-
+# AT. Need to check whether I can use the actual cell_types of if it's more convenient to use numbers
 
     knn_min_probability: float (default=0.5)
       Confidence threshold for KNN-classifier to reassign a new cell type

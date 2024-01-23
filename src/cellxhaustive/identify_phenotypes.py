@@ -182,20 +182,34 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
             best_phntp=best_phntp_comb)
 
         """
-        AT. In assign_cell_types(), adapt definitions of:
+        AT. In assign_cell_types(), in case of Array vs list of arrays, adapt definitions of:
         - cell_phntp_comb
         - best_phntp_comb
-        - new_names
-        Array vs list of arrays
+        - new_labels
+
+        best_phntp --> array(str)
+        phntp_match --> list(str)
+        cell_types_clean --> key (str), val (list)
+        base_name --> str
+        base_comb --> str
+        Change to else (instead of elif/else) and adapt assign_cell_types to deal with lists?
+
+        AT. Change output:
+        - 1 column with cell type (without Main for the main sub-cell type) and marker differences
+        - 1 column with full phenotype
         """
 
 
 
 
 
+# What happens if best_marker_comb does not contain any markers from major_cell_types.json?
+    # Because they're not significant/relevant/get removed during bimodality check
 
-# AT. Problem with 3 peaks markers --> How to deal with them in major_cell_type dict?
 
+# AT. Also return other column with full phenotype
+
+# AT. Add if test here instead of inside function to decide whether to run it
 
 
         # Try to classify undefined cells using a KNN-classifier
@@ -213,16 +227,12 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
 
     else:  # Several solutions
         pass
-        # Do for loop to try and select best
-
     return new_labels
+        # AT. Do for loop to try and select best
 
+        # AT. Use a parameter in argparse for the maximum number of solution to evaluate
 
-# AT. In annotate(), only cell_groups_name and clustering_labels are used, so do we actually need to return the other elements?
-
-
-# What is the output format? tsv, table, object... ???
-
+    # return new_labels
 
 
 
@@ -232,4 +242,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
 # best_phntp_comb = array or list of arrays
 
 # What do we do when there are several combinations?
-# Problem of several combination with markers in common?
+
+
+# AT. Problem with 3 peaks markers --> How to deal with them in major_cell_type dict?
+# AT. Checked presence of null variables until here

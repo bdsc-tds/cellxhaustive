@@ -24,7 +24,7 @@ def return_outputs(dict1, dict2, dict3, idx1, idx2):
     return out1, out2, out3
 
 
-# Function used in identify_phenotypes.py  # AT. Update script name if needed
+# Function used in identify_phenotypes.py
 def check_all_combinations(mat_representative, batches_label, samples_label,
                            markers_representative, three_peak_markers=[],
                            max_markers=15, min_annotations=3,
