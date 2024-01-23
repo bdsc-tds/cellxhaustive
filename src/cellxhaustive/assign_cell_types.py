@@ -23,10 +23,10 @@ def assign_cell_types(mat_representative,
                       batches_label,
                       samples_label,
                       markers_representative,
-                      cell_phntp,
-                      best_phntp,
                       cell_types_dict,
-                      cell_name=None):
+                      cell_name,
+                      cell_phntp,
+                      best_phntp):
     """
     Function that searches for matches between combinations of markers and a list
     of markers-defined cell types (i.e: cell type 1 is A+, B-, C-, cell type 2

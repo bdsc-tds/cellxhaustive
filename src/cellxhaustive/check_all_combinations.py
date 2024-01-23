@@ -26,7 +26,8 @@ def return_outputs(dict1, dict2, dict3, idx1, idx2):
 
 # Function used in identify_phenotypes.py  # AT. Update script name if needed
 def check_all_combinations(mat_representative, batches_label, samples_label,
-                           markers_representative, max_markers=15, min_annotations=3,
+                           markers_representative, three_peak_markers=[],
+                           max_markers=15, min_annotations=3,
                            min_samplesxbatch=0.5, min_cellxsample=10):
     """
     Function that determines best marker combinations representing a cell type by
@@ -50,6 +51,9 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
 
     markers_representative: array(str)
       1-D numpy array with markers matching each column of 'mat_representative'.
+
+    three_peak_markers: list(str) (default=[])
+      List of markers that have three peaks.
 
     max_markers: int (default=15)
       Maximum number of relevant markers to select among total list of markers
@@ -148,12 +152,12 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
             # combination 'comb' across 'samplesxbatch' and 'cellxsample' grid
             nb_phntp, phntp_to_keep, nb_undef_cells, phntp_per_cell = score_marker_combinations(
                 mat_comb=mat_comb,
-                markers_comb=markers_comb,
                 batches_label=batches_label,
                 samples_label=samples_label,
+                markers_comb=markers_comb,
+                three_peak_markers=three_peak_markers,
                 x_samplesxbatch_space=x_samplesxbatch_space,
-                y_cellxsample_space=y_cellxsample_space,
-                three_peak_markers=['CD4'])
+                y_cellxsample_space=y_cellxsample_space)
 
             # Constrain matrix given minimum number of phenotype conditions
             mask = (nb_phntp < min_annotations)

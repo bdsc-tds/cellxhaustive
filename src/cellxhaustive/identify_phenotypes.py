@@ -18,10 +18,11 @@ from knn_classifier import knn_classifier  # AT. Double-check path
 
 
 # Function used in cellxhaustive.py  # AT. Update script name if needed
-def identify_phenotypes(mat, markers, batches, samples, is_label,
-                        cell_types_dict, max_markers=15, min_annotations=3,
+def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dict,
+                        cell_name, three_peak_markers=[],
+                        max_markers=15, min_annotations=3,
                         min_samplesxbatch=0.5, min_cellxsample=10,
-                        cell_name=None, knn_refine=True, knn_min_probability=0.5):
+                        knn_refine=True, knn_min_probability=0.5):
     """
     Pipeline for automated gating, feature selection, and clustering to
     generate new annotations.
@@ -33,14 +34,14 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
       2-D numpy array expression matrix, with cells in D0 and markers in D1.
       In other words, rows contain cells and columns contain markers.
 
-    markers: array(str)
-      1-D numpy array with markers matching each column of 'mat'.
-
     batches: array(str)
       1-D numpy array with batch names of each cell of 'mat'.
 
     samples: array(str)
       1-D numpy array with sample names of each cell of 'mat'.
+
+    markers: array(str)
+      1-D numpy array with markers matching each column of 'mat'.
 
     is_label: array(bool)
       1-D numpy array with booleans to indicate cells matching current cell type.
@@ -48,6 +49,12 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
     cell_types_dict: {str: list()}
       Dictionary with cell types as keys and list of cell-type defining markers
       as values.
+
+    cell_name: str or None
+      Base name for cell types (e.g. CD4 T-cells for 'CD4T').
+
+    three_peak_markers: list(str) (default=[])
+      List of markers that have three peaks.
 
     max_markers: int (default=15)
       Maximum number of relevant markers to select among total list of markers
@@ -70,9 +77,6 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
       default, an annotation needs to be assigned to at least 10 cells/sample in at
       least 50% of samples (see description of previous parameter) within a batch
       to be considered.
-
-    cell_name: str or None (default=None)
-      Base name for cell types (e.g. CD4 T-cells for 'CD4T').
 
     knn_refine: bool (default=True)
       If True, clustering done via permutations of relevant markers will be
@@ -149,6 +153,7 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
         batches_label=batches_label,
         samples_label=samples_label,
         markers_representative=markers_rep_all,
+        three_peak_markers=three_peak_markers,
         max_markers=max_markers,
         min_annotations=min_annotations,
         min_samplesxbatch=min_samplesxbatch,
@@ -171,10 +176,10 @@ def identify_phenotypes(mat, markers, batches, samples, is_label,
             batches_label=batches_label,
             samples_label=samples_label,
             markers_representative=markers_rep_comb,
-            cell_phntp=cell_phntp_comb,
-            best_phntp=best_phntp_comb,
             cell_types_dict=cell_types_dict,
-            cell_name=cell_name)
+            cell_name=cell_name,
+            cell_phntp=cell_phntp_comb,
+            best_phntp=best_phntp_comb)
 
         """
         AT. In assign_cell_types(), adapt definitions of:

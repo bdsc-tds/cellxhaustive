@@ -16,8 +16,7 @@ from determine_marker_status import determine_marker_status  # AT. Double-check 
 
 # Function used in check_all_subsets.py  # AT. Update script name if needed
 def score_marker_combinations(mat_comb, batches_label, samples_label,
-                              markers_comb,
-                              three_peak_markers=[],
+                              markers_comb, three_peak_markers=[],
                               x_samplesxbatch_space=np.round(np.arange(0.5, 1.01, 0.1), 1),
                               y_cellxsample_space=np.arange(10, 101, 10)):
     """
@@ -86,8 +85,8 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
     phntp_per_cell = determine_marker_status(
         mat_comb=mat_comb,
         markers_comb=markers_comb,
-        three_peak_markers=three_peak_markers,
         two_peak_threshold=3,
+        three_peak_markers=three_peak_markers,
         three_peak_lower_threshold=2,
         three_peak_upper_threshold=4)
 
