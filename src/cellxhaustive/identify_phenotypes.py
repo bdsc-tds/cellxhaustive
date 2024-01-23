@@ -17,7 +17,7 @@ from knn_classifier import knn_classifier  # AT. Double-check path
 # from cellxhaustive.knn_classifier import knn_classifier
 
 
-# Function used in cellxhaustive.py  # AT. Update script name if needed
+# Function used in cellxhaustive.py
 def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dict,
                         cell_name, three_peak_markers=[],
                         max_markers=15, min_annotations=3,
@@ -227,12 +227,12 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
 
     else:  # Several solutions
         pass
-    return new_labels
         # AT. Do for loop to try and select best
 
         # AT. Use a parameter in argparse for the maximum number of solution to evaluate
 
     # return new_labels
+    return new_labels, cell_phntp_comb  # AT. Testing new outputs
 
 
 

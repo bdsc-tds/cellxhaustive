@@ -141,6 +141,7 @@ if __name__ == '__main__':
 
     # Initialise empty array to store new annotations
     annotations = np.asarray(['undefined'] * len(cell_labels)).astype('U100')
+    phenotypes = np.asarray(['undefined'] * len(cell_labels)).astype('U100')
 
     # Process cells by pre-annotations
     for label in np.unique(cell_labels):
@@ -149,7 +150,7 @@ if __name__ == '__main__':
         is_label = (cell_labels == label)
 
         # Get annotations for all cells of type 'label'
-        cell_groups_name, clustering_labels = identify_phenotypes(
+        new_labels, cell_phntp_comb = identify_phenotypes(
             mat=mat,
             batches=batches,
             samples=samples,
@@ -165,8 +166,20 @@ if __name__ == '__main__':
             knn_refine=knn_refine,
             knn_min_probability=knn_min_probability)
 
-        cell_dict = dict([tuple([x, cell_groups_name[x].split(" (")[0]])
-                          for x in cell_groups_name])
-        # AT. Because cell numbers is inside the name in (), we have to use .split() here --> Better to change the name in a function before
+        # AT. Problem if there are several solutions...
+        # Store results in arrays
+        annotations[is_label] = new_labels  # AT. May need to rework this
+        phenotypes[is_label] = cell_phntp_comb  # AT. May need to rework this
 
-        annotations[is_label] = np.vectorize(cell_dict.get)(clustering_labels)
+    # AT. Problem if there are several solutions...
+    # Combine arrays into a dataframe
+    new_col = pd.DataFrame({'Annotations': annotations, 'Phenotypes': phenotypes})
+    output_table = pd.concat([input_table, new_col], axis=1)
+
+    # Create output directory if it doesn't exist
+    output_dir = os.path.dirname(args.output_path)
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Save table with annotations and phenotypes
+    output_table.to_csv(args.output_path, sep='\t', header=True, index=False)
+    # AT. Add na_rep in case of cells with several solutions, which means a different number of columns
