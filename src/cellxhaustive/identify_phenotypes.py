@@ -212,28 +212,24 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
 # AT. Add if test here instead of inside function to decide whether to run it
 
 
-        # Try to classify undefined cells using a KNN-classifier
-        if knn_refine:
-            clustering_labels = knn_classifier(
+        # Check if conditions to run KNN-classifier are fulfilled
+        undefined = (new_labels == f'Other {cell_name}')  # Get number of undefined cells
+        if (knn_refine  # Decided by user
+                and ((np.sum(undefined) > 1))  # At least 2 undefined cells
+                and (len(np.unique(new_labels)) > 2)):  # At least 2 cell types different from 'Other'
+            # If so, run it
+            new_labels = knn_classifier(
                 mat_representative=mat_subset_rep_markers_comb,
-
-                clustering_labels=new_labels,
+                undefined=undefined,
+                new_labels=new_labels,
                 knn_min_probability=knn_min_probability)
-
-        # return cell_groups_name, clustering_labels
-        # return is_label, cell_groups_name, clustering_labels, markers_rep_batches, markers_rep_all  # AT. What was returned before
-
-
 
     else:  # Several solutions
         pass
         # AT. Do for loop to try and select best
-
         # AT. Use a parameter in argparse for the maximum number of solution to evaluate
 
-    # return new_labels
     return new_labels, cell_phntp_comb  # AT. Testing new outputs
-
 
 
 # nb_solution = float
