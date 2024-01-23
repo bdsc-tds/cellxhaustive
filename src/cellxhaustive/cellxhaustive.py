@@ -17,10 +17,16 @@ several versions of the same pipeline (see github history)
 """
 
 
-# Imports utility modules
+# Import utility modules
+import argparse
+import json
 import numpy as np
+import os
+import pandas as pd
+import pathlib
 
-# Imports local functions
+
+# Import local functions
 from identify_phenotypes import identify_phenotypes
 # from cellxhaustive.identify_phenotypes import identify_phenotypes  # AT. Double-check path
 
@@ -92,6 +98,58 @@ def cellxhaustive(mat, markers, batches, samples, cell_labels,
     --------
       # AT. Add what is returned by the function
     """
+# Parse arguments
+parser = argparse.ArgumentParser(description='Script to annotate cell types using \
+                                CITE-seq ADT data.')
+
+parser.add_argument('-i', '--input', dest='input_path', type=str,
+                    help='Path to the input table containing expression data and \
+                    samples/batch information',
+                    required=True)
+parser.add_argument('-m', '--markers', dest='marker_path', type=str,
+                    help='Path to the file containing list of markers of interest',
+                    required=True)
+parser.add_argument('-o', '--output', dest='output_path', type=str,
+                    help='Path to the output table with annotations',
+                    required=True)
+parser.add_argument('-t', '--three-peaks', dest='three_peak_markers', type=str,
+                    help="Path to file containing markers that have three peaks ['CD4']",
+                    required=False, default=['CD4'])
+parser.add_argument('-c', '--cell-type-definition', dest='cell_type_path', type=str,
+                    help='Path to the file containing cell types characterisation \
+                    [../data/config/major_cell_types.json]',
+                    required=False, default='../data/config/major_cell_types.json')
+parser.add_argument('-mm', '--max-markers', dest='max_markers', type=int,
+                    help="Maximum number of relevant markers to select among \
+                    total list of markers. Must be less than or equal to \
+                    'len(markers)' [15]",
+                    required=False, default=15)
+parser.add_argument('-ma', '--min-annotations', dest='min_annotations', type=int,
+                    help="Minimum number of phenotypes for a combination of markers \
+                    to be taken into account as a potential cell population. Must \
+                    be in '[2; len(markers)]', but it is advised to choose a value \
+                    in '[3; len(markers) - 1]' [3]",
+                    required=False, default=3)
+parser.add_argument('-ms', '--min-samplesxbatch', dest='min_samplesxbatch', type=float,
+                    help="Minimum proportion of samples within each batch with at \
+                    least 'min_cellxsample' cells for a new annotation to be \
+                    considered [0.5]",
+                    required=False, default=0.5)
+parser.add_argument('-mc', '--min-cellxsample', dest='min_cellxsample', type=int,
+                    help="Minimum number of cells within each sample in \
+                    'min_samplesxbatch' %% of samples within each batch for a new \
+                    annotation to be considered [10]",
+                    required=False, default=10)
+parser.add_argument('-k', '--knn-refine', dest='knn_refine', type=bool,
+                    help='If True, clustering done via permutations of relevant \
+                    markers will be refined using a KNN classifier [True]',
+                    required=False, default=True, choices=[True, False])
+parser.add_argument('-knn', '--knn-min-probability', dest='knn_min_probability', type=float,
+                    help='Confidence threshold for KNN classifier to reassign a new \
+                    cell type to previously undefined cells [0.5]',
+                    required=False, default=0.5)
+args = parser.parse_args()
+
 
     annotations = np.asarray(['undefined'] * len(cell_labels)).astype('U100')
 
