@@ -43,7 +43,7 @@ def find_name_difference(base_comb, base_name, best_phntp):
     if isinstance(base_comb, str):  # 0 or 1 exact match, variables are strings
         for comb_str in best_phntp:
             if comb_str == base_comb:  # No need to find differences with 'base_comb'
-                names_conv[comb_str] = f'Main {base_name} ({comb_str})'
+                names_conv[comb_str] = base_name
             else:  # Find differences between 'comb_str' and 'base_comb'
                 # Convert strings to lists to facilitate comparisons
                 comb_str_lst = comb_str.split('/')
@@ -56,7 +56,7 @@ def find_name_difference(base_comb, base_name, best_phntp):
         for comb_str in best_phntp:
             overlap = []
             if comb_str in base_comb:  # No need to find differences with 'base_comb'
-                names_conv[comb_str] = f'Main {base_name} ({comb_str})'
+                names_conv[comb_str] = base_name
             else:
                 comb_str_lst = comb_str.split('/')
                 # Calculate overlap between 'comb_str' and exact matches
