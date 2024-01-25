@@ -61,23 +61,23 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
     Returns:
     --------
     nb_phntp: array(float)
-      2-D numpy array showing number of unique cell phenotypes (combinations of
+      2-D numpy array with number of unique cell phenotypes (combinations of
       positive and negative markers from 'markers_comb') identified in 'mat_comb'
       across grid composed of metrics 'x_samplesxbatch_space' in D0 and
       'y_cellxsample_space' in D1.
 
     phntp_to_keep: array(list(str))
-      2-D numpy array showing lists of significant phenotypes across grid composed
+      2-D numpy array with lists of significant phenotypes across grid composed
       of metrics 'x_samplesxbatch_space' in D0 and 'y_cellxsample_space' in D1.
       In each element, len(phntp_to_keep[i, j]) = nb_phntp[i, j].
 
     nb_undef_cells: array(float)
-      2-D numpy array showing number of undefined cells (cells without a phenotype)
+      2-D numpy array with number of undefined cells (cells without a phenotype)
       in 'mat_comb' across grid composed of metrics 'x_samplesxbatch_space' in
       D0 and 'y_cellxsample_space' in D1.
 
     phntp_per_cell: array(str)
-      1-D numpy array showing best phenotype determined for each cell using markers
+      1-D numpy array with best phenotype determined for each cell using markers
       from 'markers_comb'.
     """
 
@@ -111,14 +111,12 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
     # check whether they are worth keeping
     for phenotype in np.unique(phntp_per_cell):
         # AT. Multithread/process here? Conflict between batches?
-
         # Initialise temporary array to store 'phenotype' results
         keep_phenotype = np.full(nb_phntp.shape, True)
 
         # Process batches separately
         for batch in np.unique(batches_label):
             # AT. Multithread/process here?
-
             # Split cell type data according to batch
             phenotypes_batch = phntp_per_cell[batches_label == batch]
 

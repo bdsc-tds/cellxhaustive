@@ -36,10 +36,10 @@ def find_name_difference(base_comb, base_name, best_phntp):
     # Split 'base_comb' string into list of markers
     base_comb_lst = base_comb.split('/')
 
-    # Initialise empty dict to store name conversion
+    # Initialise empty dictionary to store name conversion
     names_conv = {}
 
-    # Fill dict with new names
+    # Fill dictionary with new names
     if isinstance(base_comb, str):  # 0 or 1 exact match, variables are strings
         for comb_str in best_phntp:
             if comb_str == base_comb:  # No need to find differences with 'base_comb'
@@ -49,7 +49,7 @@ def find_name_difference(base_comb, base_name, best_phntp):
                 comb_str_lst = comb_str.split('/')
                 # Find different markers
                 diff_markers = sorted(list(set(comb_str_lst) - set(base_comb_lst)))
-                # Add new name to dict
+                # Add new name to dictionary
                 names_conv[comb_str] = f"{base_name} ({', '.join(diff_markers)})"
     else:  # Several exact matches, variables are lists of strings
         base_comb_lst = [comb.split('/') for comb in base_comb]
@@ -66,7 +66,7 @@ def find_name_difference(base_comb, base_name, best_phntp):
                 max_overlap_idx = overlap.index(max(overlap))
                 # Find different markers
                 diff_markers = sorted(list(set(comb_str_lst) - set(base_comb_lst[max_overlap_idx])))
-                # Add new name to dict
+                # Add new name to dictionary
                 names_conv[comb_str] = f"{base_name[max_overlap_idx]} ({', '.join(diff_markers)})"
 
     return names_conv

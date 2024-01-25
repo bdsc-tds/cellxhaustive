@@ -68,7 +68,6 @@ def determine_marker_status(mat_comb, markers_comb, two_peak_threshold=3,
     # Iterate over expression matrix with 'multi_index' flag to retrieve current
     # position in array
     for expression in iterator:
-
         # Extract row and col indices
         cell, marker_pos = iterator.multi_index
 

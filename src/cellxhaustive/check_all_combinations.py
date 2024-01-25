@@ -16,7 +16,7 @@ from score_marker_combinations import score_marker_combinations  # AT. Double-ch
 # from cellxhaustive.score_marker_combinations import score_marker_combinations
 
 
-# Convenience function to return specific dict values
+# Convenience function to return specific dictionary values
 def return_outputs(dict1, dict2, dict3, idx1, idx2):
     out1 = dict1[idx1[idx2[0]]]
     out2 = dict2[idx1[idx2[0]]]
@@ -89,12 +89,12 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
       'best_marker_comb' is equal to 'nb_solution'.
 
     cell_phntp_comb: array(str) or list(array(str))
-      1-D numpy array of strings or list of 1-D numpy arrays of strings showing
-      phenotype found for each cell using markers from associated 'best_marker_comb'
-      tuple. Number of arrays in 'cell_phntp_comb' is equal to 'nb_solution'.
+      1-D numpy array of strings or list of 1-D numpy arrays of strings with phenotype
+      found for each cell using markers from associated 'best_marker_comb' tuple.
+      Number of arrays in 'cell_phntp_comb' is equal to 'nb_solution'.
 
     best_phntp_comb: array(str) or list(array(str))
-      1-D numpy array of strings or list of 1-D numpy arrays of strings showing
+      1-D numpy array of strings or list of 1-D numpy arrays of strings with
       representative phenotypes among all possible phenotypes from 'best_marker_comb'.
       Number of arrays in 'best_phntp_comb' is equal to 'nb_solution'.
     """
@@ -143,7 +143,6 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
         for comb in ite.combinations(markers_representative, marker_counter):
             # AT. Opportunity to multiprocess? Or not because we need to test 2
             # markers first, then 3, then 4... And stop if nothing better is found
-
             # Slice data based on current marker combination 'comb'
             markers_comb = markers_representative[np.isin(markers_representative, np.asarray(comb))]
             mat_comb = mat_representative[:, np.isin(markers_representative, markers_comb)]

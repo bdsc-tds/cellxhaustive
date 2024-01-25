@@ -60,20 +60,18 @@ def assign_cell_types(mat_representative,
     cell_name: str or None
       Base name for cell types (e.g. CD4 T-cells for 'CD4T').
 
-    cell_phntp_comb: array(str) or list(array(str))
-      1-D numpy array of strings or list of 1-D numpy arrays of strings showing
-      phenotype found for each cell using markers from associated
-      'markers_representative' tuple.
+    cell_phntp_comb: array(str)
+      1-D numpy array of strings with phenotype found for each cell using markers
+      from associated 'markers_representative' tuple.
 
-    best_phntp_comb: array(str) or list(array(str))
-      1-D numpy array of strings or list of 1-D numpy arrays of strings showing
-      representative phenotypes among all possible phenotypes from 'markers_representative'.
+    best_phntp_comb: array(str)
+      1-D numpy array of strings with representative phenotypes among all possible
+      phenotypes from 'markers_representative'.
 
     Returns:
     --------
-      new_labels: array(str) or list(array(str))
-        1-D numpy array of strings or list of 1-D numpy arrays of strings with
-        new names for each cell of 'mat_representative'.
+      new_labels: array(str)
+        1-D numpy array of strings with new names for each cell of 'mat_representative'.
     """
 
     # Trim down cell classification to remove any marker that is not present
