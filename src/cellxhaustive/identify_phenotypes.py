@@ -159,6 +159,8 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
         # was found to properly represent cell type 'label' (from annotate()
         # function), so keep original annotation
         new_labels = np.full(cell_phntp_comb.shape, f'Other {cell_name}')
+        results_dict = {'new_labels': new_labels,
+                        'cell_phntp_comb': cell_phntp_comb}
 
     elif nb_solution == 1:
         # Slice matrix to keep only expression of best combination
@@ -176,6 +178,8 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
             cell_phntp=cell_phntp_comb,
             best_phntp=best_phntp_comb)
 
+        results_dict = {'new_labels': new_labels,
+                        'cell_phntp_comb': cell_phntp_comb}
 
         # Check if conditions to run KNN-classifier are fulfilled
         is_undef = (new_labels == f'Other {cell_name}')  # Get number of undefined cells
@@ -189,12 +193,19 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
                 is_undef=is_undef,
                 knn_min_probability=knn_min_probability)
 
+            results_dict = {'reannotated_labels': reannotated_labels,
+                            'reannotation_proba': reannotation_proba}
+
     else:  # Several solutions
         pass
         # AT. Do for loop to try and select best
         # AT. Use a parameter in argparse for the maximum number of solution to evaluate
 
-    return new_labels, cell_phntp_comb  # AT. Testing new outputs
+
+
+
+
+    return results_dict
 
 
 # nb_solution = float
