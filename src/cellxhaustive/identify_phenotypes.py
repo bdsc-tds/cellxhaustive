@@ -1,11 +1,12 @@
 """
-# Function that identifies the cell type of
-AT. Add general description here.
+Function that identifies most probable cell type and phenotype for a group of cells
+using expression of its most relevant markers.
 """
 
 
 # Import utility modules
 import numpy as np
+from collections import defaultdict
 
 
 # Import local functions
@@ -13,8 +14,8 @@ from assign_cell_types import assign_cell_types  # AT. Double-check path
 from check_all_combinations import check_all_combinations  # AT. Double-check path
 from knn_classifier import knn_classifier  # AT. Double-check path
 # from cellxhaustive.assign_cell_types import assign_cell_types  # AT. Double-check path
-# from cellxhaustive.check_all_combinations import check_all_combinations
-# from cellxhaustive.knn_classifier import knn_classifier
+# from cellxhaustive.check_all_combinations import check_all_combinations  # AT. Double-check path
+# from cellxhaustive.knn_classifier import knn_classifier  # AT. Double-check path
 
 
 # Function used in cellxhaustive.py
@@ -24,9 +25,8 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
                         min_samplesxbatch=0.5, min_cellxsample=10,
                         knn_refine=True, knn_min_probability=0.5):
     """
-    Pipeline for automated gating, feature selection, and clustering to
-    generate new annotations.
-    # AT. Update description
+    Function that identifies most probable cell type and phenotype for a group of
+    cells using expression of its most relevant markers.
 
     Parameters
     ----------
@@ -88,17 +88,25 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
 
     Returns:
     --------
-      # AT. Add what is returned by the function
-      new_labels
-      cell_phntp_comb
+    results_dict: dict {str: list(array(str, float, np.nan))}
+      Dictionary with 2 mandatory keys and 2 optional keys:
+        - 'new_labels' (mandatory): list of 1-D numpy arrays with cell type for each
+          cell of 'mat[is_label]'. 1 array corresponds to 1 optimal marker combination.
+        - 'cell_phntp_comb' (mandatory): list of 1-D numpy arrays with full phenotype
+          for each cell of 'mat[is_label]'. 1 array corresponds to 1 optimal marker
+          combination.
+        - 'reannotated_labels' (optional): list of 1-D numpy arrays with cell type
+          for each cell of 'mat[is_label]'. 1 array corresponds to 1 optimal marker
+          combination. Undefined cell types were reannotated using a KNN-classifier.
+          Available only if 'knn_refine=True'.
+        - 'reannotation_proba' (optional): list of 1-D numpy arrays with reannotation
+          prediction probability determined by a KNN-classifier for each undefined cell
+          of 'mat[is_label]'. 1 array corresponds to 1 optimal marker combination.
+          Available only if 'knn_refine=True'.
     """
 
     # Main gating: select relevant markers for cell population 'label' in each batch
-
-    # Perform gating for every batch independently
-    # AT. Do we need it? Multithread/process here?
     for batch in np.unique(batches):
-
         # Create boolean array to select cells matching current 'batch'
         is_batch = (batches == batch)
 
@@ -154,13 +162,20 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
         min_samplesxbatch=min_samplesxbatch,
         min_cellxsample=min_cellxsample)
 
+    # Initialise result dictionary with empty lists
+    # Note: even if lists end up with only 1 element, it makes processing results
+    # in cellxhaustive.py easier
+    results_dict = defaultdict(list)
+
     if nb_solution == 0:
         # 'best_marker_comb' is empty, which means that no marker combination
         # was found to properly represent cell type 'label' (from annotate()
         # function), so keep original annotation
         new_labels = np.full(cell_phntp_comb.shape, f'Other {cell_name}')
-        results_dict = {'new_labels': new_labels,
-                        'cell_phntp_comb': cell_phntp_comb}
+
+        # Append results to dictionary
+        results_dict['new_labels'].append(new_labels)
+        results_dict['cell_phntp_comb'].append(cell_phntp_comb)
 
     elif nb_solution == 1:
         # Slice matrix to keep only expression of best combination
@@ -178,23 +193,33 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
             cell_phntp=cell_phntp_comb,
             best_phntp=best_phntp_comb)
 
-        results_dict = {'new_labels': new_labels,
-                        'cell_phntp_comb': cell_phntp_comb}
+        # Append results to dictionary
+        results_dict['new_labels'].append(new_labels)
+        results_dict['cell_phntp_comb'].append(cell_phntp_comb)
 
-        # Check if conditions to run KNN-classifier are fulfilled
-        is_undef = (new_labels == f'Other {cell_name}')  # Get number of undefined cells
-        if (knn_refine  # Decided by user
-                and ((np.sum(is_undef) > 1))  # At least 2 undefined cells
-                and (len(np.unique(new_labels)) > 2)):  # At least 2 cell types different from 'Other'
-            # If so, run it
-            reannotated_labels, reannotation_proba = knn_classifier(
-                mat_representative=mat_subset_rep_markers_comb,
-                new_labels=new_labels,
-                is_undef=is_undef,
-                knn_min_probability=knn_min_probability)
+        if knn_refine:
+            # Reannotate only if conditions to run KNN-classifier are met
+            is_undef = (new_labels == f'Other {cell_name}')  # Get number of undefined cells
 
-            results_dict = {'reannotated_labels': reannotated_labels,
-                            'reannotation_proba': reannotation_proba}
+            # At least 2 undefined cells and 2 cell types different from 'Other'
+            if ((np.sum(is_undef) > 1) and (len(np.unique(new_labels)) > 2)):
+                # Reannotate cells
+                reannotated_labels, reannotation_proba = knn_classifier(
+                    mat_representative=mat_subset_rep_markers_comb,
+                    new_labels=new_labels,
+                    is_undef=is_undef,
+                    knn_min_probability=knn_min_probability)
+
+                # Append results to dictionary
+                results_dict['reannotated_labels'].append(reannotated_labels)
+                results_dict['reannotation_proba'].append(reannotation_proba)
+
+            else:  # If conditions are not met, no reannotation
+                # Use default arrays as placeholders for reannotation results
+                reannotated_labels = np.full(new_labels.shape[0], 'No_reannotation')
+                reannotation_proba = np.full(new_labels.shape[0], np.nan)
+                results_dict['reannotated_labels'].append(reannotated_labels)
+                results_dict['reannotation_proba'].append(reannotation_proba)
 
     else:  # Several solutions
         pass
