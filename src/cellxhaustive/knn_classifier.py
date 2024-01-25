@@ -121,6 +121,12 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     new_labels[is_undef] = reannotated
 
     # Set proba of non-reannotated cells to 'np.nan'
-    reannotation_proba[is_undef][~ is_max] = np.nan
+    reannotation_proba[[a[~ is_max_higher] for a in np.where(is_undef)]] = np.nan
+    # Note: combining two masks involves fancy indexing, which creates a copy of
+    # the data, which in turn results in ...[second_mask] = np.nan modifying that
+    # copy rather than the original array. Syntax used here avoids this problem.
+    # - np.where(is_undef) converts boolean is_undef into indices where is_undef is True
+    # - [a[~ is_max_higher] for a in ...] subsets indices to only select those
+    # where second_mask is True
 
     return new_labels, reannotation_proba
