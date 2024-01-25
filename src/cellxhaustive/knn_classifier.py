@@ -1,6 +1,6 @@
 """
-Reclassify unidentified cells using a KNN-classifier.
-AT. Add general description here.
+Reclassify unidentified cells using a KNN-classifier and return predicted
+probability for reclassification.
 """
 
 
@@ -9,16 +9,18 @@ import numpy as np
 
 
 # Import ML modules
+from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 
-# AT. Check presence/absence of all parameters/variable
-def knn_classifier(mat_representative,
-                   clustering_labels,
+# Function used in identify_phenotypes.py
+def knn_classifier(mat_representative, new_labels, is_undef,
                    knn_min_probability=0.5):
     """
-    Reclassify unidentified cells using a KNN-classifier.
+    Reclassify unidentified cells using a KNN-classifier and return predicted
+    probability for reclassification.
 
     Parameters:
     -----------
@@ -28,48 +30,97 @@ def knn_classifier(mat_representative,
       matrix is a subset of the general expression matrix and contains sliced
       data matching cell label, batch, and representative markers.
 
+    new_labels: array(str)
+      1-D numpy array with cell types and phenotypes, previously assigned by
+      assign_cell_types(), for each cell of 'mat_representative'.
 
-
-    clustering_labels: ndarray
-      Clustering indices, where -1 is assigned to undefined nodes/cells.
-      # AT. Improve description
-
-# AT. Need to check whether I can use the actual cell_types of if it's more convenient to use numbers
+    is_undef: array(bool)
+      1-D numpy array with cell type annotation for each cell of 'mat_representative'.
+      True if cell type is undefined ('Other <main type>'), False otherwise.
 
     knn_min_probability: float (default=0.5)
-      Confidence threshold for KNN-classifier to reassign a new cell type
-      to previously undefined cells.
+      Confidence threshold for KNN-classifier to reassign a new cell type to
+      previously undefined cells.
 
     Returns:
     --------
-      # AT. Add what is returned by the function
+    new_labels: array(str)
+      1-D numpy array with cell types and phenotypes reannotated by KNN-classifier
+      for each cell of 'mat_representative'.
+
+    reannotation_proba: array(float, nan)
+      1-D numpy array with prediction probability from KNN-classifier for reannotated
+      cell types and phenotypes for each cell of 'mat_representative'.
     """
 
-    # It's common practice to standarize features
-    undefined = (clustering_labels == -1)
+    # Split data in annotated (train/test) cells and undefined cells (i.e. cells
+    # that will be re-annotated by classifier)
+    annot_cells_mat = mat_representative[~ is_undef]
+    annot_phntp = new_labels[~ is_undef]
+    undef_cells_mat = mat_representative[is_undef]
+    undef_phntp = new_labels[is_undef][0]
 
-    if np.sum(undefined) > 1 and len(np.unique(clustering_labels)) > 2:
-        scaler = StandardScaler()
-        mat_representative_scaled = scaler.fit_transform(mat_representative)
+    # Further split annotated cells in training and test datasets
+    X_train, X_test, y_train, y_test = train_test_split(annot_cells_mat,
+                                                        annot_phntp,
+                                                        test_size=0.2,
+                                                        random_state=42,
+                                                        shuffle=True,
+                                                        stratify=annot_phntp)
 
-        # Initialise KNN-classifier
-        clf = KNeighborsClassifier(n_neighbors=20)
+    # Initialise scaler
+    scaler = StandardScaler()
 
-        # Find cells that were classified and train classifier
-        mat_representative_scaled_train = mat_representative_scaled[undefined == False, :]
-        y_train = clustering_labels[undefined == False]
-        clf.fit(mat_representative_scaled_train, y_train)
+    # Initialise KNN-classifier
+    clf = KNeighborsClassifier(p=2, metric='minkowski', n_jobs=12)
+    # Note: default arguments "p=2, metric='minkowski'" are equivalent to
+    # calculating Euclidean distances
 
-        # Find cells that were not classified and predict label
-        y_test = clf.predict_proba(mat_representative_scaled[undefined, :])
+    # Initialise pipeline with scaler and classifier
+    pipeline = Pipeline([('scaler', scaler), ('KNN', clf)], verbose=False)
 
-        # Figure out which cells should be left undefined and which ones should
-        # be reclassified based on model's ability to classify cells with
-        # confidence (p > 0.5)
-        newclustering_label = np.argmax(y_test, axis=1)
-        newclustering_label[np.sum(y_test > knn_min_probability, axis=1) == 0] = -1
+    # Define parameters grid for hypertuning
+    param_grid = {'KNN__n_neighbors': np.arange(5, 21, 5),
+                  'KNN__weights': ['uniform', 'distance'],
+                  'KNN__leaf_size': np.arange(10, 31, 10)}
 
-        # Reclassify undefined cells
-        clustering_labels[undefined] = newclustering_label
+    # Build parameters grid object
+    knn_grid = GridSearchCV(pipeline, param_grid=param_grid, scoring='accuracy',
+                            cv=5, n_jobs=12, refit=True, verbose=0)
 
-    return clustering_labels
+    # Find best parameters
+    best_model = knn_grid.fit(X_train, y_train)
+
+    # Apply classifier to undefined cells
+    undef_cells_pred = best_model.predict_proba(undef_cells_mat)
+    # Note: this returns an array of probabilities for a cell to belong to a
+    # certain cell type
+
+    # Initialise empty array to store updated annotations
+    reannotated = np.full(undef_cells_mat.shape[0], undef_phntp, dtype='U150')
+
+    # Extract cell types ordered by sklearn
+    ordered_cell_types = best_model.classes_
+
+    # Find index of maximum probability for each row
+    max_idx = np.argmax(undef_cells_pred, axis=1)
+
+    # Create empty array for reannotation probability
+    reannotation_proba = np.full(new_labels.shape[0], np.nan)
+
+    # Get maximum proba for each row
+    reannotation_proba[is_undef] = np.max(undef_cells_pred, axis=1)
+
+    # Check if maximum proba of each row is larger than 'knn_min_probability'
+    is_max = (reannotation_proba > knn_min_probability)
+
+    # Extract updated annotations passing threshold
+    reannotated[is_max] = ordered_cell_types[max_idx][is_max]
+
+    # Assign new annotations to original array
+    new_labels[is_undef] = reannotated
+
+    # Set proba of non-reannotated cells to 'np.nan'
+    reannotation_proba[is_undef][~ is_max] = np.nan
+
+    return new_labels, reannotation_proba

@@ -183,10 +183,10 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
                 and ((np.sum(is_undef) > 1))  # At least 2 undefined cells
                 and (len(np.unique(new_labels)) > 2)):  # At least 2 cell types different from 'Other'
             # If so, run it
-            new_labels = knn_classifier(
+            reannotated_labels, reannotation_proba = knn_classifier(
                 mat_representative=mat_subset_rep_markers_comb,
-                undefined=undefined,
                 new_labels=new_labels,
+                is_undef=is_undef,
                 knn_min_probability=knn_min_probability)
 
     else:  # Several solutions
