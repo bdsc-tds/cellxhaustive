@@ -1,7 +1,7 @@
 """
 Function that determines best marker combinations representing a cell type by
 maximizing number of phenotypes detected, proportion of samples within a batch
-containing the phenotypes, number of cells within each sample containing the
+displaying the phenotypes, number of cells within each sample displaying the
 phenotypes and minimizing number of cells without phenotypes.
 """
 
@@ -32,7 +32,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     """
     Function that determines best marker combinations representing a cell type by
     maximizing number of phenotypes detected, proportion of samples within a batch
-    containing the phenotypes, number of cells within each sample containing the
+    displaying the phenotypes, number of cells within each sample displaying the
     phenotypes and minimizing number of cells without phenotypes.
 
     Parameters:
@@ -84,7 +84,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
       marker combinations.
 
     best_marker_comb: tuple or list(tuple)
-      Tuple or list of tuples containing optimal combinations found during comparison
+      Tuple or list of tuples with optimal combinations found during comparison
       process. Each tuple contains one combination. Number of tuples in
       'best_marker_comb' is equal to 'nb_solution'.
 
@@ -185,7 +185,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                 comb_dict[comb_idx] = comb
                 cell_phntp_dict[comb_idx] = phntp_per_cell
 
-                # Create parameter grid matching x and y space
+                # Create metrics grid matching x and y space
                 x_values, y_values = np.meshgrid(x_samplesxbatch_space,
                                                  y_cellxsample_space,
                                                  indexing='ij')

@@ -72,7 +72,7 @@ def assign_cell_types(mat_representative,
     Returns:
     --------
       new_labels: array(str) or list(array(str))
-        1-D numpy array of strings or list of 1-D numpy arrays of strings containing
+        1-D numpy array of strings or list of 1-D numpy arrays of strings with
         new names for each cell of 'mat_representative'.
     """
 

@@ -15,22 +15,22 @@ def find_name_difference(base_comb, base_name, best_phntp):
     Parameters:
     -----------
     base_comb: str or list(str)
-      String or list of strings containing marker combination(s) used to define
-      base name(s) of cells groups.
+      String or list of strings with marker combination(s) used to define base
+      name(s) of cells groups.
 
     base_name: str or list(str)
-      String or list of strings containing base(s) name for cell types (e.g.
-      CD4 T-cells for 'CD4T').
+      String or list of strings with base(s) name for cell types (e.g. CD4 T-cells
+      for 'CD4T').
 
     best_phntp: array(str)
-      1-D numpy array containing strings made of concatenated lists of marker
+      1-D numpy array with strings made of concatenated lists of marker
       combinations. Each string is a different marker combination.
 
     Returns:
     --------
     names_conv: dict {str: str}
-      Dictionary containing a name mapping between phenotypes (keys) and updated
-      names (values) to annotate cells.
+      Dictionary with name mapping between phenotypes (keys) and updated names
+      (values) to annotate cells.
     """
 
     # Split 'base_comb' string into list of markers

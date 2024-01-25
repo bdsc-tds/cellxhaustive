@@ -1,7 +1,7 @@
 """
 Function that determines number of unique cell phenotypes (combination of positive
 and negative markers) and number of cells without phenotype in an expression matrix
-across different parameters thresholds.
+across different metrics thresholds.
 """
 
 
@@ -22,7 +22,7 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
     """
     Function that determines number of unique cell phenotypes (combination of
     positive and negative markers) and number of cells without phenotype in an
-    expression matrix across different parameters thresholds.
+    expression matrix across different metrics thresholds.
 
     Parameters:
     -----------
@@ -63,17 +63,17 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
     nb_phntp: array(float)
       2-D numpy array showing number of unique cell phenotypes (combinations of
       positive and negative markers from 'markers_comb') identified in 'mat_comb'
-      across grid composed of parameters 'x_samplesxbatch_space' in D0 and
+      across grid composed of metrics 'x_samplesxbatch_space' in D0 and
       'y_cellxsample_space' in D1.
 
     phntp_to_keep: array(list(str))
       2-D numpy array showing lists of significant phenotypes across grid composed
-      of parameters 'x_samplesxbatch_space' in D0 and 'y_cellxsample_space' in D1.
+      of metrics 'x_samplesxbatch_space' in D0 and 'y_cellxsample_space' in D1.
       In each element, len(phntp_to_keep[i, j]) = nb_phntp[i, j].
 
     nb_undef_cells: array(float)
       2-D numpy array showing number of undefined cells (cells without a phenotype)
-      in 'mat_comb' across grid composed of parameters 'x_samplesxbatch_space' in
+      in 'mat_comb' across grid composed of metrics 'x_samplesxbatch_space' in
       D0 and 'y_cellxsample_space' in D1.
 
     phntp_per_cell: array(str)

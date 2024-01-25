@@ -42,20 +42,20 @@ parser = argparse.ArgumentParser(description='Script to annotate cell types usin
                                 CITE-seq ADT data.')
 
 parser.add_argument('-i', '--input', dest='input_path', type=str,
-                    help='Path to the input table containing expression data and \
-                    samples/batch information',
+                    help='Path to input table with expression data and samples/\
+                    batch information',
                     required=True)
 parser.add_argument('-m', '--markers', dest='marker_path', type=str,
-                    help='Path to the file containing list of markers of interest',
+                    help='Path to file with list of markers of interest',
                     required=True)
 parser.add_argument('-o', '--output', dest='output_path', type=str,
-                    help='Path to the output table with annotations',
+                    help='Path to output table with annotations',
                     required=True)
 parser.add_argument('-t', '--three-peaks', dest='three_peak_markers', type=str,
-                    help="Path to file containing markers that have three peaks ['CD4']",
+                    help="Path to file with markers that have three peaks ['CD4']",
                     required=False, default=['CD4'])
 parser.add_argument('-c', '--cell-type-definition', dest='cell_type_path', type=str,
-                    help='Path to the file containing cell types characterisation \
+                    help='Path to file with cell types characterisation \
                     [../data/config/major_cell_types.json]',
                     required=False, default='../data/config/major_cell_types.json')
 parser.add_argument('-mm', '--max-markers', dest='max_markers', type=int,

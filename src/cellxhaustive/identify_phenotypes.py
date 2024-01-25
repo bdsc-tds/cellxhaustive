@@ -89,13 +89,8 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
     Returns:
     --------
       # AT. Add what is returned by the function
-      # AT. Double-check if we need everything
-      With best set/Without best set:
-        is_label:
-        cell_groups_name/{-1: cell_name}:
-        clustering_labels/np.zeros(np.sum(is_label)) - 1:
-        markers_rep_batches:
-        markers_rep_all/[]:
+      new_labels
+      cell_phntp_comb
     """
 
     # Main gating: select relevant markers for cell population 'label' in each batch
@@ -181,41 +176,11 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
             cell_phntp=cell_phntp_comb,
             best_phntp=best_phntp_comb)
 
-        """
-        AT. In assign_cell_types(), in case of Array vs list of arrays, adapt definitions of:
-        - cell_phntp_comb
-        - best_phntp_comb
-        - new_labels
-
-        best_phntp --> array(str)
-        phntp_match --> list(str)
-        cell_types_clean --> key (str), val (list)
-        base_name --> str
-        base_comb --> str
-        Change to else (instead of elif/else) and adapt assign_cell_types to deal with lists?
-
-        AT. Change output:
-        - 1 column with cell type (without Main for the main sub-cell type) and marker differences
-        - 1 column with full phenotype
-        """
-
-
-
-
-
-# What happens if best_marker_comb does not contain any markers from major_cell_types.json?
-    # Because they're not significant/relevant/get removed during bimodality check
-
-
-# AT. Also return other column with full phenotype
-
-# AT. Add if test here instead of inside function to decide whether to run it
-
 
         # Check if conditions to run KNN-classifier are fulfilled
-        undefined = (new_labels == f'Other {cell_name}')  # Get number of undefined cells
+        is_undef = (new_labels == f'Other {cell_name}')  # Get number of undefined cells
         if (knn_refine  # Decided by user
-                and ((np.sum(undefined) > 1))  # At least 2 undefined cells
+                and ((np.sum(is_undef) > 1))  # At least 2 undefined cells
                 and (len(np.unique(new_labels)) > 2)):  # At least 2 cell types different from 'Other'
             # If so, run it
             new_labels = knn_classifier(
@@ -242,3 +207,18 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
 
 # AT. Problem with 3 peaks markers --> How to deal with them in major_cell_type dict?
 # AT. Checked presence of null variables until here
+
+
+    """
+    AT. In assign_cell_types(), in case of Array vs list of arrays, adapt definitions of:
+    - cell_phntp_comb
+    - best_phntp_comb
+    - new_labels
+
+    best_phntp --> array(str)
+    phntp_match --> list(str)
+    cell_types_clean --> key (str), val (list)
+    base_name --> str
+    base_comb --> str
+    Change to else (instead of elif/else) and adapt assign_cell_types to deal with lists?
+    """
