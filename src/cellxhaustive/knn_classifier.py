@@ -102,9 +102,6 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     # Extract cell types ordered by sklearn
     ordered_cell_types = best_model.classes_
 
-    # Find index of maximum probability for each row
-    max_idx = np.argmax(undef_cells_pred, axis=1)
-
     # Create empty array for reannotation probability
     reannotation_proba = np.full(new_labels.shape[0], np.nan)
 
@@ -112,10 +109,13 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     reannotation_proba[is_undef] = np.max(undef_cells_pred, axis=1)
 
     # Check if maximum proba of each row is larger than 'knn_min_probability'
-    is_max = (reannotation_proba > knn_min_probability)
+    is_max_higher = (reannotation_proba[is_undef] > knn_min_probability)
+
+    # Find index of maximum probability for each row
+    max_idx = np.argmax(undef_cells_pred, axis=1)
 
     # Extract updated annotations passing threshold
-    reannotated[is_max] = ordered_cell_types[max_idx][is_max]
+    reannotated[is_max_higher] = ordered_cell_types[max_idx][is_max_higher]
 
     # Assign new annotations to original array
     new_labels[is_undef] = reannotated
