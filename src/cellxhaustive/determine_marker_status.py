@@ -59,8 +59,8 @@ def determine_marker_status(mat_comb, markers_comb, two_peak_threshold=3,
       matching that of 'markers_comb'.
     """
 
-    phntp_per_cell = np.empty(mat_comb.shape[0], dtype=np.dtype('U100'))
     # Create an array with empty strings to store cell types
+    phntp_per_cell = np.empty(mat_comb.shape[0], dtype=np.dtype('U150'))
 
     # Create a special array iterator
     iterator = np.nditer(mat_comb, flags=['multi_index'], order='C')

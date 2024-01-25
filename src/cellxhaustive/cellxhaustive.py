@@ -140,8 +140,8 @@ if __name__ == '__main__':
     knn_min_probability = args.knn_min_probability
 
     # Initialise empty array to store new annotations
-    annotations = np.asarray(['undefined'] * len(cell_labels)).astype('U100')
-    phenotypes = np.asarray(['undefined'] * len(cell_labels)).astype('U100')
+    annotations = np.asarray(['undefined'] * len(cell_labels)).astype('U150')
+    phenotypes = np.asarray(['undefined'] * len(cell_labels)).astype('U150')
 
     # Process cells by pre-annotations
     for label in np.unique(cell_labels):
