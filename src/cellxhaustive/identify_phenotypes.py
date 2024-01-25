@@ -222,39 +222,68 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
                 results_dict['reannotation_proba'].append(reannotation_proba)
 
     else:  # Several solutions
-        pass
-        # AT. Do for loop to try and select best
-        # AT. Use a parameter in argparse for the maximum number of solution to evaluate
 
+        # Initialise counter of undefined cells
+        undef_counter = []
 
+        for i in range(nb_solution):
+            # Slice matrix to keep only expression of best combination
+            markers_rep_comb = markers[np.isin(markers, best_marker_comb[i])]
+            mat_subset_rep_markers_comb = mat_subset_label[:, np.isin(markers, best_marker_comb[i])]
 
+            # Assign cell type using only markers from 'best_marker_comb[i]'
+            new_labels = assign_cell_types(
+                mat_representative=mat_subset_rep_markers_comb,
+                batches_label=batches_label,
+                samples_label=samples_label,
+                markers_representative=markers_rep_comb,
+                cell_types_dict=cell_types_dict,
+                cell_name=cell_name,
+                cell_phntp=cell_phntp_comb[i],
+                best_phntp=best_phntp_comb[i])
 
+            # Append results to dictionary
+            results_dict['new_labels'].append(new_labels)
+            results_dict['cell_phntp_comb'].append(cell_phntp_comb[i])
+
+            if knn_refine:
+                # Reannotate only if conditions to run KNN-classifier are met
+                is_undef = (new_labels == f'Other {cell_name}')  # Get number of undefined cells
+
+                # At least 2 undefined cells and 2 cell types different from 'Other'
+                if ((np.sum(is_undef) > 1) and (len(np.unique(new_labels)) > 2)):
+                    # Reannotate cells
+                    reannotated_labels, reannotation_proba = knn_classifier(
+                        mat_representative=mat_subset_rep_markers_comb,
+                        new_labels=new_labels,
+                        is_undef=is_undef,
+                        knn_min_probability=knn_min_probability)
+
+                    # Append results to dictionary
+                    results_dict['reannotated_labels'].append(reannotated_labels)
+                    results_dict['reannotation_proba'].append(reannotation_proba)
+
+                    # Record number of undefined cells after reannotation
+                    nb_undef = np.sum(reannotated_labels == f'Other {cell_name}')
+                    undef_counter.append(nb_undef)
+
+                else:  # If conditions are not met, no reannotation
+                    # Use default arrays as placeholders for reannotation results
+                    reannotated_labels = np.full(new_labels.shape[0], 'No_reannotation')
+                    reannotation_proba = np.full(new_labels.shape[0], np.nan)
+                    results_dict['reannotated_labels'].append(reannotated_labels)
+                    results_dict['reannotation_proba'].append(reannotation_proba)
+
+                    # Record number of undefined cells after reannotation
+                    nb_undef = np.sum(is_undef)
+                    undef_counter.append(nb_undef)
+
+        # Get index of undefined cells minimum
+        min_undef_idx = [i for i, x in enumerate(undef_counter) if x == min(undef_counter)]
+
+        # Filter results using previous indices
+        for val in results_dict.values():
+            val = [i for idx, i in enumerate(val) if idx in set(min_undef_idx)]
+            # Note: set() is used to increase speed
 
     return results_dict
-
-
-# nb_solution = float
-# best_marker_comb = tuple or list of tuples
-# cell_phntp_comb = array or list of arrays
-# best_phntp_comb = array or list of arrays
-
-# What do we do when there are several combinations?
-
-
-# AT. Problem with 3 peaks markers --> How to deal with them in major_cell_type dict?
-# AT. Checked presence of null variables until here
-
-
-    """
-    AT. In assign_cell_types(), in case of Array vs list of arrays, adapt definitions of:
-    - cell_phntp_comb
-    - best_phntp_comb
-    - new_labels
-
-    best_phntp --> array(str)
-    phntp_match --> list(str)
-    cell_types_clean --> key (str), val (list)
-    base_name --> str
-    base_comb --> str
-    Change to else (instead of elif/else) and adapt assign_cell_types to deal with lists?
-    """
