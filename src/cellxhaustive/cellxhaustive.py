@@ -100,22 +100,22 @@ if __name__ == '__main__':
     input_table = pd.read_csv(args.input_path, sep='\t', header=0, index_col=0)
 
     # Get 2-D array for expression using 'markers'
-    mat = input_table.loc[: , markers].to_numpy()
+    mat = input_table.loc[:, markers].to_numpy()
 
     # Get 1-D array for batch; add common batch value if information is missing
     if 'batch' in input_table.columns:
-        batches = input_table.loc[: , 'batch'].to_numpy()
+        batches = input_table.loc[:, 'batch'].to_numpy()
     else:
         batches = np.full(input_table.shape[0], 'batch0')
 
     # Get 1-D array for sample; add common sample value if information is missing
     if 'sample' in input_table.columns:
-        samples = input_table.loc[: , 'sample'].to_numpy()
+        samples = input_table.loc[:, 'sample'].to_numpy()
     else:
         samples = np.full(input_table.shape[0], 'sample0')
 
     # Get 1-D array for pre-annotated cell type
-    cell_labels = input_table.loc[: , 'cell_type'].to_numpy()
+    cell_labels = input_table.loc[:, 'cell_type'].to_numpy()
 
     # Get three peaks markers if a file is specified, otherwise use default list
     three_path = args.three_peak_markers
@@ -139,18 +139,18 @@ if __name__ == '__main__':
     knn_refine = args.knn_refine
     knn_min_probability = args.knn_min_probability
 
-    # Initialise empty array to store new annotations
+    # Initialise empty arrays and dictionary to store new annotations and results
     annotations = np.asarray(['undefined'] * len(cell_labels)).astype('U150')
     phenotypes = np.asarray(['undefined'] * len(cell_labels)).astype('U150')
+    annot_dict = {}
 
     # Process cells by pre-annotations
     for label in np.unique(cell_labels):
-
         # Create boolean array to select cells matching current label
         is_label = (cell_labels == label)
 
         # Get annotations for all cells of type 'label'
-        new_labels, cell_phntp_comb = identify_phenotypes(
+        results_dict = identify_phenotypes(
             mat=mat,
             batches=batches,
             samples=samples,
@@ -166,20 +166,69 @@ if __name__ == '__main__':
             knn_refine=knn_refine,
             knn_min_probability=knn_min_probability)
 
-        # AT. Problem if there are several solutions...
-        # Store results in arrays
-        annotations[is_label] = new_labels  # AT. May need to rework this
-        phenotypes[is_label] = cell_phntp_comb  # AT. May need to rework this
+        # Store results in another dictionary for post-processing
+        annot_dict[label] = results_dict
 
-    # AT. Problem if there are several solutions...
-    # Combine arrays into a dataframe
-    new_col = pd.DataFrame({'Annotations': annotations, 'Phenotypes': phenotypes})
-    output_table = pd.concat([input_table, new_col], axis=1)
+    # Post-process results to add them to original table and save whole table
+
+    # Find maximum number of optimal combinations across all 'cell_labels'
+    max_comb = max([len(annot_dict[label].keys()) for label in np.unique(cell_labels)])
+
+    # Build list with all column names
+    col_names = []
+    for i in range(max_comb):
+        col_names.extend([f'Annotations_{i + 1}', f'Phenotypes_{i + 1}'])
+        if knn_refine:
+            col_names.extend([f'KNN_annotations_{i + 1}', f'KNN_proba_{i + 1}'])
+
+    # Initialise empty dataframe to store all annotation results
+    annot_df = pd.DataFrame(None,
+                            index=range(input_table.shape[0]),
+                            columns=col_names)
+
+    # Fill annotation dataframe with results
+    for label in np.unique(cell_labels):
+        # Create boolean array to select cells matching current 'label'
+        is_label = (cell_labels == label)
+
+        # Slice general results dictionary
+        sub_results = annot_dict[label]
+
+        # Find number of optimal combinations for 'label' cells
+        label_nb_comb = len(sub_results.keys())
+
+        # Get number of cells
+        cell_nb = sub_results[0]['new_labels'].shape[0]
+        # Note: 'sub_results[0]' is used because it will always exist
+
+        # Get column names
+        end = (4 * label_nb_comb) if knn_refine else (2 * label_nb_comb)
+        col_names_sub = col_names[:end]
+
+        # Initialise empty dataframe to store annotation results for 'label'
+        annot_df_label = pd.DataFrame(np.nan,
+                                      index=range(cell_nb),
+                                      columns=col_names_sub)
+
+        # Create dataframe results for all optimal combinations of 'label'
+        for comb_nb in range(label_nb_comb):
+            # Extract results
+            sub_res_df = pd.DataFrame.from_dict(sub_results[comb_nb], orient='index').transpose()
+
+            # Fill 'label' annotation dataframe
+            start = 4 * comb_nb
+            annot_df_label.iloc[:, start:(start + 4)] = sub_res_df.copy()
+            # Note: copy() is used to avoid reassignation problems
+
+        # Fill general annotation dataframe with 'label' annotations
+        annot_df.iloc[is_label, :end] = annot_df_label.copy()
+
+    # Merge input dataframe and annotation dataframe
+    output_table = pd.concat([input_table, annot_df], axis=1)
 
     # Create output directory if it doesn't exist
     output_dir = os.path.dirname(args.output_path)
     os.makedirs(output_dir, exist_ok=True)
 
-    # Save table with annotations and phenotypes
+    # Save general table with annotations and phenotypes
     output_table.to_csv(args.output_path, sep='\t', header=True, index=False)
-    # AT. Add na_rep in case of cells with several solutions, which means a different number of columns
