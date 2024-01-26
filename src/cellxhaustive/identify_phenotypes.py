@@ -165,7 +165,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
     # Initialise result dictionary with empty lists
     # Note: even if lists end up with only 1 element, it makes processing results
     # in cellxhaustive.py easier
-    results_dict = defaultdict(list)
+    results_dict = defaultdict(dict)
 
     if nb_solution == 0:
         # 'best_marker_comb' is empty, which means that no marker combination
@@ -194,8 +194,8 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
             best_phntp=best_phntp_comb)
 
         # Append results to dictionary
-        results_dict['new_labels'].append(new_labels)
-        results_dict['cell_phntp_comb'].append(cell_phntp_comb)
+        results_dict[0]['new_labels'] = new_labels
+        results_dict[0]['cell_phntp_comb'] = cell_phntp_comb
 
         if knn_refine:
             # Reannotate only if conditions to run KNN-classifier are met
@@ -211,15 +211,15 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
                     knn_min_probability=knn_min_probability)
 
                 # Append results to dictionary
-                results_dict['reannotated_labels'].append(reannotated_labels)
-                results_dict['reannotation_proba'].append(reannotation_proba)
+                results_dict[0]['reannotated_labels'] = reannotated_labels
+                results_dict[0]['reannotation_proba'] = reannotation_proba
 
             else:  # If conditions are not met, no reannotation
                 # Use default arrays as placeholders for reannotation results
                 reannotated_labels = np.full(new_labels.shape[0], 'No_reannotation')
                 reannotation_proba = np.full(new_labels.shape[0], np.nan)
-                results_dict['reannotated_labels'].append(reannotated_labels)
-                results_dict['reannotation_proba'].append(reannotation_proba)
+                results_dict[0]['reannotated_labels'] = reannotated_labels
+                results_dict[0]['reannotation_proba'] = reannotation_proba
 
     else:  # Several solutions
 
@@ -243,8 +243,8 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
                 best_phntp=best_phntp_comb[i])
 
             # Append results to dictionary
-            results_dict['new_labels'].append(new_labels)
-            results_dict['cell_phntp_comb'].append(cell_phntp_comb[i])
+            results_dict[i]['new_labels'] = new_labels
+            results_dict[i]['cell_phntp_comb'] = cell_phntp_comb
 
             if knn_refine:
                 # Reannotate only if conditions to run KNN-classifier are met
@@ -260,8 +260,8 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
                         knn_min_probability=knn_min_probability)
 
                     # Append results to dictionary
-                    results_dict['reannotated_labels'].append(reannotated_labels)
-                    results_dict['reannotation_proba'].append(reannotation_proba)
+                    results_dict[i]['reannotated_labels'] = reannotated_labels
+                    results_dict[i]['reannotation_proba'] = reannotation_proba
 
                     # Record number of undefined cells after reannotation
                     nb_undef = np.sum(reannotated_labels == f'Other {cell_name}')
@@ -271,8 +271,8 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
                     # Use default arrays as placeholders for reannotation results
                     reannotated_labels = np.full(new_labels.shape[0], 'No_reannotation')
                     reannotation_proba = np.full(new_labels.shape[0], np.nan)
-                    results_dict['reannotated_labels'].append(reannotated_labels)
-                    results_dict['reannotation_proba'].append(reannotation_proba)
+                    results_dict[i]['reannotated_labels'] = reannotated_labels
+                    results_dict[i]['reannotation_proba'] = reannotation_proba
 
                     # Record number of undefined cells after reannotation
                     nb_undef = np.sum(is_undef)
