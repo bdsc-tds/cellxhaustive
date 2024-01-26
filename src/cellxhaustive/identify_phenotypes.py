@@ -282,8 +282,8 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
         min_undef_idx = [i for i, x in enumerate(undef_counter) if x == min(undef_counter)]
 
         # Filter results using previous indices
-        for val in results_dict.values():
-            val = [i for idx, i in enumerate(val) if idx in set(min_undef_idx)]
+        for key, val in results_dict.items():
+            results_dict[key] = [i for idx, i in enumerate(val) if idx in set(min_undef_idx)]
             # Note: set() is used to increase speed
 
     return results_dict
