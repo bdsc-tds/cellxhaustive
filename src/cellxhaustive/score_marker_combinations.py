@@ -16,10 +16,9 @@ from determine_marker_status import determine_marker_status  # AT. Double-check 
 
 # Function used in check_all_subsets.py
 def score_marker_combinations(mat_comb, batches_label, samples_label,
-                              x_samplesxbatch_space=np.round(np.arange(0.5, 1.01, 0.1), 1),
-                              y_cellxsample_space=np.arange(10, 101, 10)):
                               markers_comb, two_peak_threshold,
                               three_peak_markers, three_peak_low, three_peak_high,
+                              x_samplesxbatch_space, y_cellxsample_space):
     """
     Function that determines number of unique cell phenotypes (combination of
     positive and negative markers) and number of cells without phenotype in an

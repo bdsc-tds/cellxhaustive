@@ -26,10 +26,10 @@ def return_outputs(dict1, dict2, dict3, idx1, idx2):
 
 # Function used in identify_phenotypes.py
 def check_all_combinations(mat_representative, batches_label, samples_label,
-                           max_markers=15, min_annotations=3,
-                           min_samplesxbatch=0.5, min_cellxsample=10):
                            markers_representative, two_peak_threshold,
                            three_peak_markers, three_peak_low, three_peak_high,
+                           max_markers, min_annotations,
+                           min_samplesxbatch, min_cellxsample):
     """
     Function that determines best marker combinations representing a cell type by
     maximizing number of phenotypes detected, proportion of samples within a batch
