@@ -1,25 +1,25 @@
 """
-# AT. Improve general description.
-# AT. Add what is returned by the script
+Package to determine marker combination phenotypes and assign cell types from
+CITE-seq ADT data through automated gating, feature selection and clustering.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- Utility functions to run pipeline for phenotype identification
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
---------------------------------------------------------------------
-PURPOSE:
-These are just the different components of the pipeline:
-Main gating, selecting relevant markers, finding new phenotypes...
---------------------------------------------------------------------
-NOTES:
-Here I am sticking with the clean version of it, but I did try\
-several versions of the same pipeline (see github history)
---------------------------------------------------------------------
+Minimum requirements to run the analyses and associated parameters:
+-i INPUT_PATH, --input INPUT_PATH
+  Path to input table with expression data and samples/batch information. Rows
+  should be cells and columns should be one of the following:
+  - marker expression (float)
+  - sample information (str)
+  - batch information (str)
+  - cell type information (after main-gating for example) (str)
+  Columns must be tab-separated.
 
-Pipeline for automated gating, feature selection, and clustering to
-generate new annotations.
-# AT. Update description
+-m MARKER_PATH, --markers MARKER_PATH
+  Path to file with list of markers of interest that will be used during the
+  analyses. There should be one marker per line.
 
+-o OUTPUT_PATH, --output OUTPUT_PATH
+  Path to output table with all input data as well as phenotypes, cell types and
+  associated scores determined during the analyses.
 """
 
 
@@ -38,12 +38,12 @@ from identify_phenotypes import identify_phenotypes
 
 
 # Parse arguments
-parser = argparse.ArgumentParser(description='Script to annotate cell types using \
+parser = argparse.ArgumentParser(description='Package to annotate cell types using \
                                 CITE-seq ADT data.')
 
 parser.add_argument('-i', '--input', dest='input_path', type=str,
-                    help='Path to input table with expression data and samples/\
-                    batch information',
+                    help='Path to input table with expression data and \
+                    samples/batch/cell_type information',
                     required=True)
 parser.add_argument('-m', '--markers', dest='marker_path', type=str,
                     help='Path to file with list of markers of interest',
@@ -52,8 +52,8 @@ parser.add_argument('-o', '--output', dest='output_path', type=str,
                     help='Path to output table with annotations',
                     required=True)
 parser.add_argument('-t', '--three-peaks', dest='three_peak_markers', type=str,
-                    help="Path to file with markers that have three peaks ['CD4']",
-                    required=False, default=['CD4'])
+                    help="Path to file with markers that have three peaks []",
+                    required=False, default=[])
 parser.add_argument('-c', '--cell-type-definition', dest='cell_type_path', type=str,
                     help='Path to file with cell types characterisation \
                     [../data/config/major_cell_types.json]',
@@ -91,7 +91,7 @@ args = parser.parse_args()
 
 
 # Main script execution
-if __name__ == '__main__':
+if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Get 1-D array for markers
     markers = pd.read_csv(args.marker_path, sep='\t', header=None).to_numpy().flatten()

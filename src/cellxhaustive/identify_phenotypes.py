@@ -10,9 +10,9 @@ from collections import defaultdict
 
 
 # Import local functions
-from assign_cell_types import assign_cell_types  # AT. Double-check path
-from check_all_combinations import check_all_combinations  # AT. Double-check path
-from knn_classifier import knn_classifier  # AT. Double-check path
+from assign_cell_types import assign_cell_types
+from check_all_combinations import check_all_combinations
+from knn_classifier import knn_classifier
 # from cellxhaustive.assign_cell_types import assign_cell_types  # AT. Double-check path
 # from cellxhaustive.check_all_combinations import check_all_combinations  # AT. Double-check path
 # from cellxhaustive.knn_classifier import knn_classifier  # AT. Double-check path
