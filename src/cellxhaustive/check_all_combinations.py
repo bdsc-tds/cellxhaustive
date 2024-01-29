@@ -26,9 +26,10 @@ def return_outputs(dict1, dict2, dict3, idx1, idx2):
 
 # Function used in identify_phenotypes.py
 def check_all_combinations(mat_representative, batches_label, samples_label,
-                           markers_representative, three_peak_markers=[],
                            max_markers=15, min_annotations=3,
                            min_samplesxbatch=0.5, min_cellxsample=10):
+                           markers_representative, two_peak_threshold,
+                           three_peak_markers, three_peak_low, three_peak_high,
     """
     Function that determines best marker combinations representing a cell type by
     maximizing number of phenotypes detected, proportion of samples within a batch
@@ -52,8 +53,26 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     markers_representative: array(str)
       1-D numpy array with markers matching each column of 'mat_representative'.
 
+    two_peak_threshold: float (default=3)
+      Threshold to consider when determining whether a two-peaks marker is
+      negative or positive. Expression below this threshold means marker will be
+      considered negative. Conversely, expression above this threshold means
+      marker will be considered positive.
+
     three_peak_markers: list(str) (default=[])
       List of markers that have three peaks.
+
+    three_peak_low: float (default=2)
+      Threshold to consider when determining whether a three-peaks marker is
+      negative or low positive. Expression below this threshold means marker will
+      be considered negative. See description of 'three_peak_high' for
+      more information on low_positive markers.
+
+    three_peak_high: float (default=4)
+      Threshold to consider when determining whether a three-peaks marker is
+      low_positive or positive. Expression above this threshold means marker will
+      be considered positive. Expression between 'three_peak_low' and
+      'three_peak_high' means marker will be considered low_positive.
 
     max_markers: int (default=15)
       Maximum number of relevant markers to select among total list of markers
@@ -154,7 +173,10 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                 batches_label=batches_label,
                 samples_label=samples_label,
                 markers_comb=markers_comb,
+                two_peak_threshold=two_peak_threshold,
                 three_peak_markers=three_peak_markers,
+                three_peak_low=three_peak_low,
+                three_peak_high=three_peak_high,
                 x_samplesxbatch_space=x_samplesxbatch_space,
                 y_cellxsample_space=y_cellxsample_space)
 

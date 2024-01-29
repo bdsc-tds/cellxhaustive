@@ -16,9 +16,10 @@ from determine_marker_status import determine_marker_status  # AT. Double-check 
 
 # Function used in check_all_subsets.py
 def score_marker_combinations(mat_comb, batches_label, samples_label,
-                              markers_comb, three_peak_markers=[],
                               x_samplesxbatch_space=np.round(np.arange(0.5, 1.01, 0.1), 1),
                               y_cellxsample_space=np.arange(10, 101, 10)):
+                              markers_comb, two_peak_threshold,
+                              three_peak_markers, three_peak_low, three_peak_high,
     """
     Function that determines number of unique cell phenotypes (combination of
     positive and negative markers) and number of cells without phenotype in an
@@ -41,8 +42,26 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
     markers_comb: array(str)
       1-D numpy array with markers matching each column of 'mat_comb'.
 
+    two_peak_threshold: float (default=3)
+      Threshold to consider when determining whether a two-peaks marker is
+      negative or positive. Expression below this threshold means marker will be
+      considered negative. Conversely, expression above this threshold means
+      marker will be considered positive.
+
     three_peak_markers: list(str) (default=[])
       List of markers that have three peaks.
+
+    three_peak_low: float (default=2)
+      Threshold to consider when determining whether a three-peaks marker is
+      negative or low positive. Expression below this threshold means marker will
+      be considered negative. See description of 'three_peak_high' for
+      more information on low_positive markers.
+
+    three_peak_high: float (default=4)
+      Threshold to consider when determining whether a three-peaks marker is
+      low_positive or positive. Expression above this threshold means marker will
+      be considered positive. Expression between 'three_peak_low' and
+      'three_peak_high' means marker will be considered low_positive.
 
     x_samplesxbatch_space: array(float) (default=[0.5, 0.6, 0.7, ..., 1])
       Minimum proportion of samples within each batch with at least
@@ -85,10 +104,10 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
     phntp_per_cell = determine_marker_status(
         mat_comb=mat_comb,
         markers_comb=markers_comb,
-        two_peak_threshold=3,
+        two_peak_threshold=two_peak_threshold,
         three_peak_markers=three_peak_markers,
-        three_peak_lower_threshold=2,
-        three_peak_upper_threshold=4)
+        three_peak_low=three_peak_low,
+        three_peak_high=three_peak_high)
 
     # Initialise arrays to store results
     nb_phntp = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))

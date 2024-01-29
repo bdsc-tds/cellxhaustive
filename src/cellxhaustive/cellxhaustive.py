@@ -51,9 +51,21 @@ parser.add_argument('-m', '--markers', dest='marker_path', type=str,
 parser.add_argument('-o', '--output', dest='output_path', type=str,
                     help='Path to output table with annotations',
                     required=True)
-parser.add_argument('-t', '--three-peaks', dest='three_peak_markers', type=str,
+parser.add_argument('-t', '--two-peak-threshold', dest='two_peak_threshold', type=float,
+                    help="Threshold to determine whether a two-peaks marker is\
+                    negative or positive [3]",
+                    required=False, default=3)
+parser.add_argument('-tp', '--three-peaks', dest='three_peak_markers', type=str,
                     help="Path to file with markers that have three peaks []",
                     required=False, default=[])
+parser.add_argument('-tpl', '--three-peak-low', dest='three_peak_low', type=float,
+                    help="Threshold to determine whether three-peaks marker is\
+                    negative or low_positive [2]",
+                    required=False, default=2)
+parser.add_argument('-tph', '--three-peak-high', dest='three_peak_high', type=float,
+                    help="Threshold to determine whether three-peaks marker is\
+                    positive or low_positive [4]",
+                    required=False, default=4)
 parser.add_argument('-c', '--cell-type-definition', dest='cell_type_path', type=str,
                     help='Path to file with cell types characterisation \
                     [../data/config/major_cell_types.json]',
@@ -132,6 +144,9 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     # https://github.com/RGLab/rcellontologymapping/blob/main/src/src/ImmportDefinitions.hs
 
     # Get other parameter values from argument parsing
+    two_peak_threshold = args.two_peak_threshold
+    three_peak_low = args.three_peak_low
+    three_peak_high = args.three_peak_high
     max_markers = args.max_markers
     min_annotations = args.min_annotations
     min_cellxsample = args.min_cellxsample
@@ -157,7 +172,10 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
             markers=markers,
             is_label=is_label,
             cell_types_dict=cell_types_dict,
+            two_peak_threshold=two_peak_threshold,
             three_peak_markers=three_peak_markers,
+            three_peak_low=three_peak_low,
+            three_peak_high=three_peak_high,
             cell_name=label,
             max_markers=max_markers,
             min_annotations=min_annotations,

@@ -19,11 +19,12 @@ from knn_classifier import knn_classifier
 
 
 # Function used in cellxhaustive.py
-def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dict,
-                        cell_name, three_peak_markers=[],
                         max_markers=15, min_annotations=3,
                         min_samplesxbatch=0.5, min_cellxsample=10,
                         knn_refine=True, knn_min_probability=0.5):
+def identify_phenotypes(mat, batches, samples, markers, is_label,
+                        cell_types_dict, cell_name, two_peak_threshold,
+                        three_peak_markers, three_peak_low, three_peak_high,
     """
     Function that identifies most probable cell type and phenotype for a group of
     cells using expression of its most relevant markers.
@@ -53,8 +54,26 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
     cell_name: str or None
       Base name for cell types (e.g. CD4 T-cells for 'CD4T').
 
+    two_peak_threshold: float (default=3)
+      Threshold to consider when determining whether a two-peaks marker is
+      negative or positive. Expression below this threshold means marker will be
+      considered negative. Conversely, expression above this threshold means
+      marker will be considered positive.
+
     three_peak_markers: list(str) (default=[])
       List of markers that have three peaks.
+
+    three_peak_low: float (default=2)
+      Threshold to consider when determining whether a three-peaks marker is
+      negative or low positive. Expression below this threshold means marker will
+      be considered negative. See description of 'three_peak_high' for
+      more information on low_positive markers.
+
+    three_peak_high: float (default=4)
+      Threshold to consider when determining whether a three-peaks marker is
+      low_positive or positive. Expression above this threshold means marker will
+      be considered positive. Expression between 'three_peak_low' and
+      'three_peak_high' means marker will be considered low_positive.
 
     max_markers: int (default=15)
       Maximum number of relevant markers to select among total list of markers
@@ -156,7 +175,10 @@ def identify_phenotypes(mat, batches, samples, markers, is_label, cell_types_dic
         batches_label=batches_label,
         samples_label=samples_label,
         markers_representative=markers_rep_all,
+        two_peak_threshold=two_peak_threshold,
         three_peak_markers=three_peak_markers,
+        three_peak_low=three_peak_low,
+        three_peak_high=three_peak_high,
         max_markers=max_markers,
         min_annotations=min_annotations,
         min_samplesxbatch=min_samplesxbatch,
