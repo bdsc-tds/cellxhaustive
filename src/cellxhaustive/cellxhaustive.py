@@ -81,6 +81,9 @@ parser.add_argument('-ma', '--min-annotations', dest='min_annotations', type=int
                     be in '[2; len(markers)]', but it is advised to choose a value \
                     in '[3; len(markers) - 1]' [3]",
                     required=False, default=3)
+parser.add_argument('-s', '--max-solutions', dest='max_solutions', type=int,
+                    help="Maximum number of optimal solutions to keep",
+                    required=False, default=10)
 parser.add_argument('-ms', '--min-samplesxbatch', dest='min_samplesxbatch', type=float,
                     help="Minimum proportion of samples within each batch with at \
                     least 'min_cellxsample' cells for a new annotation to be \
@@ -149,6 +152,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     three_peak_high = args.three_peak_high
     max_markers = args.max_markers
     min_annotations = args.min_annotations
+    max_solutions = args.max_solutions
     min_cellxsample = args.min_cellxsample
     min_samplesxbatch = args.min_samplesxbatch
     knn_refine = args.knn_refine
@@ -179,6 +183,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
             cell_name=label,
             max_markers=max_markers,
             min_annotations=min_annotations,
+            max_solutions=max_solutions,
             min_cellxsample=min_cellxsample,
             min_samplesxbatch=min_samplesxbatch,
             knn_refine=knn_refine,

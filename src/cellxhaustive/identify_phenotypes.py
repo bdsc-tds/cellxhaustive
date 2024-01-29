@@ -6,6 +6,7 @@ using expression of its most relevant markers.
 
 # Import utility modules
 import numpy as np
+import random
 from collections import defaultdict
 
 
@@ -23,7 +24,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
                         cell_types_dict, cell_name, two_peak_threshold,
                         three_peak_markers, three_peak_low, three_peak_high,
                         max_markers, min_annotations,
-                        min_samplesxbatch, min_cellxsample,
+                        min_samplesxbatch, min_cellxsample, max_solutions,
                         knn_refine, knn_min_probability):
     """
     Function that identifies most probable cell type and phenotype for a group of
@@ -83,6 +84,12 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
       Minimum number of phenotypes for a combination of markers to be taken into
       account as a potential cell population. Must be in '[2; len(markers)]',
       but it is advised to choose a value in '[3; len(markers) - 1]'.
+
+    max_solutions: int (default=10)
+      Maximum number of optimal solutions to keep. If script finds more than
+      'max_solutions' optimal marker combinations, 'max_solutions' combinations
+      will be randomly chosen to be further processed and appear in final output.
+      This parameters aims to limit computational burden.
 
     min_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least 'min_cellxsample'
@@ -248,7 +255,13 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
         # Initialise counter of undefined cells
         undef_counter = []
 
-        for i in range(nb_solution):
+        # Check number of solutions. If too high, randomly pick without repetitions
+        if nb_solution > max_solutions:
+            solutions = random.sample(range(nb_solution), max_solutions)
+        else:
+            solutions = range(nb_solution)
+
+        for i in solutions:
             # Slice matrix to keep only expression of best combination
             markers_rep_comb = markers[np.isin(markers, best_marker_comb[i])]
             mat_subset_rep_markers_comb = mat_subset_label[:, np.isin(markers, best_marker_comb[i])]
