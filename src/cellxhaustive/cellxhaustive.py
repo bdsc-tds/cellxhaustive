@@ -33,8 +33,7 @@ import pathlib
 
 
 # Import local functions
-from identify_phenotypes import identify_phenotypes
-# from cellxhaustive.identify_phenotypes import identify_phenotypes  # AT. Double-check path
+from cellxhaustive.identify_phenotypes import identify_phenotypes
 
 
 # Parse arguments
@@ -106,7 +105,7 @@ args = parser.parse_args()
 
 
 # Main script execution
-if __name__ == '__main__':  # AT. Double check behaviour inside package
+if __name__ == '__main__':
 
     # Get 1-D array for markers
     markers = pd.read_csv(args.marker_path, sep='\t', header=None).to_numpy().flatten()

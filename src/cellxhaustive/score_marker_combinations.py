@@ -10,8 +10,7 @@ import numpy as np
 
 
 # Import local functions
-from determine_marker_status import determine_marker_status  # AT. Double-check path
-# from cellxhaustive.determine_marker_status import cellxhaustive.determine_marker_status
+from cellxhaustive.determine_marker_status import cellxhaustive.determine_marker_status
 
 
 # Function used in check_all_subsets.py
@@ -128,13 +127,11 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
     # Process marker phenotypes returned by 'determine_marker_status()' and
     # check whether they are worth keeping
     for phenotype in np.unique(phntp_per_cell):
-        # AT. Multithread/process here? Conflict between batches?
         # Initialise temporary array to store 'phenotype' results
         keep_phenotype = np.full(nb_phntp.shape, True)
 
         # Process batches separately
         for batch in np.unique(batches_label):
-            # AT. Multithread/process here?
             # Split cell type data according to batch
             phenotypes_batch = phntp_per_cell[batches_label == batch]
 

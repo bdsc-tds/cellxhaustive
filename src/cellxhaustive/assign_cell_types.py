@@ -14,8 +14,7 @@ import numpy as np
 
 
 # Import local functions
-from find_name_difference import find_name_difference  # AT. Double-check path
-# from cellxhaustive.find_name_difference import find_name_difference
+from cellxhaustive.find_name_difference import find_name_difference
 
 
 # Function used in identify_phenotypes.py

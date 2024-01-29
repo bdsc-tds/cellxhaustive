@@ -12,8 +12,7 @@ import numpy as np
 
 
 # Import local functions
-from score_marker_combinations import score_marker_combinations  # AT. Double-check path
-# from cellxhaustive.score_marker_combinations import score_marker_combinations
+from cellxhaustive.score_marker_combinations import score_marker_combinations
 
 
 # Convenience function to return specific dictionary values
@@ -160,8 +159,6 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
 
         # For a given number of markers, check all possible marker combinations
         for comb in ite.combinations(markers_representative, marker_counter):
-            # AT. Opportunity to multiprocess? Or not because we need to test 2
-            # markers first, then 3, then 4... And stop if nothing better is found
             # Slice data based on current marker combination 'comb'
             markers_comb = markers_representative[np.isin(markers_representative, np.asarray(comb))]
             mat_comb = mat_representative[:, np.isin(markers_representative, markers_comb)]
