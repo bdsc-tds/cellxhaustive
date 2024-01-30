@@ -26,6 +26,7 @@ Minimum requirements to run the analyses and associated parameters:
 # Import utility modules
 import argparse
 import json
+import logging
 import numpy as np
 import os
 import pandas as pd
@@ -33,8 +34,10 @@ import pathlib
 
 
 # Import local functions
-from identify_phenotypes import identify_phenotypes
-# from cellxhaustive.identify_phenotypes import identify_phenotypes  # AT. Double-check path
+from identify_phenotypes import identify_phenotypes  # AT. Double-check path
+from utils import setup_log  # AT. Double-check path
+# from cellxhaustive.identify_phenotypes import identify_phenotypes
+# from cellxhaustive.utils import setup_log
 
 
 # Parse arguments
@@ -107,6 +110,10 @@ args = parser.parse_args()
 
 # Main script execution
 if __name__ == '__main__':  # AT. Double check behaviour inside package
+
+    # Set-up log config
+    logfile = f'{os.path.splitext(args.output_path)[0]}.log'
+    setup_log(logfile)
 
     # Get 1-D array for markers
     markers = pd.read_csv(args.marker_path, sep='\t', header=None).to_numpy().flatten()
