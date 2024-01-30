@@ -203,8 +203,8 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
         new_labels = np.full(cell_phntp_comb.shape, f'Other {cell_name}')
 
         # Append results to dictionary
-        results_dict['new_labels'].append(new_labels)
-        results_dict['cell_phntp_comb'].append(cell_phntp_comb)
+        results_dict['new_labels'] = new_labels
+        results_dict['cell_phntp_comb'] = cell_phntp_comb
 
     elif nb_solution == 1:
         # Slice matrix to keep only expression of best combination
