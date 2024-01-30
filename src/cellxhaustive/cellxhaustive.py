@@ -136,7 +136,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     three_path = args.three_peak_markers
     if (not isinstance(three_path, list) and pathlib.Path(three_path).is_file()):
         with open(three_path) as file:
-            lines = file.read().splitlines()
+            three_peak_markers = file.read().splitlines()
     else:
         three_peak_markers = args.three_peak_markers
 
