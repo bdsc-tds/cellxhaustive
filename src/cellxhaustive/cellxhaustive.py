@@ -43,7 +43,6 @@ from utils import setup_log  # AT. Double-check path
 # Parse arguments
 parser = argparse.ArgumentParser(description='Package to annotate cell types using \
                                 CITE-seq ADT data.')
-
 parser.add_argument('-i', '--input', dest='input_path', type=str,
                     help='Path to input table with expression data and \
                     samples/batch/cell_type information',
@@ -54,6 +53,12 @@ parser.add_argument('-m', '--markers', dest='marker_path', type=str,
 parser.add_argument('-o', '--output', dest='output_path', type=str,
                     help='Path to output table with annotations',
                     required=True)
+parser.add_argument('-l', '--log', dest='log_path', type=str,
+                    help='Path to log file',
+                    required=False, default='')
+parser.add_argument('-ll', '--log-level', dest='log_level', type=str,
+                    help='Verbosity level of lof file',
+                    required=False, default='info', choices=['debug', 'info', 'warning'])
 parser.add_argument('-t', '--two-peak-threshold', dest='two_peak_threshold', type=float,
                     help="Threshold to determine whether a two-peaks marker is\
                     negative or positive [3]",
@@ -112,8 +117,12 @@ args = parser.parse_args()
 if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Set-up log config
-    logfile = f'{os.path.splitext(args.output_path)[0]}.log'
-    setup_log(logfile)
+    if not args.log_path:
+        logfile = f'{os.path.splitext(args.output_path)[0]}.log'
+    else:
+        logfile = args.log_path
+
+    setup_log(logfile, args.log_level)
 
     # Get 1-D array for markers
     markers = pd.read_csv(args.marker_path, sep='\t', header=None).to_numpy().flatten()
