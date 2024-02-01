@@ -6,6 +6,7 @@ across different metrics thresholds.
 
 
 # Import utility modules
+import logging
 import numpy as np
 
 
@@ -100,6 +101,7 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
     """
 
     # Determine markers status of 'markers_comb' using expression data
+    logging.debug(f'\t\t\t\t\t\tDetermining marker status for each cell')
     phntp_per_cell = determine_marker_status(
         mat_comb=mat_comb,
         markers_comb=markers_comb,
@@ -127,6 +129,7 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
 
     # Process marker phenotypes returned by 'determine_marker_status()' and
     # check whether they are worth keeping
+    logging.debug(f'\t\t\t\t\t\tChecking which phenotypes are passing thresholds')
     for phenotype in np.unique(phntp_per_cell):
         # AT. Multithread/process here? Conflict between batches?
         # Initialise temporary array to store 'phenotype' results
