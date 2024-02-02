@@ -84,7 +84,7 @@
     "Treg": [
         "CD3+",
         "CD4+",
-        "CD127+-",
+        "CD127low",
         "CD25+"
     ],
     "NK T cell": [
@@ -96,8 +96,8 @@
     "transitional B cell": [
         "CD19+",
         "CD20+",
-        "CD24++",
-        "CD38++",
+        "CD24+",
+        "CD38+",
         "CD3-"
     ],
     "naive CD4+ T cell": [
@@ -155,7 +155,7 @@
         "CXCR3+"
     ],
     "CD16- CD56 NK cell": [
-        "CD56++",
+        "CD56+",
         "CD3-",
         "CD19-",
         "CD20-",
@@ -181,8 +181,8 @@
     ],
     "plasmablast": [
         "CD19+",
-        "CD27++",
-        "CD38++",
+        "CD27+",
+        "CD38+",
         "CD3-",
         "CD20-"
     ],
@@ -203,7 +203,7 @@
     "naive CCR4+ Treg": [
         "CD3+",
         "CD4+",
-        "CD127+-",
+        "CD127low",
         "CD25+",
         "CCR4+",
         "CD45RO-"
@@ -211,7 +211,7 @@
     "memory CCR4+ Treg": [
         "CD3+",
         "CD4+",
-        "CD127+-",
+        "CD127low",
         "CD25+",
         "CCR4+",
         "CD45RO+"
@@ -219,7 +219,7 @@
     "activated CCR4+ Treg": [
         "CD3+",
         "CD4+",
-        "CD127+-",
+        "CD127low",
         "CD25+",
         "CCR4+",
         "HLA.DR+"
