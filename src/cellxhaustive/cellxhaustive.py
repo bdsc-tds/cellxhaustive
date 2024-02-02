@@ -54,10 +54,10 @@ parser.add_argument('-o', '--output', dest='output_path', type=str,
                     help='Path to output table with annotations',
                     required=True)
 parser.add_argument('-l', '--log', dest='log_path', type=str,
-                    help='Path to log file',
+                    help='Path to log file [output_path.log]',
                     required=False, default='')
 parser.add_argument('-ll', '--log-level', dest='log_level', type=str,
-                    help='Verbosity level of lof file',
+                    help='Verbosity level of log file [info]',
                     required=False, default='info', choices=['debug', 'info', 'warning'])
 parser.add_argument('-t', '--two-peak-threshold', dest='two_peak_threshold', type=float,
                     help='Threshold to determine whether a two-peaks marker is\
@@ -90,7 +90,7 @@ parser.add_argument('-ma', '--min-annotations', dest='min_annotations', type=int
                     in '[3; len(markers) - 1]' [3]",
                     required=False, default=3)
 parser.add_argument('-s', '--max-solutions', dest='max_solutions', type=int,
-                    help='Maximum number of optimal solutions to keep',
+                    help='Maximum number of optimal solutions to keep [10]',
                     required=False, default=10)
 parser.add_argument('-ms', '--min-samplesxbatch', dest='min_samplesxbatch', type=float,
                     help="Minimum proportion of samples within each batch with at \
