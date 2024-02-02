@@ -221,6 +221,13 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
         results_dict[0]['new_labels'] = new_labels
         results_dict[0]['cell_phntp_comb'] = cell_phntp_comb
 
+        if knn_refine:
+            # Use default arrays as placeholders for reannotation results
+            reannotated_labels = np.full(mat_subset_rep_markers.shape[0], 'No_reannotation')
+            reannotation_proba = np.full(mat_subset_rep_markers.shape[0], np.nan)
+            results_dict[0]['reannotated_labels'] = reannotated_labels
+            results_dict[0]['reannotation_proba'] = reannotation_proba
+
     elif nb_solution == 1:
         logging.info('\t\t\t<1> optimal combination found, building new cell types on it')
         # Slice matrix to keep only expression of best combination
