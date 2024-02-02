@@ -154,6 +154,13 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     while ((marker_counter <= max_combination)
            and (max_nb_phntp_tot <= max_nb_phntp_marker)):
 
+        # If max number of phenotypes does not increase and is not nul, stop now.
+        # This avoids both a 'plateau effect' (increase number of markers without
+        # improving number of phenotypes) and finding no phenotype
+        if (max_nb_phntp_tot == max_nb_phntp_marker) and (max_nb_phntp_tot != 0):
+            logging.info("\t\t\t\tNumber of phenotypes didn't improve over last iteration, stopping now")
+            break
+
         # Save new higher (or equal) maximum number of phenotypes
         max_nb_phntp_tot = max_nb_phntp_marker
 
