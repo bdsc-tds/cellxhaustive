@@ -116,13 +116,19 @@ args = parser.parse_args()
 # Main script execution
 if __name__ == '__main__':  # AT. Double check behaviour inside package
 
-    # Set-up log config
+    # Determine log file name
     if not args.log_path:
-        logfile = f'{os.path.splitext(args.output_path)[0]}.log'
+        log_file = f'{os.path.splitext(args.output_path)[0]}.log'
     else:
-        logfile = args.log_path
+        log_file = args.log_path
 
-    setup_log(logfile, args.log_level)
+    # Create log directory if it doesn't exist
+    log_dir = os.path.dirname(log_file)
+    logging.debug(f'Creating log directory <{log_dir}>')
+    os.makedirs(log_dir, exist_ok=True)
+
+    # Set-up logging configuration
+    setup_log(log_file, args.log_level)
 
     # Get 1-D array for markers
     logging.info(f'Importing markers list from <{args.marker_path}>')
