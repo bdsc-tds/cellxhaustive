@@ -12,13 +12,13 @@ import sys
 class CustomFormatter(logging.Formatter):
 
     # Colors and format
-    format = "[%(asctime)s]  %(levelname)-8s  %(message)s"
     grey = '\x1b[38;20m'
     green = '\x1b[32;20m'
     yellow = '\x1b[33;20m'
     red = '\x1b[31;20m'
     bold_red = '\x1b[1;31;20m'
     reset = '\x1b[0m'
+    format = '[%(asctime)s]  %(filename)28s  %(levelname)-8s  %(message)s'
     datefmt = '%Y.%m.%d - %H:%M:%S'
 
     FORMATS = {logging.DEBUG: grey + format + reset,
@@ -49,7 +49,7 @@ def setup_log(logfile, loglevel):
 
     # Sets handlers with proper redirection and format
     # File handler
-    fh_formatter = logging.Formatter(fmt='[%(asctime)s]  %(levelname)-8s  %(message)s',
+    fh_formatter = logging.Formatter(fmt='[%(asctime)s]  %(filename)28s  %(levelname)-8s  %(message)s',
                                      datefmt='%Y.%m.%d - %H:%M:%S')
     handler_fh = logging.FileHandler(logfile, mode='w')
     handler_fh.setFormatter(fh_formatter)
