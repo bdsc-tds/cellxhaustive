@@ -5,6 +5,7 @@ using expression of its most relevant markers.
 
 
 # Import utility modules
+import logging
 import numpy as np
 import random
 from collections import defaultdict
@@ -129,17 +130,22 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
     """
 
     # Main gating: select relevant markers for cell population 'label' in each batch
+    logging.info('\t\tPerforming main gating in all batches')
     for batch in np.unique(batches):
+        logging.debug(f'\t\t\tProcessing batch <{batch}>')
         # Create boolean array to select cells matching current 'batch'
+        logging.debug('\t\t\t\tSelecting matching cells')
         is_batch = (batches == batch)
 
         # Create boolean array to select cells matching current 'label' and 'batch'
         is_label_batch = np.logical_and(is_batch, is_label)
 
         # Subset expression matrix to cells of current 'batch' and 'label' only
+        logging.debug('\t\t\t\tSelecting corresponding expression data')
         mat_subset = mat[is_label_batch, :]
 
         # Check bimodality of markers and select best ones
+        logging.debug('\t\t\t\tEvaluating marker bimodality')
         marker_center_values = -np.abs(np.mean(mat_subset, axis=0) - 3)
         marker_threshold_value = np.sort(marker_center_values)[::-1][max_markers]  # Select max_markers-th center value (in descending order)
         is_center_greater = (marker_center_values > marker_threshold_value)
@@ -147,6 +153,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
 
         # Store list of relevant markers for every batch
         # Note: try/except avoids an error if dict doesn't exist yet
+        logging.debug('\t\t\t\tStoring relevant markers')
         try:
             markers_rep_batches[batch] = list(markers_rep)
         except NameError:
@@ -157,11 +164,14 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
     # all batches and extract related data
 
     # Extract markers present in all batches
+    logging.info('\t\tSelecting markers present in all batches')
     markers_rep_all = set.intersection(*map(set, markers_rep_batches.values()))
     markers_rep_all = np.array(list(markers_rep_all))  # Converts format back to array
+    logging.info(f'\t\t\tFound {len(markers_rep_all)} markers')
 
     # Extract expression, batch and sample information across all batches for
     # cell population 'label'
+    logging.info('\t\tExtracting matching expression, batch and sample information')
     mat_subset_label = mat[is_label, :]
     batches_label = batches[is_label]
     samples_label = samples[is_label]
@@ -174,6 +184,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
     # possible best combinations, phenotypes of all 'mat_subset_rep_markers'
     # cells and among those, phenotypes passing various thresholds (see function
     # definition for more information on those)
+    logging.info('\t\tChecking all possible marker combinations')
     nb_solution, best_marker_comb, cell_phntp_comb, best_phntp_comb = check_all_combinations(
         mat_representative=mat_subset_rep_markers,
         batches_label=batches_label,
@@ -193,22 +204,35 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
     # in cellxhaustive.py easier
     results_dict = defaultdict(dict)
 
+    logging.info('\t\tAssigning cell types based on optimal combinations')
     if nb_solution == 0:
         # 'best_marker_comb' is empty, which means that no marker combination
-        # was found to properly represent cell type 'label' (from annotate()
-        # function), so keep original annotation
-        new_labels = np.full(cell_phntp_comb.shape, f'Other {cell_name}')
+        # was found to properly represent cell type 'label' (from annotate(), so
+        # keep original annotation
+        logging.warning('\t\t\tNo optimal combination found, reverting to original cell types')
+        new_labels = np.full(mat_subset_rep_markers.shape[0], cell_name)
+        # No marker combination means no phenotype can be assigned to cells
+        cell_phntp_comb = np.full(mat_subset_rep_markers.shape[0], 'No_phenotype')
 
         # Append results to dictionary
-        results_dict['new_labels'].append(new_labels)
-        results_dict['cell_phntp_comb'].append(cell_phntp_comb)
+        results_dict[0]['new_labels'] = new_labels
+        results_dict[0]['cell_phntp_comb'] = cell_phntp_comb
+
+        if knn_refine:
+            # Use default arrays as placeholders for reannotation results
+            reannotated_labels = np.full(mat_subset_rep_markers.shape[0], 'No_reannotation')
+            reannotation_proba = np.full(mat_subset_rep_markers.shape[0], np.nan)
+            results_dict[0]['reannotated_labels'] = reannotated_labels
+            results_dict[0]['reannotation_proba'] = reannotation_proba
 
     elif nb_solution == 1:
+        logging.info('\t\t\t<1> optimal combination found, building new cell types on it')
         # Slice matrix to keep only expression of best combination
         markers_rep_comb = markers[np.isin(markers, best_marker_comb)]
         mat_subset_rep_markers_comb = mat_subset_label[:, np.isin(markers, best_marker_comb)]
 
         # Assign cell type using only markers from 'best_marker_comb'
+        logging.info('\t\t\tAssigning cell types to each cell')
         new_labels = assign_cell_types(
             mat_representative=mat_subset_rep_markers_comb,
             batches_label=batches_label,
@@ -230,6 +254,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
             # At least 2 undefined cells and 2 cell types different from 'Other'
             if ((np.sum(is_undef) > 1) and (len(np.unique(new_labels)) > 2)):
                 # Reannotate cells
+                logging.info('\t\t\t\tRefining annotations with KNN-classifier')
                 reannotated_labels, reannotation_proba = knn_classifier(
                     mat_representative=mat_subset_rep_markers_comb,
                     new_labels=new_labels,
@@ -241,6 +266,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
                 results_dict[0]['reannotation_proba'] = reannotation_proba
 
             else:  # If conditions are not met, no reannotation
+                logging.warning('\t\t\t\tNot enough cell types or undefined cells to refine annotations with KNN-classifier')
                 # Use default arrays as placeholders for reannotation results
                 reannotated_labels = np.full(new_labels.shape[0], 'No_reannotation')
                 reannotation_proba = np.full(new_labels.shape[0], np.nan)
@@ -250,20 +276,26 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
     else:  # Several solutions
 
         # Initialise counter of undefined cells
+        logging.info(f'\t\t\t<{nb_solution}> optimal combinations found, building new cell types on them')
         undef_counter = []
 
         # Check number of solutions. If too high, randomly pick without repetitions
         if nb_solution > max_solutions:
+            logging.warning(f'\t\t\t\tToo many combinations, choosing {max_solutions} randomly')
+            logging.warning("\t\t\t\tIncrease '-s' parameter to process all of them")
             solutions = random.sample(range(nb_solution), max_solutions)
         else:
             solutions = range(nb_solution)
 
+        logging.info('\t\t\tProcessing the different combinations')
         for i in solutions:
+            logging.info(f'\t\t\t\tProcessing combinations {i}')
             # Slice matrix to keep only expression of best combination
             markers_rep_comb = markers[np.isin(markers, best_marker_comb[i])]
             mat_subset_rep_markers_comb = mat_subset_label[:, np.isin(markers, best_marker_comb[i])]
 
             # Assign cell type using only markers from 'best_marker_comb[i]'
+            logging.info('\t\t\t\tAssigning cell types to each cell')
             new_labels = assign_cell_types(
                 mat_representative=mat_subset_rep_markers_comb,
                 batches_label=batches_label,
@@ -285,6 +317,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
                 # At least 2 undefined cells and 2 cell types different from 'Other'
                 if ((np.sum(is_undef) > 1) and (len(np.unique(new_labels)) > 2)):
                     # Reannotate cells
+                    logging.info('\t\t\t\t\tRefining annotations with KNN-classifier')
                     reannotated_labels, reannotation_proba = knn_classifier(
                         mat_representative=mat_subset_rep_markers_comb,
                         new_labels=new_labels,
@@ -300,6 +333,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
                     undef_counter.append(nb_undef)
 
                 else:  # If conditions are not met, no reannotation
+                    logging.warning('\t\t\t\t\tNot enough cell types or undefined cells to refine annotations with KNN-classifier')
                     # Use default arrays as placeholders for reannotation results
                     reannotated_labels = np.full(new_labels.shape[0], 'No_reannotation')
                     reannotation_proba = np.full(new_labels.shape[0], np.nan)
@@ -310,12 +344,15 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
                     nb_undef = np.sum(is_undef)
                     undef_counter.append(nb_undef)
 
-        # Get index of undefined cells minimum
-        min_undef_idx = [i for i, x in enumerate(undef_counter) if x == min(undef_counter)]
+        if knn_refine:  # If KNN-classifier was run, count undefined cells again
+            logging.info('\t\t\tRedefining optimal combinations after KNN-classification')
+            # Get index of undefined cells minimum
+            min_undef_idx = [i for i, x in enumerate(undef_counter) if x == min(undef_counter)]
 
-        # Filter results using previous indices
-        for key, val in results_dict.items():
-            results_dict[key] = [i for idx, i in enumerate(val) if idx in set(min_undef_idx)]
-            # Note: set() is used to increase speed
+            # Filter results using previous indices
+            for key, val in results_dict.items():
+                results_dict[key] = [i for idx, i in enumerate(val) if idx in set(min_undef_idx)]
+                # Note: set() is used to increase speed
+            logging.info(f'\t\t\t\tFound {len(results_dict)} optimal combinations for {cell_name} cells')
 
     return results_dict

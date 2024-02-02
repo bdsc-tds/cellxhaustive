@@ -5,6 +5,7 @@ probability for reclassification.
 
 
 # Import utility modules
+import logging
 import numpy as np
 
 
@@ -55,6 +56,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
 
     # Split data in annotated (train/test) cells and undefined cells (i.e. cells
     # that will be re-annotated by classifier)
+    logging.info('\t\t\t\t\t\tSplitting data in training and test datasets')
     annot_cells_mat = mat_representative[~ is_undef]
     annot_phntp = new_labels[~ is_undef]
     undef_cells_mat = mat_representative[is_undef]
@@ -69,6 +71,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
                                                         stratify=annot_phntp)
 
     # Initialise scaler
+    logging.info('\t\t\t\t\t\tInitializing KNN-classifier and parameters grid')
     scaler = StandardScaler()
 
     # Initialise KNN-classifier
@@ -89,13 +92,18 @@ def knn_classifier(mat_representative, new_labels, is_undef,
                             cv=5, n_jobs=12, refit=True, verbose=0)
 
     # Find best parameters
+    logging.info('\t\t\t\t\t\tTuning hyperparameters')
     best_model = knn_grid.fit(X_train, y_train)
+    logging.info(f'\t\t\t\t\t\t\tBest parameters found: {best_model.best_params_}')
+    logging.info(f'\t\t\t\t\t\t\twith a max accuracy of: {best_model.best_score_:.3f}')
 
     # Apply classifier to undefined cells
+    logging.info(f'\t\t\t\t\t\tApplying KNN-classifier to undefined cells')
     undef_cells_pred = best_model.predict_proba(undef_cells_mat)
     # Note: this returns an array of probabilities for a cell to belong to a
     # certain cell type
 
+    logging.info('\t\t\t\t\t\tSelecting annotations passing knn_min_probability threshold')
     # Initialise empty array to store updated annotations
     reannotated = np.full(undef_cells_mat.shape[0], undef_phntp, dtype='U150')
 
@@ -118,6 +126,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     reannotated[is_max_higher] = ordered_cell_types[max_idx][is_max_higher]
 
     # Assign new annotations to original array
+    logging.info('\t\t\t\t\t\tAssigning new annotations passing threshold')
     new_labels[is_undef] = reannotated
 
     return new_labels, reannotation_proba
