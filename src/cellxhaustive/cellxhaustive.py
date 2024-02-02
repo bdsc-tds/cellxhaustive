@@ -308,6 +308,8 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Merge input dataframe and annotation dataframe
     logging.info('\tMerging input data and annotation table')
+    annot_df.set_index(input_table.index, inplace=True)
+    # Note: set indices to avoid problem during concatenation
     output_table = pd.concat([input_table, annot_df], axis=1)
 
     # Create output directory if it doesn't exist
