@@ -210,14 +210,16 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
     logging.info('\t\tAssigning cell types based on optimal combinations')
     if nb_solution == 0:
         # 'best_marker_comb' is empty, which means that no marker combination
-        # was found to properly represent cell type 'label' (from annotate()
-        # function), so keep original annotation
-        logging.warning('\t\t\tNo optimal combination found, reverting to base cell types')
-        new_labels = np.full(cell_phntp_comb.shape, f'Other {cell_name}')
+        # was found to properly represent cell type 'label' (from annotate(), so
+        # keep original annotation
+        logging.warning('\t\t\tNo optimal combination found, reverting to original cell types')
+        new_labels = np.full(mat_subset_rep_markers.shape[0], cell_name)
+        # No marker combination means no phenotype can be assigned to cells
+        cell_phntp_comb = np.full(mat_subset_rep_markers.shape[0], 'No_phenotype')
 
         # Append results to dictionary
-        results_dict['new_labels'] = new_labels
-        results_dict['cell_phntp_comb'] = cell_phntp_comb
+        results_dict[0]['new_labels'] = new_labels
+        results_dict[0]['cell_phntp_comb'] = cell_phntp_comb
 
     elif nb_solution == 1:
         logging.info('\t\t\t<1> optimal combination found, building new cell types on it')
