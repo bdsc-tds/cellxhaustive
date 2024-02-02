@@ -60,19 +60,19 @@ parser.add_argument('-ll', '--log-level', dest='log_level', type=str,
                     help='Verbosity level of lof file',
                     required=False, default='info', choices=['debug', 'info', 'warning'])
 parser.add_argument('-t', '--two-peak-threshold', dest='two_peak_threshold', type=float,
-                    help="Threshold to determine whether a two-peaks marker is\
-                    negative or positive [3]",
+                    help='Threshold to determine whether a two-peaks marker is\
+                    negative or positive [3]',
                     required=False, default=3)
 parser.add_argument('-tp', '--three-peaks', dest='three_peak_markers', type=str,
-                    help="Path to file with markers that have three peaks []",
+                    help='Path to file with markers that have three peaks []',
                     required=False, default=[])
 parser.add_argument('-tpl', '--three-peak-low', dest='three_peak_low', type=float,
-                    help="Threshold to determine whether three-peaks marker is\
-                    negative or low_positive [2]",
+                    help='Threshold to determine whether three-peaks marker is\
+                    negative or low_positive [2]',
                     required=False, default=2)
 parser.add_argument('-tph', '--three-peak-high', dest='three_peak_high', type=float,
-                    help="Threshold to determine whether three-peaks marker is\
-                    positive or low_positive [4]",
+                    help='Threshold to determine whether three-peaks marker is\
+                    positive or low_positive [4]',
                     required=False, default=4)
 parser.add_argument('-c', '--cell-type-definition', dest='cell_type_path', type=str,
                     help='Path to file with cell types characterisation \
@@ -90,7 +90,7 @@ parser.add_argument('-ma', '--min-annotations', dest='min_annotations', type=int
                     in '[3; len(markers) - 1]' [3]",
                     required=False, default=3)
 parser.add_argument('-s', '--max-solutions', dest='max_solutions', type=int,
-                    help="Maximum number of optimal solutions to keep",
+                    help='Maximum number of optimal solutions to keep',
                     required=False, default=10)
 parser.add_argument('-ms', '--min-samplesxbatch', dest='min_samplesxbatch', type=float,
                     help="Minimum proportion of samples within each batch with at \
@@ -158,7 +158,6 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     # Get 1-D array for pre-annotated cell type
     logging.info(f'Retrieving cell type information in <{args.input_path}>')
     cell_labels = input_table.loc[:, 'cell_type'].to_numpy()
-    # logging.info(f'\tFound {len(cell_labels)} cell types')
 
     # Get three peaks markers if a file is specified, otherwise use default list
     logging.info('Checking for existence of markers with 3 peaks')
@@ -233,12 +232,12 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     logging.info('Gathering results in annotation table')
 
     # Find maximum number of optimal combinations across all 'cell_labels'
-    logging.debug('Determining total maximum number of optimal combinations')
+    logging.debug('\tDetermining total maximum number of optimal combinations')
     max_comb = max([len(annot_dict[label].keys()) for label in np.unique(cell_labels)])
-    logging.debug(f'\tFound {max_comb} combinations')
+    logging.debug(f"\t\tFound {max_comb} combination{'s' if max_comb > 1 else ''}")
 
     # Build list with all column names
-    logging.debug('Building column names')
+    logging.debug('\tBuilding column names')
     col_names = []
     for i in range(max_comb):
         col_names.extend([f'Annotations_{i + 1}', f'Phenotypes_{i + 1}'])
@@ -246,48 +245,48 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
             col_names.extend([f'KNN_annotations_{i + 1}', f'KNN_proba_{i + 1}'])
 
     # Initialise empty dataframe to store all annotation results
-    logging.debug('Initialising empty annotation table')
+    logging.debug('\tInitialising empty annotation table')
     annot_df = pd.DataFrame(None,
                             index=range(input_table.shape[0]),
                             columns=col_names)
 
     # Fill annotation dataframe with results
-    logging.info('Filling annotation table with analyses results')
+    logging.info('\tFilling annotation table with analyses results')
     for label in np.unique(cell_labels):
-        logging.info(f'\tCreating result subtable for {label} annotations')
+        logging.info(f'\t\tCreating result subtable for <{label}> annotations')
 
         # Create boolean array to select cells matching current 'label'
-        logging.debug(f'\t\tSelecting matching cells')
+        logging.debug(f'\t\t\tSelecting matching cells')
         is_label = (cell_labels == label)
 
         # Slice general results dictionary
-        logging.debug(f'\t\tSelecting associated results')
+        logging.debug(f'\t\t\tSelecting associated results')
         sub_results = annot_dict[label]
 
         # Find number of optimal combinations for 'label' cells
-        logging.debug(f'\t\tDetermining maximum number of optimal combinations')
+        logging.debug(f'\t\t\tDetermining maximum number of optimal combinations')
         label_nb_comb = len(sub_results.keys())
-        logging.debug(f'\t\t\tFound {label_nb_comb} combinations')
+        logging.debug(f"\t\t\t\tFound {label_nb_comb} combination{'s' if label_nb_comb > 1 else ''}")
 
         # Get number of cells
-        logging.debug(f'\t\tCounting cells')
+        logging.debug(f'\t\t\tCounting cells')
         cell_nb = sub_results[0]['new_labels'].shape[0]
         # Note: 'sub_results[0]' is used because it will always exist
-        logging.debug(f'\t\t\tFound {cell_nb} cells')
+        logging.debug(f'\t\t\t\tFound {cell_nb} cells')
 
         # Get column names
-        logging.debug('\t\tBuilding column names')
+        logging.debug('\t\t\tBuilding column names')
         end = (4 * label_nb_comb) if knn_refine else (2 * label_nb_comb)
         col_names_sub = col_names[:end]
 
         # Initialise empty dataframe to store annotation results for 'label'
-        logging.debug('\t\tInitialising empty table to proper dimensions')
+        logging.debug('\t\t\tInitialising empty table to proper dimensions')
         annot_df_label = pd.DataFrame(np.nan,
                                       index=range(cell_nb),
                                       columns=col_names_sub)
 
         # Create dataframe results for all optimal combinations of 'label'
-        logging.debug('\t\tFilling table')
+        logging.debug('\t\t\tFilling table')
         for comb_nb in range(label_nb_comb):
             # Extract results
             sub_res_df = pd.DataFrame.from_dict(sub_results[comb_nb], orient='index').transpose()
@@ -298,7 +297,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
             # Note: copy() is used to avoid reassignation problems
 
         # Fill general annotation dataframe with 'label' annotations
-        logging.info(f'\t\tIntegrating {label} subtable to general annotation table')
+        logging.info(f'\t\t\tIntegrating subtable to general annotation table')
         annot_df.iloc[is_label, :end] = annot_df_label.copy()
 
     # Merge input dataframe and annotation dataframe

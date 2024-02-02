@@ -12,13 +12,13 @@ import sys
 class CustomFormatter(logging.Formatter):
 
     # Colors and format
-    grey = "\x1b[38;20m"
-    green = "\x1b[32;20m"
-    yellow = "\x1b[33;20m"
-    red = "\x1b[31;20m"
-    bold_red = "\x1b[1;31;20m"
-    reset = "\x1b[0m"
     format = "[%(asctime)s]  %(levelname)-8s  %(message)s"
+    grey = '\x1b[38;20m'
+    green = '\x1b[32;20m'
+    yellow = '\x1b[33;20m'
+    red = '\x1b[31;20m'
+    bold_red = '\x1b[1;31;20m'
+    reset = '\x1b[0m'
     datefmt = '%Y.%m.%d - %H:%M:%S'
 
     FORMATS = {logging.DEBUG: grey + format + reset,
@@ -34,7 +34,7 @@ class CustomFormatter(logging.Formatter):
         return formatter.format(record)
 
 
-# Function to configurate logging
+# Function to configurate logging, used in cellxhaustive.py
 def setup_log(logfile, loglevel):
 
     # Reset logging handler to avoid conflicts
