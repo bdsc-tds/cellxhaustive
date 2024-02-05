@@ -164,6 +164,6 @@ def assign_cell_types(mat_representative,
     # remaining names much easier
 
     # Rename undefined non-representative phenotypes
-    new_labels[new_labels == 'None'] = f'Other {cell_name}'
+    new_labels[new_labels == None] = f'Other {cell_name}'
 
     return new_labels
