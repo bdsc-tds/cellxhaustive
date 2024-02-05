@@ -230,6 +230,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
 
     elif nb_solution == 1:
         logging.info('\t\t\t<1> optimal combination found, building new cell types on it')
+        logging.info(f'\t\t\t\tBest combination is {best_marker_comb}')
         # Slice matrix to keep only expression of best combination
         markers_rep_comb = markers[np.isin(markers, best_marker_comb)]
         mat_subset_rep_markers_comb = mat_subset_label[:, np.isin(markers, best_marker_comb)]

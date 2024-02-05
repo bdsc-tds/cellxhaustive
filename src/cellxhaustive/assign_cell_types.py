@@ -160,8 +160,8 @@ def assign_cell_types(mat_representative,
     logging.info('\t\t\t\tRenaming cell types')
     new_labels = np.vectorize(names_conv.get)(cell_phntp)
     # Note: by using dict.get method, non-representative phenotypes (missing
-    # from 'names_conv') are converted to 'None' (str), which make converting
-    # those remaining names much easier
+    # from 'names_conv') are converted to 'None', which makes converting those
+    # remaining names much easier
 
     # Rename undefined non-representative phenotypes
     new_labels[new_labels == 'None'] = f'Other {cell_name}'
