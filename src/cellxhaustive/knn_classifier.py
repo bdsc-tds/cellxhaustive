@@ -5,6 +5,7 @@ probability for reclassification.
 
 
 # Import utility modules
+import copy
 import logging
 import numpy as np
 
@@ -45,7 +46,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
 
     Returns:
     --------
-    new_labels: array(str)
+    reannotated_labels: array(str)
       1-D numpy array with cell types and phenotypes reannotated by KNN-classifier
       for each cell of 'mat_representative'.
 
@@ -54,13 +55,16 @@ def knn_classifier(mat_representative, new_labels, is_undef,
       cell types and phenotypes for each cell of 'mat_representative'.
     """
 
+    # Copy 'new_labels' array to avoid changing the original array
+    reannotated_labels = copy.deepcopy(new_labels)
+
     # Split data in annotated (train/test) cells and undefined cells (i.e. cells
     # that will be re-annotated by classifier)
     logging.info('\t\t\t\t\t\tSplitting data in training and test datasets')
     annot_cells_mat = mat_representative[~ is_undef]
-    annot_phntp = new_labels[~ is_undef]
+    annot_phntp = reannotated_labels[~ is_undef]
     undef_cells_mat = mat_representative[is_undef]
-    undef_phntp = new_labels[is_undef][0]
+    undef_phntp = reannotated_labels[is_undef][0]
 
     # Further split annotated cells in training and test datasets
     X_train, X_test, y_train, y_test = train_test_split(annot_cells_mat,
@@ -111,7 +115,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     ordered_cell_types = best_model.classes_
 
     # Create empty array for reannotation probability
-    reannotation_proba = np.full(new_labels.shape[0], np.nan)
+    reannotation_proba = np.full(reannotated_labels.shape[0], np.nan)
 
     # Get maximum proba for each row
     reannotation_proba[is_undef] = np.max(undef_cells_pred, axis=1)
@@ -127,6 +131,6 @@ def knn_classifier(mat_representative, new_labels, is_undef,
 
     # Assign new annotations to original array
     logging.info('\t\t\t\t\t\tAssigning new annotations passing threshold')
-    new_labels[is_undef] = reannotated
+    reannotated_labels[is_undef] = reannotated
 
-    return new_labels, reannotation_proba
+    return reannotated_labels, reannotation_proba
