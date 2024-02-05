@@ -102,10 +102,9 @@ parser.add_argument('-mc', '--min-cellxsample', dest='min_cellxsample', type=int
                     'min_samplesxbatch' %% of samples within each batch for a new \
                     annotation to be considered [10]",
                     required=False, default=10)
-parser.add_argument('-k', '--knn-refine', dest='knn_refine', type=bool,
-                    help='If True, clustering done via permutations of relevant \
-                    markers will be refined using a KNN classifier [True]',
-                    required=False, default=True, choices=[True, False])
+parser.add_argument('-nk', '--no-knn', dest='knn_refine', type=bool,
+                    help='If present, do not refine annotations with a KNN classifier',
+                    required=False, default=True, action="store_false")
 parser.add_argument('-knn', '--knn-min-probability', dest='knn_min_probability', type=float,
                     help='Confidence threshold for KNN classifier to reassign a new \
                     cell type to previously undefined cells [0.5]',

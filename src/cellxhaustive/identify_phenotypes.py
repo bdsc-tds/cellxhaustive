@@ -90,7 +90,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
       Maximum number of optimal solutions to keep. If script finds more than
       'max_solutions' optimal marker combinations, 'max_solutions' combinations
       will be randomly chosen to be further processed and appear in final output.
-      This parameters aims to limit computational burden.
+      This parameter aims to limit computational burden.
 
     min_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least 'min_cellxsample'
