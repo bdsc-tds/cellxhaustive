@@ -271,6 +271,8 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
 
             else:  # If conditions are not met, no reannotation
                 logging.warning('\t\t\t\tNot enough cell types or undefined cells to refine annotations with KNN-classifier')
+                logging.warning(f'\t\t\t\t\tUndefined cells: <{np.sum(is_undef)}>')
+                logging.warning(f'\t\t\t\t\tAnnotations: <{len(np.unique(new_labels))}>')
                 # Use default arrays as placeholders for reannotation results
                 reannotated_labels = np.full(new_labels.shape[0], 'No_reannotation')
                 reannotation_proba = np.full(new_labels.shape[0], np.nan)
@@ -338,6 +340,8 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
 
                 else:  # If conditions are not met, no reannotation
                     logging.warning('\t\t\t\t\tNot enough cell types or undefined cells to refine annotations with KNN-classifier')
+                    logging.warning(f'\t\t\t\t\t\tUndefined cells: <{np.sum(is_undef)}>')
+                    logging.warning(f'\t\t\t\t\t\tAnnotations: <{len(np.unique(new_labels))}>')
                     # Use default arrays as placeholders for reannotation results
                     reannotated_labels = np.full(new_labels.shape[0], 'No_reannotation')
                     reannotation_proba = np.full(new_labels.shape[0], np.nan)
