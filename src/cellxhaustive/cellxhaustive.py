@@ -319,4 +319,4 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Save general table with annotations and phenotypes
     logging.info(f'Saving final table to <{args.output_path}>')
-    output_table.to_csv(args.output_path, sep='\t', header=True, index=False)
+    output_table.to_csv(args.output_path, sep='\t', header=True, index=True)
