@@ -295,13 +295,13 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
 
         logging.info('\t\t\tProcessing the different combinations')
         for i in solutions:
-            logging.info(f'\t\t\t\tProcessing combinations {i}')
+            logging.info(f'\t\t\t\tProcessing combination {i}: {best_marker_comb[i]}')
             # Slice matrix to keep only expression of best combination
             markers_rep_comb = markers[np.isin(markers, best_marker_comb[i])]
             mat_subset_rep_markers_comb = mat_subset_label[:, np.isin(markers, best_marker_comb[i])]
 
             # Assign cell type using only markers from 'best_marker_comb[i]'
-            logging.info('\t\t\t\tAssigning cell types to each cell')
+            logging.info('\t\t\t\t\tAssigning cell types to each cell')
             new_labels = assign_cell_types(
                 mat_representative=mat_subset_rep_markers_comb,
                 batches_label=batches_label,
