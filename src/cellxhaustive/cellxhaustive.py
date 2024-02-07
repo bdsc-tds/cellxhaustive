@@ -102,7 +102,7 @@ parser.add_argument('-r', '--min-cellxsample', dest='min_cellxsample', type=int,
                     'min_samplesxbatch' %% of samples within each batch for a new \
                     annotation to be considered [10]",
                     required=False, default=10)
-parser.add_argument('-k', '--no-knn', dest='knn_refine', type=bool,
+parser.add_argument('-k', '--no-knn', dest='knn_refine',
                     help='If present, do not refine annotations with a KNN classifier',
                     required=False, default=True, action="store_false")
 parser.add_argument('-p', '--knn-min-probability', dest='knn_min_probability', type=float,
