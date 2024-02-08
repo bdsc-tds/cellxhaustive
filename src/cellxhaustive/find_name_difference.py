@@ -33,14 +33,13 @@ def find_name_difference(base_comb, base_name, best_phntp):
       (values) to annotate cells.
     """
 
-    # Split 'base_comb' string into list of markers
-    base_comb_lst = base_comb.split('/')
-
     # Initialise empty dictionary to store name conversion
     names_conv = {}
 
     # Fill dictionary with new names
     if isinstance(base_comb, str):  # 0 or 1 exact match, variables are strings
+        # Split 'base_comb' string into list of markers
+        base_comb_lst = base_comb.split('/')
         for comb_str in best_phntp:
             if comb_str == base_comb:  # No need to find differences with 'base_comb'
                 names_conv[comb_str] = base_name
@@ -52,11 +51,12 @@ def find_name_difference(base_comb, base_name, best_phntp):
                 # Add new name to dictionary
                 names_conv[comb_str] = f"{base_name} ({', '.join(diff_markers)})"
     else:  # Several exact matches, variables are lists of strings
+        # Split 'base_comb' string list into list of list of markers
         base_comb_lst = [comb.split('/') for comb in base_comb]
         for comb_str in best_phntp:
             overlap = []
             if comb_str in base_comb:  # No need to find differences with 'base_comb'
-                names_conv[comb_str] = base_name
+                names_conv[comb_str] = base_name[base_comb.index(comb_str)]
             else:
                 comb_str_lst = comb_str.split('/')
                 # Calculate overlap between 'comb_str' and exact matches

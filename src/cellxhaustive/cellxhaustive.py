@@ -54,21 +54,21 @@ parser.add_argument('-o', '--output', dest='output_path', type=str,
 parser.add_argument('-l', '--log', dest='log_path', type=str,
                     help='Path to log file [output_path.log]',
                     required=False, default='')
-parser.add_argument('-ll', '--log-level', dest='log_level', type=str,
+parser.add_argument('-n', '--log-level', dest='log_level', type=str,
                     help='Verbosity level of log file [info]',
                     required=False, default='info', choices=['debug', 'info', 'warning'])
-parser.add_argument('-t', '--two-peak-threshold', dest='two_peak_threshold', type=float,
+parser.add_argument('-g', '--two-peak-threshold', dest='two_peak_threshold', type=float,
                     help='Threshold to determine whether a two-peaks marker is\
                     negative or positive [3]',
                     required=False, default=3)
-parser.add_argument('-tp', '--three-peaks', dest='three_peak_markers', type=str,
+parser.add_argument('-d', '--three-peaks', dest='three_peak_markers', type=str,
                     help='Path to file with markers that have three peaks []',
                     required=False, default=[])
-parser.add_argument('-tpl', '--three-peak-low', dest='three_peak_low', type=float,
+parser.add_argument('-e', '--three-peak-low', dest='three_peak_low', type=float,
                     help='Threshold to determine whether three-peaks marker is\
                     negative or low_positive [2]',
                     required=False, default=2)
-parser.add_argument('-tph', '--three-peak-high', dest='three_peak_high', type=float,
+parser.add_argument('-f', '--three-peak-high', dest='three_peak_high', type=float,
                     help='Threshold to determine whether three-peaks marker is\
                     positive or low_positive [4]',
                     required=False, default=4)
@@ -76,12 +76,12 @@ parser.add_argument('-c', '--cell-type-definition', dest='cell_type_path', type=
                     help='Path to file with cell types characterisation \
                     [../data/config/major_cell_types.json]',
                     required=False, default='../data/config/major_cell_types.json')
-parser.add_argument('-mm', '--max-markers', dest='max_markers', type=int,
+parser.add_argument('-a', '--max-markers', dest='max_markers', type=int,
                     help="Maximum number of relevant markers to select among \
                     total list of markers. Must be less than or equal to \
                     'len(markers)' [15]",
                     required=False, default=15)
-parser.add_argument('-ma', '--min-annotations', dest='min_annotations', type=int,
+parser.add_argument('-b', '--min-annotations', dest='min_annotations', type=int,
                     help="Minimum number of phenotypes for a combination of markers \
                     to be taken into account as a potential cell population. Must \
                     be in '[2; len(markers)]', but it is advised to choose a value \
@@ -90,21 +90,20 @@ parser.add_argument('-ma', '--min-annotations', dest='min_annotations', type=int
 parser.add_argument('-s', '--max-solutions', dest='max_solutions', type=int,
                     help='Maximum number of optimal solutions to keep [10]',
                     required=False, default=10)
-parser.add_argument('-ms', '--min-samplesxbatch', dest='min_samplesxbatch', type=float,
+parser.add_argument('-q', '--min-samplesxbatch', dest='min_samplesxbatch', type=float,
                     help="Minimum proportion of samples within each batch with at \
                     least 'min_cellxsample' cells for a new annotation to be \
                     considered [0.5]",
                     required=False, default=0.5)
-parser.add_argument('-mc', '--min-cellxsample', dest='min_cellxsample', type=int,
+parser.add_argument('-r', '--min-cellxsample', dest='min_cellxsample', type=int,
                     help="Minimum number of cells within each sample in \
                     'min_samplesxbatch' %% of samples within each batch for a new \
                     annotation to be considered [10]",
                     required=False, default=10)
-parser.add_argument('-k', '--knn-refine', dest='knn_refine', type=bool,
-                    help='If True, clustering done via permutations of relevant \
-                    markers will be refined using a KNN classifier [True]',
-                    required=False, default=True, choices=[True, False])
-parser.add_argument('-knn', '--knn-min-probability', dest='knn_min_probability', type=float,
+parser.add_argument('-k', '--no-knn', dest='knn_refine',
+                    help='If present, do not refine annotations with a KNN classifier',
+                    required=False, default=True, action="store_false")
+parser.add_argument('-p', '--knn-min-probability', dest='knn_min_probability', type=float,
                     help='Confidence threshold for KNN classifier to reassign a new \
                     cell type to previously undefined cells [0.5]',
                     required=False, default=0.5)
@@ -144,7 +143,7 @@ if __name__ == '__main__':
     # Get 1-D array for batch; add common batch value if information is missing
     logging.info(f'Retrieving batch information in <{args.input_path}>')
     if 'batch' in input_table.columns:
-        batches = input_table.loc[:, 'batch'].to_numpy()
+        batches = input_table.loc[:, 'batch'].to_numpy(dtype=str)
     else:
         logging.warning(f'\tNo batch information in <{args.input_path}>')
         logging.warning('\tSetting batch value to <batch0> for all cells')
@@ -153,7 +152,7 @@ if __name__ == '__main__':
     # Get 1-D array for sample; add common sample value if information is missing
     logging.info(f'Retrieving sample information in <{args.input_path}>')
     if 'sample' in input_table.columns:
-        samples = input_table.loc[:, 'sample'].to_numpy()
+        samples = input_table.loc[:, 'sample'].to_numpy(dtype=str)
     else:
         logging.warning(f'\tNo sample information in <{args.input_path}>')
         logging.warning('\tSetting sample value to <sample0> for all cells')
@@ -161,7 +160,7 @@ if __name__ == '__main__':
 
     # Get 1-D array for pre-annotated cell type
     logging.info(f'Retrieving cell type information in <{args.input_path}>')
-    cell_labels = input_table.loc[:, 'cell_type'].to_numpy()
+    cell_labels = input_table.loc[:, 'cell_type'].to_numpy(dtype=str)
 
     # Get three peaks markers if a file is specified, otherwise use default list
     logging.info('Checking for existence of markers with 3 peaks')
@@ -260,7 +259,7 @@ if __name__ == '__main__':
         logging.info(f'\t\tCreating result subtable for <{label}> annotations')
 
         # Create boolean array to select cells matching current 'label'
-        logging.debug(f'\t\t\tSelecting matching cells')
+        logging.info(f'\t\t\tSelecting matching cells')
         is_label = (cell_labels == label)
 
         # Slice general results dictionary
@@ -268,19 +267,19 @@ if __name__ == '__main__':
         sub_results = annot_dict[label]
 
         # Find number of optimal combinations for 'label' cells
-        logging.debug(f'\t\t\tDetermining maximum number of optimal combinations')
-        label_nb_comb = len(sub_results.keys())
-        logging.debug(f"\t\t\t\tFound {label_nb_comb} combination{'s' if label_nb_comb > 1 else ''}")
+        logging.info(f'\t\t\tDetermining maximum number of optimal combinations')
+        label_nb_comb = list(sub_results.keys())
+        logging.info(f"\t\t\t\tFound {len(label_nb_comb)} combination{'s' if len(label_nb_comb) > 1 else ''}")
 
         # Get number of cells
-        logging.debug(f'\t\t\tCounting cells')
-        cell_nb = sub_results[0]['new_labels'].shape[0]
-        # Note: 'sub_results[0]' is used because it will always exist
-        logging.debug(f'\t\t\t\tFound {cell_nb} cells')
+        logging.info(f'\t\t\tCounting cells')
+        cell_nb = sub_results[list(sub_results)[0]]['new_labels'].shape[0]
+        # Note: 'list(sub_results)[0]' is used because it will always exist
+        logging.info(f'\t\t\t\tFound {cell_nb} cells')
 
         # Get column names
         logging.debug('\t\t\tBuilding column names')
-        end = (4 * label_nb_comb) if knn_refine else (2 * label_nb_comb)
+        end = (4 * len(label_nb_comb)) if knn_refine else (2 * len(label_nb_comb))
         col_names_sub = col_names[:end]
 
         # Initialise empty dataframe to store annotation results for 'label'
@@ -291,12 +290,12 @@ if __name__ == '__main__':
 
         # Create dataframe results for all optimal combinations of 'label'
         logging.debug('\t\t\tFilling table')
-        for comb_nb in range(label_nb_comb):
+        for idx, comb_nb in enumerate(label_nb_comb):
             # Extract results
             sub_res_df = pd.DataFrame.from_dict(sub_results[comb_nb], orient='index').transpose()
 
             # Fill 'label' annotation dataframe
-            start = 4 * comb_nb
+            start = 4 * idx
             annot_df_label.iloc[:, start:(start + 4)] = sub_res_df.copy()
             # Note: copy() is used to avoid reassignation problems
 
@@ -317,4 +316,4 @@ if __name__ == '__main__':
 
     # Save general table with annotations and phenotypes
     logging.info(f'Saving final table to <{args.output_path}>')
-    output_table.to_csv(args.output_path, sep='\t', header=True, index=False)
+    output_table.to_csv(args.output_path, sep='\t', header=True, index=True)
