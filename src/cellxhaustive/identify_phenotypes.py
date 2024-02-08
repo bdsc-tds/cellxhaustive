@@ -359,7 +359,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
             min_undef_idx = [i for i, x in enumerate(undef_counter) if x == min(undef_counter)]
 
             # Filter results using previous indices
-            for key in results_dict.keys():
+            for key in list(results_dict.keys()):
                 if key not in min_undef_idx:
                     del results_dict[key]  # Keep only indices with minimum undefined cells
             logging.info(f'\t\t\t\tFound {len(results_dict)} optimal combinations')
