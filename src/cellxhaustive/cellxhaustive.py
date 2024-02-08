@@ -270,18 +270,18 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
         # Find number of optimal combinations for 'label' cells
         logging.info(f'\t\t\tDetermining maximum number of optimal combinations')
-        label_nb_comb = len(sub_results.keys())
-        logging.info(f"\t\t\t\tFound {label_nb_comb} combination{'s' if label_nb_comb > 1 else ''}")
+        label_nb_comb = list(sub_results.keys())
+        logging.info(f"\t\t\t\tFound {len(label_nb_comb)} combination{'s' if len(label_nb_comb) > 1 else ''}")
 
         # Get number of cells
         logging.info(f'\t\t\tCounting cells')
-        cell_nb = sub_results[0]['new_labels'].shape[0]
-        # Note: 'sub_results[0]' is used because it will always exist
+        cell_nb = sub_results[list(sub_results)[0]]['new_labels'].shape[0]
+        # Note: 'list(sub_results)[0]' is used because it will always exist
         logging.info(f'\t\t\t\tFound {cell_nb} cells')
 
         # Get column names
         logging.debug('\t\t\tBuilding column names')
-        end = (4 * label_nb_comb) if knn_refine else (2 * label_nb_comb)
+        end = (4 * len(label_nb_comb)) if knn_refine else (2 * len(label_nb_comb))
         col_names_sub = col_names[:end]
 
         # Initialise empty dataframe to store annotation results for 'label'
@@ -292,12 +292,12 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
         # Create dataframe results for all optimal combinations of 'label'
         logging.debug('\t\t\tFilling table')
-        for comb_nb in range(label_nb_comb):
+        for idx, comb_nb in enumerate(label_nb_comb):
             # Extract results
             sub_res_df = pd.DataFrame.from_dict(sub_results[comb_nb], orient='index').transpose()
 
             # Fill 'label' annotation dataframe
-            start = 4 * comb_nb
+            start = 4 * idx
             annot_df_label.iloc[:, start:(start + 4)] = sub_res_df.copy()
             # Note: copy() is used to avoid reassignation problems
 
