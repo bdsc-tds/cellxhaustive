@@ -145,7 +145,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     # Get 1-D array for batch; add common batch value if information is missing
     logging.info(f'Retrieving batch information in <{args.input_path}>')
     if 'batch' in input_table.columns:
-        batches = input_table.loc[:, 'batch'].to_numpy()
+        batches = input_table.loc[:, 'batch'].to_numpy(dtype=str)
     else:
         logging.warning(f'\tNo batch information in <{args.input_path}>')
         logging.warning('\tSetting batch value to <batch0> for all cells')
@@ -154,7 +154,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     # Get 1-D array for sample; add common sample value if information is missing
     logging.info(f'Retrieving sample information in <{args.input_path}>')
     if 'sample' in input_table.columns:
-        samples = input_table.loc[:, 'sample'].to_numpy()
+        samples = input_table.loc[:, 'sample'].to_numpy(dtype=str)
     else:
         logging.warning(f'\tNo sample information in <{args.input_path}>')
         logging.warning('\tSetting sample value to <sample0> for all cells')
@@ -162,7 +162,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Get 1-D array for pre-annotated cell type
     logging.info(f'Retrieving cell type information in <{args.input_path}>')
-    cell_labels = input_table.loc[:, 'cell_type'].to_numpy()
+    cell_labels = input_table.loc[:, 'cell_type'].to_numpy(dtype=str)
 
     # Get three peaks markers if a file is specified, otherwise use default list
     logging.info('Checking for existence of markers with 3 peaks')
