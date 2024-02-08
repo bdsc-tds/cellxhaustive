@@ -315,7 +315,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
 
             # Append results to dictionary
             results_dict[i]['new_labels'] = new_labels
-            results_dict[i]['cell_phntp_comb'] = cell_phntp_comb
+            results_dict[i]['cell_phntp_comb'] = cell_phntp_comb[i]
 
             if knn_refine:
                 # Reannotate only if conditions to run KNN-classifier are met
