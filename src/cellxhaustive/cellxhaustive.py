@@ -261,7 +261,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         logging.info(f'\t\tCreating result subtable for <{label}> annotations')
 
         # Create boolean array to select cells matching current 'label'
-        logging.debug(f'\t\t\tSelecting matching cells')
+        logging.info(f'\t\t\tSelecting matching cells')
         is_label = (cell_labels == label)
 
         # Slice general results dictionary
@@ -269,15 +269,15 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         sub_results = annot_dict[label]
 
         # Find number of optimal combinations for 'label' cells
-        logging.debug(f'\t\t\tDetermining maximum number of optimal combinations')
+        logging.info(f'\t\t\tDetermining maximum number of optimal combinations')
         label_nb_comb = len(sub_results.keys())
-        logging.debug(f"\t\t\t\tFound {label_nb_comb} combination{'s' if label_nb_comb > 1 else ''}")
+        logging.info(f"\t\t\t\tFound {label_nb_comb} combination{'s' if label_nb_comb > 1 else ''}")
 
         # Get number of cells
-        logging.debug(f'\t\t\tCounting cells')
+        logging.info(f'\t\t\tCounting cells')
         cell_nb = sub_results[0]['new_labels'].shape[0]
         # Note: 'sub_results[0]' is used because it will always exist
-        logging.debug(f'\t\t\t\tFound {cell_nb} cells')
+        logging.info(f'\t\t\t\tFound {cell_nb} cells')
 
         # Get column names
         logging.debug('\t\t\tBuilding column names')

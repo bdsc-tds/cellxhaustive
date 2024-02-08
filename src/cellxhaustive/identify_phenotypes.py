@@ -362,6 +362,6 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
             for key, val in results_dict.items():
                 results_dict[key] = [i for idx, i in enumerate(val) if idx in set(min_undef_idx)]
                 # Note: set() is used to increase speed
-            logging.info(f'\t\t\t\tFound {len(results_dict)} optimal combinations for {cell_name} cells')
+            logging.info(f'\t\t\t\tFound {len(results_dict)} optimal combinations')
 
     return results_dict
