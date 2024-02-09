@@ -209,13 +209,57 @@ if __name__ == '__main__':
 
 
 # Datasets to check:
+# 500 cells, 5 markers, 1 batch, 1 sample, equal cell type distribution, all non-defining markers negative
+# Same but with non-defining markers positive or negative across all cells
+
 # 500 cells, 5 markers, 1 batch, 1 sample, equal cell type distribution
+
 # 500 cells, 5 markers, several batches, 1 sample, equal cell type distribution
 # 500 cells, 5 markers, 1 batch, several samples, equal cell type distribution
+
 # 500 cells, 5 markers, several batches, several sample, equal cell type distribution
+
+# mutual information criteria, Jaccard index? for cell type identification
+# Average marker overlap across all cells? for phenotype
+
+# Plot over std (x), MIC (y)
+# Plot over batches (x), MIC (y) boxscore
+# Use xmin param
+
+# 4 batches, 10 samples
+
+# Average when there are several combinations
+
+
+# CHANGE BOUNDS
+
 # 10 markers?
 # Non-equal cell type distribution?
 # Check impact of limiting the number of markers. For example, if mam-markers = 3, do we see cell types with more than 3 markers?
 
 
 # Test presence/absence of batch, sample, cell_type
+
+
+
+# Only positive markers for missing markers for 1st test
+
+# CD3, CD4, CD127
+
+# Use Hao dataset as test?
+
+
+
+# Higher tier paper with analyses and method/package
+
+# Update methods
+
+# Rerun ADTnorm analzses
+# Perform ADT annotations using package
+
+# Compare Azimuth annotations vs cellxhaustive
+
+# Acute phase vs convalescent phase
+
+# Benchmark cellxhaustive vs other packages CITE-sort
+
