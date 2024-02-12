@@ -14,6 +14,9 @@ from scipy.stats import truncnorm
 
 # Parse arguments
 parser = argparse.ArgumentParser(description='Script to generate test datasets for cellxhaustive package')
+parser.add_argument('-o', '--output', dest='output', type=str,
+                    help='Path to output file []',
+                    required=False, default='')
 parser.add_argument('-n', '--nb-cell', dest='nb_cell', type=int,
                     help='Number of cells to generate [500]',
                     required=False, default=500)
