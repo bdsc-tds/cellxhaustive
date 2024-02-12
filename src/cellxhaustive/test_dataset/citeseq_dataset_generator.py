@@ -33,8 +33,8 @@ parser.add_argument('-c', '--cell-type', dest='cell_type', type=str,
                     help='Path to file with cell types ontology [cell_types.json]',
                     required=False, default='cell_types.json')
 parser.add_argument('-pmin', '--pos-min', dest='pos_min', type=float,
-                    help='Minimum expression value in positive distribution [3]',
-                    required=False, default=3)
+                    help='Minimum expression value in positive distribution [0]',
+                    required=False, default=0)
 parser.add_argument('-pmax', '--pos-max', dest='pos_max', type=float,
                     help='Maximum expression value in positive distribution [6]',
                     required=False, default=6)
@@ -42,20 +42,20 @@ parser.add_argument('-pmean', '--pos-mean', dest='pos_mean', type=float,
                     help='Mean expression in positive distribution [(pos_max+pos_min)/2]',
                     required=False)
 parser.add_argument('-pstd', '--pos-std', dest='pos_std', type=float,
-                    help='Expression standard deviation in positive distribution [1]',
-                    required=False, default=1)
+                    help='Expression standard deviation in positive distribution [0.75]',
+                    required=False, default=0.75)
 parser.add_argument('-nmin', '--neg-min', dest='neg_min', type=float,
                     help='Minimum expression value in negative distribution [0]',
                     required=False, default=0)
 parser.add_argument('-nmax', '--neg-max', dest='neg_max', type=float,
-                    help='Maximum expression value in negative distribution [3]',
-                    required=False, default=3)
+                    help='Maximum expression value in negative distribution [6]',
+                    required=False, default=6)
 parser.add_argument('-nmean', '--neg-mean', dest='neg_mean', type=float,
                     help='Mean expression in negative distribution [(neg_max+neg_min)/2]',
                     required=False)
 parser.add_argument('-nstd', '--neg-std', dest='neg_std', type=float,
-                    help='Expression standard deviation in negative distribution [1]',
-                    required=False, default=1)
+                    help='Expression standard deviation in negative distribution [0.75]',
+                    required=False, default=0.75)
 args = parser.parse_args()
 
 
