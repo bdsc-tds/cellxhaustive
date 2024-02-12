@@ -209,15 +209,25 @@ if __name__ == '__main__':
 
 
 # Datasets to check:
-# 500 cells, 5 markers, 1 batch, 1 sample, equal cell type distribution, all non-defining markers negative
+# 1. 1000 cells, 5 markers, 1 batch, 1 sample, equal cell type distribution, all non-defining markers negative:
+# 2.
+# 3.
+# 4.
+# 5.
+# 6.
+# 7.
+# 8.
+
+
+
 # Same but with non-defining markers positive or negative across all cells
 
-# 500 cells, 5 markers, 1 batch, 1 sample, equal cell type distribution
+# 1000 cells, 5 markers, 1 batch, 1 sample, equal cell type distribution
 
-# 500 cells, 5 markers, several batches, 1 sample, equal cell type distribution
-# 500 cells, 5 markers, 1 batch, several samples, equal cell type distribution
+# 1000 cells, 5 markers, several batches, 1 sample, equal cell type distribution
+# 1000 cells, 5 markers, 1 batch, several samples, equal cell type distribution
 
-# 500 cells, 5 markers, several batches, several sample, equal cell type distribution
+# 1000 cells, 5 markers, several batches, several sample, equal cell type distribution
 
 # mutual information criteria, Jaccard index? for cell type identification
 # Average marker overlap across all cells? for phenotype
