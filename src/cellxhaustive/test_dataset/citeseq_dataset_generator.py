@@ -191,20 +191,16 @@ if __name__ == '__main__':
     final_table.to_csv(output, sep='\t', header=True, index=True)
     print(f'Generated dataset is {output}')
 
+    # Quick distribution plot
+    import matplotlib.pyplot as plt
+    x_range = np.linspace(-1, 7, 1000)
+    plt.plot(x_range, neg_dis.pdf(x_range), 'b')
+    plt.plot(x_range, pos_dis.pdf(x_range), 'r')
+    plt.title('Marker expression')
+    plt.legend(labels=['Negative markers', 'Positive markers'], loc='upper left')
+    plt.savefig(output.replace('tsv', 'jpg'))
+    # plt.show()
 
-# Notes: potential conflict and assignation problem between cell types 0, 1 and 2?
-
-
-# # To plot distrib
-# import matplotlib.pyplot as plt
-# pos_dis = truncnorm(-1.5, 1.5, loc=4.5, scale=2)
-# neg_dis = truncnorm(-1.5, 1.5, loc=1.5, scale=2)
-# x_range = np.linspace(-0, 10, 1000)
-# # plt.plot(x_range, truncnorm.pdf(x_range, a, b, loc = my_mean, scale = my_std))
-# plt.plot(x_range, pos_dis.pdf(x_range))
-# plt.show()
-# plt.plot(x_range, neg_dis.pdf(x_range))
-# plt.show()
 
 
 # Check whether theoretical distribution (truncated normal distribution) fit
