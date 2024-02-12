@@ -183,9 +183,14 @@ if __name__ == '__main__':
     final_table.index.names = ['cell_nb']  # Rename index
 
     # Build output name
-    output = f'cell_expression_{nb_cell}cells_{nb_marker}mkers_{nb_sample}samples_{nb_batch}batches'
-    output += f'_pmin{pos_min}_pmax{pos_max}_pmean{pos_mean}_pstd{pos_std}'
-    output += f'_nmin{neg_min}_nmax{neg_max}_nmean{neg_mean}_nstd{neg_std}.tsv'
+    if not args.output:
+        output = f'cell_expression_{nb_cell}cells_{nb_marker}mkers_{nb_sample}samples_{nb_batch}batches'
+        output += f'_min{pos_min}_max{pos_max}_nmean{neg_mean}_pmean{pos_mean}_std{pos_std}.tsv'
+        # output = f'cell_expression_{nb_cell}cells_{nb_marker}mkers_{nb_sample}samples_{nb_batch}batches'
+        # output += f'_pmin{pos_min}_pmax{pos_max}_pmean{pos_mean}_pstd{pos_std}'
+        # output += f'_nmin{neg_min}_nmax{neg_max}_nmean{neg_mean}_nstd{neg_std}.tsv'
+    else:
+        output = args.output
 
     # Save table to file
     final_table.to_csv(output, sep='\t', header=True, index=True)
