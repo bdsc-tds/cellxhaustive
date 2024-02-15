@@ -30,8 +30,8 @@ parser.add_argument('-s', '--sample', dest='nb_sample', type=int,
                     help='Number of samples to define [1]',
                     required=False, default=1)
 parser.add_argument('-c', '--cell-type', dest='cell_type', type=str,
-                    help='Path to file with cell types ontology [cell_types.json]',
-                    required=False, default='cell_types.json')
+                    help='Path to file with cell types ontology [cell_types_test.json]',
+                    required=False, default='cell_types_test.json')
 parser.add_argument('-pmin', '--pos-min', dest='pos_min', type=float,
                     help='Minimum expression value in positive distribution [0]',
                     required=False, default=0)
@@ -64,7 +64,8 @@ def get_full_phenotype(rng, tot_markers, cell_dict, idx):
     pheno = cp.deepcopy(cell_dict[idx])
     for marker in tot_markers:
         if marker not in ''.join(pheno):
-            status = rng.choice(['+', '-'], p=[0.5, 0.5])
+            status = rng.choice(['+', '-'], p=[0, 1])
+            # status = rng.choice(['+', '-'], p=[0.5, 0.5])
             marker_state = f'{marker}{status}'
             pheno.append(marker_state)
     pheno.sort()  # Sort all markers in alphabetical order
@@ -110,6 +111,9 @@ if __name__ == '__main__':
     proba = np.full(nb_cell_types, (1 / nb_cell_types))
     cell_type = rng.choice(nb_cell_types, size=nb_cell, p=proba)
 
+    # Create fake cell type
+    fake_type = ['42'] * nb_cell
+
     # Get cell ontology phenotypes
     cell_phntp_onto = np.vectorize(cell_types_str.get)(cell_type)
 
@@ -136,6 +140,7 @@ if __name__ == '__main__':
 
     # Initialise final dictionary
     tot_dict = {'cell_type': cell_type,
+                'fake_type': fake_type,
                 'cell_phntp_onto': cell_phntp_onto,
                 'cell_phntp_full': cell_phntp_full_str,
                 'batch': batch,
@@ -194,7 +199,7 @@ if __name__ == '__main__':
 
     # Save table to file
     final_table.to_csv(output, sep='\t', header=True, index=True)
-    print(f'Generated dataset is {output}')
+    print(f'Generated dataset at {output}')
 
     # Quick distribution plot
     import matplotlib.pyplot as plt
@@ -208,12 +213,11 @@ if __name__ == '__main__':
 
 
 
-# Check whether theoretical distribution (truncated normal distribution) fit
-# actual marker expression distribution
-
-
 # Datasets to check:
-# 1. 1000 cells, 5 markers, 1 batch, 1 sample, equal cell type distribution, all non-defining markers negative:
+# Default = 5000 cells, 5 markers, 1 batch, 1 sample, min = 0, max = 6, nmean = 1.5, pmean = 4.5, std = 0.75, all non-defining markers negative
+    # cell_expression_5000cells_5mkers_1samples_1batches_min0_max6_nmean1.5_pmean4.5_std0.75_default
+# 1. Default but non-defining markers both positive and negative
+    # cell_expression_5000cells_5mkers_1samples_1batches_min0_max6_nmean1.5_pmean4.5_std0.75_mixed
 # 2.
 # 3.
 # 4.
@@ -222,11 +226,15 @@ if __name__ == '__main__':
 # 7.
 # 8.
 
+# Check whether theoretical distribution (truncated normal distribution) fit
+# actual marker expression distribution
+
+# Check potential conflict and assignation problem between cell types 0 vs 1 and 0 vs 2? (0 is included both in 1 and 2)
+
 
 
 # Same but with non-defining markers positive or negative across all cells
 
-# 1000 cells, 5 markers, 1 batch, 1 sample, equal cell type distribution
 
 # 1000 cells, 5 markers, several batches, 1 sample, equal cell type distribution
 # 1000 cells, 5 markers, 1 batch, several samples, equal cell type distribution
@@ -234,7 +242,7 @@ if __name__ == '__main__':
 # 1000 cells, 5 markers, several batches, several sample, equal cell type distribution
 
 # mutual information criteria, Jaccard index? for cell type identification
-# Average marker overlap across all cells? for phenotype
+# Average marker phenotype overlap (overlap between annotated phenotype and actual phenotype) across all cells?
 
 # Plot over std (x), MIC (y)
 # Plot over batches (x), MIC (y) boxscore
@@ -242,22 +250,18 @@ if __name__ == '__main__':
 
 # 4 batches, 10 samples
 
-# Average when there are several combinations
+# Average score when there are several combinations
 
-
-# CHANGE BOUNDS
 
 # 10 markers?
-# Non-equal cell type distribution?
-# Check impact of limiting the number of markers. For example, if mam-markers = 3, do we see cell types with more than 3 markers?
+# Check impact of limiting the number of markers. For example, if max-markers = 3, do we see cell types with more than 3 markers?
 
 
 # Test presence/absence of batch, sample, cell_type
 
 
 
-# Only positive markers for missing markers for 1st test
-
+# Try with only key markers --> only positive??
 # CD3, CD4, CD127
 
 # Use Hao dataset as test?
