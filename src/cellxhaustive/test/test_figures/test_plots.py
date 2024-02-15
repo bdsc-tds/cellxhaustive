@@ -9,6 +9,7 @@ import os
 import pandas as pd
 import seaborn as sns
 from sklearn.metrics import adjusted_mutual_info_score
+from sklearn.metrics import jaccard_score
 
 
 # Function to add jittering on scatterplots
@@ -19,41 +20,50 @@ def jitter(val, j):
 # Create numpy random generator with seed for reproducibility
 np.random.seed(42)
 
-# Plot AMI across std
+# Plot AMI/Jaccard similarity across std
 # Initialise objects
 markers = ['a', 'b', 'c', 'd', 'e']  # Markers list
-std_dir = 'default_std_test/'  # std folder
+std_dir = '../test_results/fake_std_test/'  # std folder
 std_files = [f for f in os.listdir(std_dir) if f.endswith('.tsv')]  # std tsv files
-std_rows = []  # Data list
+std_rows_ami = []  # AMI data list
+std_rows_jaccard = []  # AMI data list
 std_exp_df = pd.DataFrame()  # Expression data frame
 
 # Fill dataframe
 for file in std_files:
     # Get std value
-    std = float(file.replace('cell_expression_5000cells_std', '').replace('_default_annotated.tsv', ''))
+    std = float(file.replace('cell_expression_fake_std', '').replace('_annotated.tsv', ''))
     # Build path
     std_file = os.path.join(std_dir, file)
     # Load file
     std_res = pd.read_csv(std_file, sep='\t', index_col=0)
     # Get true cell types
-    std_labels_true = std_res['cell_type']
+    std_labels_true = std_res['cell_phntp_full']
     # Get expression data
     std_exp = std_res.loc[:, markers]
     std_exp['std'] = std
     # Add it to expression table
     std_exp_df = pd.concat([std_exp_df, std_exp])
     # Get columns containing annotations (several optimal combinations --> several columns)
-    std_labels_col = [col for col in std_res.columns if 'KNN_annot' in col]
+    std_labels_col = [col for col in std_res.columns if 'Phenotypes_' in col]
     for annot in std_labels_col:
         std_labels_pred = std_res[annot]
-        score = adjusted_mutual_info_score(std_labels_true, std_labels_pred)
-        std_rows.append({'std': std, 'score': score})
+        std_score_ami = adjusted_mutual_info_score(std_labels_true, std_labels_pred)
+        std_rows_ami.append({'std': std, 'std_score_ami': std_score_ami})
+        std_score_jaccard = jaccard_score(std_labels_true, std_labels_pred, average='weighted')
+        std_rows_jaccard.append({'std': std, 'std_score_jaccard': std_score_jaccard})
 
 # Build final AMI dataframe, sort by std and reset indices
-df_std = pd.DataFrame(std_rows).sort_values(by='std', ignore_index=True)
+df_std_ami = pd.DataFrame(std_rows_ami).sort_values(by='std', ignore_index=True)
 
 # Calculate average AMI in case there are several combinations
-avg_std = df_std.groupby('std', as_index=False)['score'].mean()
+avg_std_ami = df_std_ami.groupby('std', as_index=False)['std_score_ami'].mean()
+
+# Build final ARI dataframe, sort by std and reset indices
+df_std_jaccard = pd.DataFrame(std_rows_jaccard).sort_values(by='std', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_std_jaccard = df_std_jaccard.groupby('std', as_index=False)['std_score_jaccard'].mean()
 
 # Melt expression table
 std_exp_df_melted = pd.melt(std_exp_df, id_vars='std')
@@ -64,11 +74,13 @@ sns.set(style='whitegrid')
 fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
 
 # AMI Scatterplot
-g = sns.scatterplot(x=df_std['std'], y=df_std['score'], color='blue', ax=ax[0])
-g = sns.scatterplot(x=jitter(avg_std['std'], 0.05), y=avg_std['score'], color='red', ax=ax[0])
-g.set(xlabel='Marker distributions std', ylabel='AMI', ylim=[0, 1.1])
-ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI'])
-ax[0].title.set_text('Adjusted Mutual Information (AMI) score')
+g = sns.scatterplot(x=jitter(df_std_ami['std'], 0.05), y=df_std_ami['std_score_ami'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_std_ami['std'], 0.05), y=avg_std_ami['std_score_ami'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_std_jaccard['std'], 0.05), y=df_std_jaccard['std_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_std_jaccard['std'], 0.05), y=avg_std_jaccard['std_score_jaccard'], color='red', linewidth=0, ax=ax[0])
+g.set(xlabel='Marker distributions std', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
+ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
+ax[0].title.set_text('Similarity scores')
 
 # Expression density plot
 h = sns.kdeplot(data=std_exp_df_melted, x='value', hue='std', fill=True,
@@ -76,30 +88,464 @@ h = sns.kdeplot(data=std_exp_df_melted, x='value', hue='std', fill=True,
 h.set(xlabel='ADT expression')
 ax[1].legend_.set_title('Standard deviation')
 ax[1].title.set_text('Distribution of markers expression')
-fig.figure.suptitle('Impact of standard deviation on AMI')
+fig.figure.suptitle('Impact of standard deviation on phenotypes identification')
 fig.tight_layout()
-fig.figure.savefig(os.path.join(std_dir, 'std_AMI_expression.jpg'))
+fig.figure.savefig('fake_std_phenotypes.jpg', dpi=600)
+
+
+
+# Plot AMI/Jaccard similarity across std with 4 batches
+# Initialise objects
+batch_std_dir = '../test_results/batch_std_test/'  # batch_std folder
+batch_std_files = [f for f in os.listdir(batch_std_dir) if f.endswith('.tsv')]  # batch_std tsv files
+batch_std_rows_ami = []  # AMI data list
+batch_std_rows_jaccard = []  # AMI data list
+batch_std_exp_df = pd.DataFrame()  # Expression data frame
+
+# Fill dataframe
+for file in batch_std_files:
+    # Get std value
+    std = float(file.replace('cell_expression_batch_std', '').replace('_annotated.tsv', ''))
+    # Build path
+    batch_std_file = os.path.join(batch_std_dir, file)
+    # Load file
+    batch_std_res = pd.read_csv(batch_std_file, sep='\t', index_col=0)
+    # Get true cell types
+    batch_std_labels_true = batch_std_res['cell_phntp_full']
+    # Get expression data
+    batch_std_exp = batch_std_res.loc[:, markers]
+    batch_std_exp['std'] = std
+    # Add it to expression table
+    batch_std_exp_df = pd.concat([batch_std_exp_df, batch_std_exp])
+    # Get columns containing annotations (several optimal combinations --> several columns)
+    batch_std_labels_col = [col for col in batch_std_res.columns if 'Phenotypes_' in col]
+    for annot in batch_std_labels_col:
+        batch_std_labels_pred = batch_std_res[annot]
+        batch_std_score_ami = adjusted_mutual_info_score(batch_std_labels_true, batch_std_labels_pred)
+        batch_std_rows_ami.append({'std': std, 'batch_std_score_ami': batch_std_score_ami})
+        batch_std_score_jaccard = jaccard_score(batch_std_labels_true, batch_std_labels_pred, average='weighted')
+        batch_std_rows_jaccard.append({'std': std, 'batch_std_score_jaccard': batch_std_score_jaccard})
+
+# Build final AMI dataframe, sort by std and reset indices
+df_batch_std_ami = pd.DataFrame(batch_std_rows_ami).sort_values(by='std', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_batch_std_ami = df_batch_std_ami.groupby('std', as_index=False)['batch_std_score_ami'].mean()
+
+# Build final ARI dataframe, sort by std and reset indices
+df_batch_std_jaccard = pd.DataFrame(batch_std_rows_jaccard).sort_values(by='std', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_batch_std_jaccard = df_batch_std_jaccard.groupby('std', as_index=False)['batch_std_score_jaccard'].mean()
+
+# Melt expression table
+batch_std_exp_df_melted = pd.melt(batch_std_exp_df, id_vars='std')
+
+# Plot figures
+plt.clf()  # Make sure there are no underlying figure
+sns.set(style='whitegrid')
+fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
+
+# AMI Scatterplot
+g = sns.scatterplot(x=jitter(df_batch_std_ami['std'], 0.05), y=df_batch_std_ami['batch_std_score_ami'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_batch_std_ami['std'], 0.05), y=avg_batch_std_ami['batch_std_score_ami'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_batch_std_jaccard['std'], 0.05), y=df_batch_std_jaccard['batch_std_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_batch_std_jaccard['std'], 0.05), y=avg_batch_std_jaccard['batch_std_score_jaccard'], color='red', linewidth=0, ax=ax[0])
+g.set(xlabel='Marker distributions std', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
+ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
+ax[0].title.set_text('Similarity scores')
+
+# Expression density plot
+h = sns.kdeplot(data=batch_std_exp_df_melted, x='value', hue='std', fill=True,
+                common_norm=False, alpha=0.4, palette='crest', ax=ax[1])
+h.set(xlabel='ADT expression')
+ax[1].legend_.set_title('Standard deviation')
+ax[1].title.set_text('Distribution of markers expression')
+fig.figure.suptitle('Impact of increasing batch number on phenotypes identification')
+fig.tight_layout()
+fig.figure.savefig('batch_std_phenotypes.jpg', dpi=600)
+
+
+
+# Plot AMI/Jaccard similarity across std with 4 samples
+# Initialise objects
+sample_dir = '../test_results/sample_std_test/'  # sample folder
+sample_files = [f for f in os.listdir(sample_dir) if f.endswith('.tsv')]  # sample tsv files
+sample_rows_ami = []  # AMI data list
+sample_rows_jaccard = []  # AMI data list
+sample_exp_df = pd.DataFrame()  # Expression data frame
+
+# Fill dataframe
+for file in sample_files:
+    # Get std value
+    std = float(file.replace('cell_expression_sample_std', '').replace('_annotated.tsv', ''))
+    # Build path
+    sample_file = os.path.join(sample_dir, file)
+    # Load file
+    sample_res = pd.read_csv(sample_file, sep='\t', index_col=0)
+    # Get true cell types
+    sample_labels_true = sample_res['cell_phntp_full']
+    # Get expression data
+    sample_exp = sample_res.loc[:, markers]
+    sample_exp['std'] = std
+    # Add it to expression table
+    sample_exp_df = pd.concat([sample_exp_df, sample_exp])
+    # Get columns containing annotations (several optimal combinations --> several columns)
+    sample_labels_col = [col for col in sample_res.columns if 'Phenotypes_' in col]
+    for annot in sample_labels_col:
+        sample_labels_pred = sample_res[annot]
+        sample_score_ami = adjusted_mutual_info_score(sample_labels_true, sample_labels_pred)
+        sample_rows_ami.append({'std': std, 'sample_score_ami': sample_score_ami})
+        sample_score_jaccard = jaccard_score(sample_labels_true, sample_labels_pred, average='weighted')
+        sample_rows_jaccard.append({'std': std, 'sample_score_jaccard': sample_score_jaccard})
+
+# Build final AMI dataframe, sort by std and reset indices
+df_sample_ami = pd.DataFrame(sample_rows_ami).sort_values(by='std', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_sample_ami = df_sample_ami.groupby('std', as_index=False)['sample_score_ami'].mean()
+
+# Build final ARI dataframe, sort by std and reset indices
+df_sample_jaccard = pd.DataFrame(sample_rows_jaccard).sort_values(by='std', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_sample_jaccard = df_sample_jaccard.groupby('std', as_index=False)['sample_score_jaccard'].mean()
+
+# Melt expression table
+sample_exp_df_melted = pd.melt(sample_exp_df, id_vars='std')
+
+# Plot figures
+plt.clf()  # Make sure there are no underlying figure
+sns.set(style='whitegrid')
+fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
+
+# AMI Scatterplot
+g = sns.scatterplot(x=jitter(df_sample_ami['std'], 0.05), y=df_sample_ami['sample_score_ami'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_sample_ami['std'], 0.05), y=avg_sample_ami['sample_score_ami'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_sample_jaccard['std'], 0.05), y=df_sample_jaccard['sample_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_sample_jaccard['std'], 0.05), y=avg_sample_jaccard['sample_score_jaccard'], color='red', linewidth=0, ax=ax[0])
+g.set(xlabel='Marker distributions std', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
+ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
+ax[0].title.set_text('Similarity scores')
+
+# Expression density plot
+h = sns.kdeplot(data=sample_exp_df_melted, x='value', hue='std', fill=True,
+                common_norm=False, alpha=0.4, palette='crest', ax=ax[1])
+h.set(xlabel='ADT expression')
+ax[1].legend_.set_title('Standard deviation')
+ax[1].title.set_text('Distribution of markers expression')
+fig.figure.suptitle('Impact of increasing sample number on phenotypes identification')
+fig.tight_layout()
+fig.figure.savefig('sample_std_phenotypes.jpg', dpi=600)
+
+
+
+# Plot AMI/Jaccard similarity across std with batches and samples
+# Initialise objects
+batch_sample_dir = '../test_results/batch_sample_std_test/'  # batch_sample folder
+batch_sample_files = [f for f in os.listdir(batch_sample_dir) if f.endswith('.tsv')]  # batch_sample tsv files
+batch_sample_rows_ami = []  # AMI data list
+batch_sample_rows_jaccard = []  # AMI data list
+batch_sample_exp_df = pd.DataFrame()  # Expression data frame
+
+# Fill dataframe
+for file in batch_sample_files:
+    # Get std value
+    std = float(file.replace('cell_expression_batch_sample_std', '').replace('_annotated.tsv', ''))
+    # Build path
+    batch_sample_file = os.path.join(batch_sample_dir, file)
+    # Load file
+    batch_sample_res = pd.read_csv(batch_sample_file, sep='\t', index_col=0)
+    # Get true cell types
+    batch_sample_labels_true = batch_sample_res['cell_phntp_full']
+    # Get expression data
+    batch_sample_exp = batch_sample_res.loc[:, markers]
+    batch_sample_exp['std'] = std
+    # Add it to expression table
+    batch_sample_exp_df = pd.concat([batch_sample_exp_df, batch_sample_exp])
+    # Get columns containing annotations (several optimal combinations --> several columns)
+    batch_sample_labels_col = [col for col in batch_sample_res.columns if 'Phenotypes_' in col]
+    for annot in batch_sample_labels_col:
+        batch_sample_labels_pred = batch_sample_res[annot]
+        batch_sample_score_ami = adjusted_mutual_info_score(batch_sample_labels_true, batch_sample_labels_pred)
+        batch_sample_rows_ami.append({'std': std, 'batch_sample_score_ami': batch_sample_score_ami})
+        batch_sample_score_jaccard = jaccard_score(batch_sample_labels_true, batch_sample_labels_pred, average='weighted')
+        batch_sample_rows_jaccard.append({'std': std, 'batch_sample_score_jaccard': batch_sample_score_jaccard})
+
+# Build final AMI dataframe, sort by std and reset indices
+df_batch_sample_ami = pd.DataFrame(batch_sample_rows_ami).sort_values(by='std', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_batch_sample_ami = df_batch_sample_ami.groupby('std', as_index=False)['batch_sample_score_ami'].mean()
+
+# Build final ARI dataframe, sort by std and reset indices
+df_batch_sample_jaccard = pd.DataFrame(batch_sample_rows_jaccard).sort_values(by='std', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_batch_sample_jaccard = df_batch_sample_jaccard.groupby('std', as_index=False)['batch_sample_score_jaccard'].mean()
+
+# Melt expression table
+batch_sample_exp_df_melted = pd.melt(batch_sample_exp_df, id_vars='std')
+
+# Plot figures
+plt.clf()  # Make sure there are no underlying figure
+sns.set(style='whitegrid')
+fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
+
+# AMI Scatterplot
+g = sns.scatterplot(x=jitter(df_batch_sample_ami['std'], 0.05), y=df_batch_sample_ami['batch_sample_score_ami'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_batch_sample_ami['std'], 0.05), y=avg_batch_sample_ami['batch_sample_score_ami'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_batch_sample_jaccard['std'], 0.05), y=df_batch_sample_jaccard['batch_sample_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_batch_sample_jaccard['std'], 0.05), y=avg_batch_sample_jaccard['batch_sample_score_jaccard'], color='red', linewidth=0, ax=ax[0])
+g.set(xlabel='Marker distributions std', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
+ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
+ax[0].title.set_text('Similarity scores')
+
+# Expression density plot
+h = sns.kdeplot(data=batch_sample_exp_df_melted, x='value', hue='std', fill=True,
+                common_norm=False, alpha=0.4, palette='crest', ax=ax[1])
+h.set(xlabel='ADT expression')
+ax[1].legend_.set_title('Standard deviation')
+ax[1].title.set_text('Distribution of markers expression')
+fig.figure.suptitle('Impact of increasing sample and batch number on phenotypes identification')
+fig.tight_layout()
+fig.figure.savefig('batch_sample_std_phenotypes.jpg', dpi=600)
+
+
+
+# Plot AMI/Jaccard similarity across batches
+# Initialise objects
+batch_dir = '../test_results/batch_test/'  # batch folder
+batch_files = [f for f in os.listdir(batch_dir) if f.endswith('.tsv')]  # batch tsv files
+batch_rows_ami = []  # AMI data list
+batch_rows_jaccard = []  # AMI data list
+batch_exp_df = pd.DataFrame()  # Expression data frame
+
+# Fill dataframe
+for file in batch_files:
+    # Get std value
+    nb_batch = float(file.replace('cell_expression_std0.75_', '').replace('batches_annotated.tsv', ''))
+    # Build path
+    batch_file = os.path.join(batch_dir, file)
+    # Load file
+    batch_res = pd.read_csv(batch_file, sep='\t', index_col=0)
+    # Get true cell types
+    batch_labels_true = batch_res['cell_phntp_full']
+    # Get expression data
+    batch_exp = batch_res.loc[:, markers]
+    batch_exp['nb_batch'] = nb_batch
+    # Add it to expression table
+    batch_exp_df = pd.concat([batch_exp_df, batch_exp])
+    # Get columns containing annotations (several optimal combinations --> several columns)
+    batch_labels_col = [col for col in batch_res.columns if 'Phenotypes_' in col]
+    for annot in batch_labels_col:
+        batch_labels_pred = batch_res[annot]
+        batch_score_ami = adjusted_mutual_info_score(batch_labels_true, batch_labels_pred)
+        batch_rows_ami.append({'nb_batch': nb_batch, 'batch_score_ami': batch_score_ami})
+        batch_score_jaccard = jaccard_score(batch_labels_true, batch_labels_pred, average='weighted')
+        batch_rows_jaccard.append({'nb_batch': nb_batch, 'batch_score_jaccard': batch_score_jaccard})
+
+# Build final AMI dataframe, sort by nb_batch and reset indices
+df_batch_ami = pd.DataFrame(batch_rows_ami).sort_values(by='nb_batch', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_batch_ami = df_batch_ami.groupby('nb_batch', as_index=False)['batch_score_ami'].mean()
+
+# Build final ARI dataframe, sort by nb_batch and reset indices
+df_batch_jaccard = pd.DataFrame(batch_rows_jaccard).sort_values(by='nb_batch', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_batch_jaccard = df_batch_jaccard.groupby('nb_batch', as_index=False)['batch_score_jaccard'].mean()
+
+# Melt expression table
+batch_exp_df_melted = pd.melt(batch_exp_df, id_vars='nb_batch')
+
+# Plot figures
+plt.clf()  # Make sure there are no underlying figure
+sns.set(style='whitegrid')
+fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
+
+# AMI Scatterplot
+g = sns.scatterplot(x=jitter(df_batch_ami['nb_batch'], 0.05), y=df_batch_ami['batch_score_ami'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_batch_ami['nb_batch'], 0.05), y=avg_batch_ami['batch_score_ami'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_batch_jaccard['nb_batch'], 0.05), y=df_batch_jaccard['batch_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_batch_jaccard['nb_batch'], 0.05), y=avg_batch_jaccard['batch_score_jaccard'], color='red', linewidth=0, ax=ax[0])
+g.set(xlabel='Number of batches', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
+ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
+ax[0].title.set_text('Similarity scores')
+
+# Expression density plot
+h = sns.kdeplot(data=batch_exp_df_melted, x='value', hue='nb_batch', fill=True,
+                common_norm=False, alpha=0.1, palette='crest', ax=ax[1])
+h.set(xlabel='ADT expression')
+ax[1].legend_.set_title('Batch number')
+ax[1].title.set_text('Distribution of markers expression')
+fig.figure.suptitle('Impact of batch number on phenotypes identification')
+fig.tight_layout()
+fig.figure.savefig('batch_phenotypes.jpg', dpi=600)
+
+
+
+# Plot AMI/Jaccard similarity across samples
+# Initialise objects
+sample_dir = '../test_results/sample_test/'  # sample folder
+sample_files = [f for f in os.listdir(sample_dir) if f.endswith('.tsv')]  # sample tsv files
+sample_rows_ami = []  # AMI data list
+sample_rows_jaccard = []  # AMI data list
+sample_exp_df = pd.DataFrame()  # Expression data frame
+
+# Fill dataframe
+for file in sample_files:
+    # Get std value
+    nb_sample = float(file.replace('cell_expression_std0.75_', '').replace('samples_annotated.tsv', ''))
+    # Build path
+    sample_file = os.path.join(sample_dir, file)
+    # Load file
+    sample_res = pd.read_csv(sample_file, sep='\t', index_col=0)
+    # Get true cell types
+    sample_labels_true = sample_res['cell_phntp_full']
+    # Get expression data
+    sample_exp = sample_res.loc[:, markers]
+    sample_exp['nb_sample'] = nb_sample
+    # Add it to expression table
+    sample_exp_df = pd.concat([sample_exp_df, sample_exp])
+    # Get columns containing annotations (several optimal combinations --> several columns)
+    sample_labels_col = [col for col in sample_res.columns if 'Phenotypes_' in col]
+    for annot in sample_labels_col:
+        sample_labels_pred = sample_res[annot]
+        sample_score_ami = adjusted_mutual_info_score(sample_labels_true, sample_labels_pred)
+        sample_rows_ami.append({'nb_sample': nb_sample, 'sample_score_ami': sample_score_ami})
+        sample_score_jaccard = jaccard_score(sample_labels_true, sample_labels_pred, average='weighted')
+        sample_rows_jaccard.append({'nb_sample': nb_sample, 'sample_score_jaccard': sample_score_jaccard})
+
+# Build final AMI dataframe, sort by nb_sample and reset indices
+df_sample_ami = pd.DataFrame(sample_rows_ami).sort_values(by='nb_sample', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_sample_ami = df_sample_ami.groupby('nb_sample', as_index=False)['sample_score_ami'].mean()
+
+# Build final ARI dataframe, sort by nb_sample and reset indices
+df_sample_jaccard = pd.DataFrame(sample_rows_jaccard).sort_values(by='nb_sample', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_sample_jaccard = df_sample_jaccard.groupby('nb_sample', as_index=False)['sample_score_jaccard'].mean()
+
+# Melt expression table
+sample_exp_df_melted = pd.melt(sample_exp_df, id_vars='nb_sample')
+
+# Plot figures
+plt.clf()  # Make sure there are no underlying figure
+sns.set(style='whitegrid')
+fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
+
+# AMI Scatterplot
+g = sns.scatterplot(x=jitter(df_sample_ami['nb_sample'], 0.05), y=df_sample_ami['sample_score_ami'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_sample_ami['nb_sample'], 0.05), y=avg_sample_ami['sample_score_ami'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_sample_jaccard['nb_sample'], 0.05), y=df_sample_jaccard['sample_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_sample_jaccard['nb_sample'], 0.05), y=avg_sample_jaccard['sample_score_jaccard'], color='red', linewidth=0, ax=ax[0])
+g.set(xlabel='Number of samples', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
+ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
+ax[0].title.set_text('Similarity scores')
+
+# Expression density plot
+h = sns.kdeplot(data=sample_exp_df_melted, x='value', hue='nb_sample', fill=True,
+                common_norm=False, alpha=0.1, palette='crest', ax=ax[1])
+h.set(xlabel='ADT expression')
+ax[1].legend_.set_title('Sample number')
+ax[1].title.set_text('Distribution of markers expression')
+fig.figure.suptitle('Impact of sample number on phenotypes identification')
+fig.tight_layout()
+fig.figure.savefig('sample_phenotypes.jpg', dpi=600)
+
+
+
+# Plot AMI/Jaccard similarity across batches and samples
+# Initialise objects
+batch_sample_dir = '../test_results/batch_sample_test/'  # batch_sample folder
+batch_sample_files = [f for f in os.listdir(batch_sample_dir) if f.endswith('.tsv')]  # batch_sample tsv files
+batch_sample_rows_ami = []  # AMI data list
+batch_sample_rows_jaccard = []  # AMI data list
+batch_sample_exp_df = pd.DataFrame()  # Expression data frame
+
+# Fill dataframe
+for file in batch_sample_files:
+    # Get std value
+    # nb_batch_sample = float(file.replace('cell_expression_std0.75_', '').replace('batch_samples_annotated.tsv', ''))
+    nb_batch_sample = float(file[:-30].replace('cell_expression_std0.75_', ''))
+    # Build path
+    batch_sample_file = os.path.join(batch_sample_dir, file)
+    # Load file
+    batch_sample_res = pd.read_csv(batch_sample_file, sep='\t', index_col=0)
+    # Get true cell types
+    batch_sample_labels_true = batch_sample_res['cell_phntp_full']
+    # Get expression data
+    batch_sample_exp = batch_sample_res.loc[:, markers]
+    batch_sample_exp['nb_batch_sample'] = nb_batch_sample
+    # Add it to expression table
+    batch_sample_exp_df = pd.concat([batch_sample_exp_df, batch_sample_exp])
+    # Get columns containing annotations (several optimal combinations --> several columns)
+    batch_sample_labels_col = [col for col in batch_sample_res.columns if 'Phenotypes_' in col]
+    for annot in batch_sample_labels_col:
+        batch_sample_labels_pred = batch_sample_res[annot]
+        batch_sample_score_ami = adjusted_mutual_info_score(batch_sample_labels_true, batch_sample_labels_pred)
+        batch_sample_rows_ami.append({'nb_batch_sample': nb_batch_sample, 'batch_sample_score_ami': batch_sample_score_ami})
+        batch_sample_score_jaccard = jaccard_score(batch_sample_labels_true, batch_sample_labels_pred, average='weighted')
+        batch_sample_rows_jaccard.append({'nb_batch_sample': nb_batch_sample, 'batch_sample_score_jaccard': batch_sample_score_jaccard})
+
+# Build final AMI dataframe, sort by nb_batch_sample and reset indices
+df_batch_sample_ami = pd.DataFrame(batch_sample_rows_ami).sort_values(by='nb_batch_sample', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_batch_sample_ami = df_batch_sample_ami.groupby('nb_batch_sample', as_index=False)['batch_sample_score_ami'].mean()
+
+# Build final ARI dataframe, sort by nb_batch_sample and reset indices
+df_batch_sample_jaccard = pd.DataFrame(batch_sample_rows_jaccard).sort_values(by='nb_batch_sample', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_batch_sample_jaccard = df_batch_sample_jaccard.groupby('nb_batch_sample', as_index=False)['batch_sample_score_jaccard'].mean()
+
+# Melt expression table
+batch_sample_exp_df_melted = pd.melt(batch_sample_exp_df, id_vars='nb_batch_sample')
+
+# Plot figures
+plt.clf()  # Make sure there are no underlying figure
+sns.set(style='whitegrid')
+fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
+
+# AMI Scatterplot
+g = sns.scatterplot(x=jitter(df_batch_sample_ami['nb_batch_sample'], 0.05), y=df_batch_sample_ami['batch_sample_score_ami'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_batch_sample_ami['nb_batch_sample'], 0.05), y=avg_batch_sample_ami['batch_sample_score_ami'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_batch_sample_jaccard['nb_batch_sample'], 0.05), y=df_batch_sample_jaccard['batch_sample_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_batch_sample_jaccard['nb_batch_sample'], 0.05), y=avg_batch_sample_jaccard['batch_sample_score_jaccard'], color='red', linewidth=0, ax=ax[0])
+g.set(xlabel='Number of batches/samples', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
+ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
+ax[0].title.set_text('Similarity scores')
+
+# Expression density plot
+h = sns.kdeplot(data=batch_sample_exp_df_melted, x='value', hue='nb_batch_sample', fill=True,
+                common_norm=False, alpha=0.1, palette='crest', ax=ax[1])
+h.set(xlabel='ADT expression')
+ax[1].legend_.set_title('Batch/Sample number')
+ax[1].title.set_text('Distribution of markers expression')
+fig.figure.suptitle('Impact of batche and sample number on phenotypes identification')
+fig.tight_layout()
+fig.figure.savefig('batch_sample_phenotypes.jpg', dpi=600)
+
+
+# Datasets checked:
+# Default = 5000 cells, 5 markers, 1 batch, 1 sample, min = 0, max = 6, nmean = 1.5, pmean = 4.5, all non-defining markers negative
+# 1. Default with varying std and fake cell type --> fake_std_test
+# 2. Default with varying std, fake cell type, 4 batches and 1 sample --> batch_std_test
+# 3. Default with varying std, fake cell type, 1 batch and 4 samples --> sample_std_test
+# 4. Default with varying std, fake cell type, 4 batches and 4 samples --> batch_sample_std_test
+# 5. Default with std fixed to 0.75, fake cell type and 1 to 6 batches --> batch_test
+# 6. Default with std fixed to 0.75, fake cell type and 1 to 6 samples --> sample_test
+# 7. Default with std fixed to 0.75, fake cell type and 1 to 6 samples/batches --> batch_sample_test
 
 
 
 
-
-
-
-# Datasets to check:
-# Default = 5000 cells, 5 markers, 1 batch, 1 sample, min = 0, max = 6, nmean = 1.5, pmean = 4.5, std = 0.75, all non-defining markers negative
-    # cell_expression_5000cells_5mkers_1samples_1batches_min0_max6_nmean1.5_pmean4.5_std0.75_default
-    # Varying std
-
-# 1. Default but non-defining markers both positive and negative
-    # cell_expression_5000cells_5mkers_1samples_1batches_min0_max6_nmean1.5_pmean4.5_std0.75_mixed
-# 2.
-# 3.
-# 4.
-# 5.
-# 6.
-# 7.
-# 8.
+# X. Default but non-defining markers can be positive or negative --> mixed_std_test
 
 # Check whether theoretical distribution (truncated normal distribution) fit
 # actual marker expression distribution
@@ -111,26 +557,14 @@ fig.figure.savefig(os.path.join(std_dir, 'std_AMI_expression.jpg'))
 # Same but with non-defining markers positive or negative across all cells
 
 
-# 1000 cells, 5 markers, several batches, 1 sample, equal cell type distribution
-# 1000 cells, 5 markers, 1 batch, several samples, equal cell type distribution
-
-# 1000 cells, 5 markers, several batches, several sample, equal cell type distribution
-
-# mutual information criteria, Jaccard index? for cell type identification
 # Average marker phenotype overlap (overlap between annotated phenotype and actual phenotype) across all cells?
 
-# Plot over std (x), MIC (y)
-# Plot over batches (x), MIC (y) boxscore
-# Use xmin param
-
-# 4 batches, 10 samples
-
-# Average score when there are several combinations
-
+# Use different xmin param?
 
 # 10 markers?
 # Check impact of limiting the number of markers. For example, if max-markers = 3, do we see cell types with more than 3 markers?
 
+# Try with only key markers --> only positive??
+# CD3, CD4, CD127
 
-# Test presence/absence of batch, sample, cell_type
-
+# Use Hao dataset as test?

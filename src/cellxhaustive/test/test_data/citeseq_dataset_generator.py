@@ -190,10 +190,7 @@ if __name__ == '__main__':
     # Build output name
     if not args.output:
         output = f'cell_expression_{nb_cell}cells_{nb_marker}mkers_{nb_sample}samples_{nb_batch}batches'
-        output += f'_min{pos_min}_max{pos_max}_nmean{neg_mean}_pmean{pos_mean}_std{pos_std}.tsv'
-        # output = f'cell_expression_{nb_cell}cells_{nb_marker}mkers_{nb_sample}samples_{nb_batch}batches'
-        # output += f'_pmin{pos_min}_pmax{pos_max}_pmean{pos_mean}_pstd{pos_std}'
-        # output += f'_nmin{neg_min}_nmax{neg_max}_nmean{neg_mean}_nstd{neg_std}.tsv'
+        output += f'_min{pos_min}_max{pos_max}_nmean{neg_mean}_pmean{pos_mean}_nstd{neg_std}_pstd{pos_std}.tsv'
     else:
         output = args.output
 
@@ -209,75 +206,3 @@ if __name__ == '__main__':
     plt.title('Marker expression')
     plt.legend(labels=['Negative markers', 'Positive markers'], loc='upper left')
     plt.savefig(output.replace('tsv', 'jpg'))
-    # plt.show()
-
-
-
-# Datasets to check:
-# Default = 5000 cells, 5 markers, 1 batch, 1 sample, min = 0, max = 6, nmean = 1.5, pmean = 4.5, std = 0.75, all non-defining markers negative
-    # cell_expression_5000cells_5mkers_1samples_1batches_min0_max6_nmean1.5_pmean4.5_std0.75_default
-# 1. Default but non-defining markers both positive and negative
-    # cell_expression_5000cells_5mkers_1samples_1batches_min0_max6_nmean1.5_pmean4.5_std0.75_mixed
-# 2.
-# 3.
-# 4.
-# 5.
-# 6.
-# 7.
-# 8.
-
-# Check whether theoretical distribution (truncated normal distribution) fit
-# actual marker expression distribution
-
-# Check potential conflict and assignation problem between cell types 0 vs 1 and 0 vs 2? (0 is included both in 1 and 2)
-
-
-
-# Same but with non-defining markers positive or negative across all cells
-
-
-# 1000 cells, 5 markers, several batches, 1 sample, equal cell type distribution
-# 1000 cells, 5 markers, 1 batch, several samples, equal cell type distribution
-
-# 1000 cells, 5 markers, several batches, several sample, equal cell type distribution
-
-# mutual information criteria, Jaccard index? for cell type identification
-# Average marker phenotype overlap (overlap between annotated phenotype and actual phenotype) across all cells?
-
-# Plot over std (x), MIC (y)
-# Plot over batches (x), MIC (y) boxscore
-# Use xmin param
-
-# 4 batches, 10 samples
-
-# Average score when there are several combinations
-
-
-# 10 markers?
-# Check impact of limiting the number of markers. For example, if max-markers = 3, do we see cell types with more than 3 markers?
-
-
-# Test presence/absence of batch, sample, cell_type
-
-
-
-# Try with only key markers --> only positive??
-# CD3, CD4, CD127
-
-# Use Hao dataset as test?
-
-
-
-# Higher tier paper with analyses and method/package
-
-# Update methods
-
-# Rerun ADTnorm analzses
-# Perform ADT annotations using package
-
-# Compare Azimuth annotations vs cellxhaustive
-
-# Acute phase vs convalescent phase
-
-# Benchmark cellxhaustive vs other packages CITE-sort
-
