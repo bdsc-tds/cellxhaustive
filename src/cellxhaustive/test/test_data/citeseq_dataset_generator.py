@@ -7,6 +7,7 @@ import argparse
 import copy as cp
 import json
 import numpy as np
+import os
 import pandas as pd
 import string
 from scipy.stats import truncnorm
@@ -64,8 +65,8 @@ def get_full_phenotype(rng, tot_markers, cell_dict, idx):
     pheno = cp.deepcopy(cell_dict[idx])
     for marker in tot_markers:
         if marker not in ''.join(pheno):
-            status = rng.choice(['+', '-'], p=[0, 1])
-            # status = rng.choice(['+', '-'], p=[0.5, 0.5])
+            # status = rng.choice(['+', '-'], p=[0, 1])
+            status = rng.choice(['+', '-'], p=[0.5, 0.5])
             marker_state = f'{marker}{status}'
             pheno.append(marker_state)
     pheno.sort()  # Sort all markers in alphabetical order
@@ -193,6 +194,10 @@ if __name__ == '__main__':
         output += f'_min{pos_min}_max{pos_max}_nmean{neg_mean}_pmean{pos_mean}_nstd{neg_std}_pstd{pos_std}.tsv'
     else:
         output = args.output
+
+    # Create output directory if it doesn't exist
+    output_dir = os.path.dirname(args.output)
+    os.makedirs(output_dir, exist_ok=True)
 
     # Save table to file
     final_table.to_csv(output, sep='\t', header=True, index=True)
