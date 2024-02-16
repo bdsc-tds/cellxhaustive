@@ -521,7 +521,7 @@ h = sns.kdeplot(data=batch_sample_exp_df_melted, x='value', hue='variable', fill
 h.set(xlabel='ADT expression')
 ax[1].legend_.set_title('Marker')
 ax[1].title.set_text('Distribution of markers expression')
-fig.figure.suptitle('Impact of batche and sample number on phenotype identification\n(Negative markers)')
+fig.figure.suptitle('Impact of batch and sample number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
 fig.figure.savefig('batch_sample_phenotypes.jpg', dpi=600)
 
@@ -1081,3 +1081,13 @@ fig.figure.savefig('mixed_batch_sample_phenotypes.jpg', dpi=600)
 # CD3, CD4, CD127
 
 # Use Hao dataset as test?
+
+
+# Try to vary xmin
+# Try with our dataset without cell type information with high xmin and high ymin --> test if it finds main cell type
+#     Test with only "good" markers
+#     Test relevant markers CD45, CD127, but add noisx fake markers --> Can it discriminate both
+# Require real annotations
+
+# Parallelization
+# Name assignment
