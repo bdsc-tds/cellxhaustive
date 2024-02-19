@@ -532,13 +532,86 @@ fig.figure.savefig('default_batch_sample.jpg', dpi=600)
 print('Saved default_batch_sample.jpg')
 
 
+# Plot AMI/Jaccard similarity across xmin - only negative markers
+# Initialise objects
+xmin_dir = '../test_results/default_batch_sample_std_xmin_test/'  # Folder
+xmin_files = [f for f in os.listdir(xmin_dir) if f.endswith('.tsv')]  # tsv files
+xmin_rows_ami = []  # AMI data list
+xmin_rows_jaccard = []  # Jaccard data list
+xmin_exp_df = pd.DataFrame()  # Expression data frame
+
+# Fill dataframe
+for file in xmin_files:
+    # Get std value
+    nb_xmin = float(file.replace('default_cell_expression_4batches_4samples_std0.75_xmin', '').replace('_annotated.tsv', ''))
+    # Build path
+    xmin_file = os.path.join(xmin_dir, file)
+    # Load file
+    xmin_res = pd.read_csv(xmin_file, sep='\t', index_col=0)
+    # Get true cell types
+    xmin_labels_true = xmin_res['cell_phntp_full']
+    # Get expression data
+    xmin_exp = xmin_res.loc[:, markers]
+    xmin_exp['nb_xmin'] = nb_xmin
+    # Add it to expression table
+    xmin_exp_df = pd.concat([xmin_exp_df, xmin_exp])
+    # Get columns containing annotations (several optimal combinations --> several columns)
+    xmin_labels_col = [col for col in xmin_res.columns if 'Phenotypes_' in col]
+    for annot in xmin_labels_col:
+        xmin_labels_pred = xmin_res[annot]
+        xmin_score_ami = adjusted_mutual_info_score(xmin_labels_true, xmin_labels_pred)
+        xmin_rows_ami.append({'nb_xmin': nb_xmin, 'xmin_score_ami': xmin_score_ami})
+        xmin_score_jaccard = jaccard_score(xmin_labels_true, xmin_labels_pred, average='weighted')
+        xmin_rows_jaccard.append({'nb_xmin': nb_xmin, 'xmin_score_jaccard': xmin_score_jaccard})
+
+# Build final AMI dataframe, sort by nb_xmin and reset indices
+df_xmin_ami = pd.DataFrame(xmin_rows_ami).sort_values(by='nb_xmin', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_xmin_ami = df_xmin_ami.groupby('nb_xmin', as_index=False)['xmin_score_ami'].mean()
+
+# Build final ARI dataframe, sort by nb_xmin and reset indices
+df_xmin_jaccard = pd.DataFrame(xmin_rows_jaccard).sort_values(by='nb_xmin', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_xmin_jaccard = df_xmin_jaccard.groupby('nb_xmin', as_index=False)['xmin_score_jaccard'].mean()
+
+# Melt expression table
+xmin_exp_df_melted = pd.melt(xmin_exp_df, id_vars='nb_xmin')
+
+# Plot figures
+plt.clf()  # Make sure there are no underlying figure
+sns.set(style='whitegrid')
+fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
+
+# AMI Scatterplot
+g = sns.scatterplot(x=jitter(df_xmin_ami['nb_xmin'], 0, 1), y=df_xmin_ami['xmin_score_ami'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_xmin_ami['nb_xmin'], 0, 1), y=avg_xmin_ami['xmin_score_ami'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_xmin_jaccard['nb_xmin'], 0, 1), y=df_xmin_jaccard['xmin_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_xmin_jaccard['nb_xmin'], 0, 1), y=avg_xmin_jaccard['xmin_score_jaccard'], color='red', linewidth=0, ax=ax[0])
+g.set(xlabel='Minimum cell per phenotype per sample', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
+ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
+ax[0].title.set_text('Similarity scores')
+
+# Expression density plot
+h = sns.kdeplot(data=xmin_exp_df_melted, x='value', hue='variable', fill=True,
+                common_norm=False, alpha=0.1, palette='crest', ax=ax[1])
+h.set(xlabel='ADT expression')
+ax[1].legend_.set_title('Marker')
+ax[1].title.set_text('Distribution of markers expression')
+fig.figure.suptitle('Impact of minimum number of cells per sample per phenotype on phenotype identification\n(Negative markers)')
+fig.tight_layout()
+fig.figure.savefig('default_xmin.jpg', dpi=600)
+print('Saved default_xmin.jpg')
+
+
 
 
 
 # Plot AMI/Jaccard similarity across std - negative and positive markers
 # Initialise objects
-std_dir_mixed = '../test_results/mixed_fake_std_test/'  # std_mixed folder
-std_files_mixed = [f for f in os.listdir(std_dir_mixed) if f.endswith('.tsv')]  # std_mixed tsv files
+std_dir_mixed = '../test_results/mixed_fake_std_test/'  # Folder
+std_files_mixed = [f for f in os.listdir(std_dir_mixed) if f.endswith('.tsv')]  # tsv files
 std_rows_ami_mixed = []  # AMI data list
 std_rows_jaccard_mixed = []  # Jaccard data list
 std_exp_df_mixed = pd.DataFrame()  # Expression data frame
@@ -827,13 +900,6 @@ fig.figure.savefig('mixed_batch_sample_std.jpg', dpi=600)
 print('Saved mixed_batch_sample_std.jpg')
 
 
-
-
-
-
-
-
-
 # Plot AMI/Jaccard similarity across batches - negative and positive markers
 # Initialise objects
 batch_dir_mixed = '../test_results/mixed_batch_test/'  # Folder
@@ -1053,6 +1119,77 @@ fig.figure.savefig('mixed_batch_sample.jpg', dpi=600)
 print('Saved mixed_batch_sample.jpg')
 
 
+# Plot AMI/Jaccard similarity across xmin - negative and positive markers
+# Initialise objects
+xmin_dir_mixed = '../test_results/mixed_batch_sample_std_xmin_test/'  # Folder
+xmin_files_mixed = [f for f in os.listdir(xmin_dir_mixed) if f.endswith('.tsv')]  # tsv files
+xmin_rows_ami_mixed = []  # AMI data list
+xmin_rows_jaccard_mixed = []  # Jaccard data list
+xmin_exp_df_mixed = pd.DataFrame()  # Expression data frame
+
+# Fill dataframe
+for file in xmin_files_mixed:
+    # Get std value
+    nb_xmin = float(file.replace('mixed_cell_expression_4batches_4samples_std0.75_xmin', '').replace('_annotated.tsv', ''))
+    # Build path
+    xmin_file_mixed = os.path.join(xmin_dir_mixed, file)
+    # Load file
+    xmin_res_mixed = pd.read_csv(xmin_file_mixed, sep='\t', index_col=0)
+    # Get true cell types
+    xmin_labels_true_mixed = xmin_res_mixed['cell_phntp_full']
+    # Get expression data
+    xmin_exp_mixed = xmin_res_mixed.loc[:, markers]
+    xmin_exp_mixed['nb_xmin'] = nb_xmin
+    # Add it to expression table
+    xmin_exp_df_mixed = pd.concat([xmin_exp_df_mixed, xmin_exp_mixed])
+    # Get columns containing annotations (several optimal combinations --> several columns)
+    xmin_labels_col_mixed = [col for col in xmin_res_mixed.columns if 'Phenotypes_' in col]
+    for annot in xmin_labels_col_mixed:
+        xmin_labels_pred_mixed = xmin_res_mixed[annot]
+        xmin_score_ami_mixed = adjusted_mutual_info_score(xmin_labels_true_mixed, xmin_labels_pred_mixed)
+        xmin_rows_ami_mixed.append({'nb_xmin': nb_xmin, 'xmin_score_ami_mixed': xmin_score_ami_mixed})
+        xmin_score_jaccard_mixed = jaccard_score(xmin_labels_true_mixed, xmin_labels_pred_mixed, average='weighted')
+        xmin_rows_jaccard_mixed.append({'nb_xmin': nb_xmin, 'xmin_score_jaccard_mixed': xmin_score_jaccard_mixed})
+
+# Build final AMI dataframe, sort by nb_xmin and reset indices
+df_xmin_ami_mixed = pd.DataFrame(xmin_rows_ami_mixed).sort_values(by='nb_xmin', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_xmin_ami_mixed = df_xmin_ami_mixed.groupby('nb_xmin', as_index=False)['xmin_score_ami_mixed'].mean()
+
+# Build final ARI dataframe, sort by nb_xmin and reset indices
+df_xmin_jaccard_mixed = pd.DataFrame(xmin_rows_jaccard_mixed).sort_values(by='nb_xmin', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_xmin_jaccard_mixed = df_xmin_jaccard_mixed.groupby('nb_xmin', as_index=False)['xmin_score_jaccard_mixed'].mean()
+
+# Melt expression table
+xmin_exp_df_melted_mixed = pd.melt(xmin_exp_df_mixed, id_vars='nb_xmin')
+
+# Plot figures
+plt.clf()  # Make sure there are no underlying figure
+sns.set(style='whitegrid')
+fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
+
+# AMI Scatterplot
+g = sns.scatterplot(x=jitter(df_xmin_ami_mixed['nb_xmin'], 0.05, 0.03), y=df_xmin_ami_mixed['xmin_score_ami_mixed'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_xmin_ami_mixed['nb_xmin'], 0.05, 0.03), y=avg_xmin_ami_mixed['xmin_score_ami_mixed'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_xmin_jaccard_mixed['nb_xmin'], 0.05, 0.03), y=df_xmin_jaccard_mixed['xmin_score_jaccard_mixed'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_xmin_jaccard_mixed['nb_xmin'], 0.05, 0.03), y=avg_xmin_jaccard_mixed['xmin_score_jaccard_mixed'], color='red', linewidth=0, ax=ax[0])
+g.set(xlabel='Minimum cell per phenotype per sample', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
+ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
+ax[0].title.set_text('Similarity scores')
+
+# Expression density plot
+h = sns.kdeplot(data=xmin_exp_df_melted_mixed, x='value', hue='variable', fill=True,
+                common_norm=False, alpha=0.1, palette='crest', ax=ax[1])
+h.set(xlabel='ADT expression')
+ax[1].legend_.set_title('Marker')
+ax[1].title.set_text('Distribution of markers expression')
+fig.figure.suptitle('Impact of minimum number of cells per sample per phenotype on phenotype identification\n(Positive and negative markers)')
+fig.tight_layout()
+fig.figure.savefig('mixed_xmin.jpg', dpi=600)
+print('Saved mixed_xmin.jpg')
 
 
 
@@ -1091,8 +1228,6 @@ print('Saved mixed_batch_sample.jpg')
 
 
 
-# Use different xmin param?
-
 # 10 markers?
 # Check impact of limiting the number of markers. For example, if max-markers = 3, do we see cell types with more than 3 markers?
 
@@ -1102,7 +1237,6 @@ print('Saved mixed_batch_sample.jpg')
 # Use Hao dataset as test?
 
 
-# Try to vary xmin
 # Try with our dataset without cell type information with high xmin and high ymin --> test if it finds main cell type
 #     Test with only "good" markers
 #     Test relevant markers CD45, CD127, but add noisy fake markers --> Can it discriminate both?
