@@ -1048,7 +1048,7 @@ h = sns.kdeplot(data=batch_sample_exp_df_melted_mixed, x='value', hue='variable'
 h.set(xlabel='ADT expression')
 ax[1].legend_.set_title('Marker')
 ax[1].title.set_text('Distribution of markers expression')
-fig.figure.suptitle('Impact of batche and sample number on phenotype identification\n(Positive and negative markers)')
+fig.figure.suptitle('Impact of batch and sample number on phenotype identification\n(Positive and negative markers)')
 fig.tight_layout()
 fig.figure.savefig('mixed_batch_sample.jpg', dpi=600)
 print('Saved mixed_batch_sample.jpg')
