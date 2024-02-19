@@ -224,9 +224,9 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
 
         if knn_refine:
             # Use default arrays as placeholders for reannotation results
-            reannotated_labels = np.full(mat_subset_rep_markers.shape[0], 'No_reannotation')
             reannotation_proba = np.full(mat_subset_rep_markers.shape[0], np.nan)
-            results_dict[0]['reannotated_labels'] = reannotated_labels
+            results_dict[0]['reannotated_labels'] = new_labels
+            results_dict[0]['reannotated_phntp'] = cell_phntp_comb
             results_dict[0]['reannotation_proba'] = reannotation_proba
 
     elif nb_solution == 1:
@@ -281,9 +281,9 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
                 logging.warning(f'\t\t\t\t\tUndefined cells: <{np.sum(is_undef)}>')
                 logging.warning(f'\t\t\t\t\tAnnotations: <{len(np.unique(new_labels))}>')
                 # Use default arrays as placeholders for reannotation results
-                reannotated_labels = np.full(new_labels.shape[0], 'No_reannotation')
                 reannotation_proba = np.full(new_labels.shape[0], np.nan)
-                results_dict[0]['reannotated_labels'] = reannotated_labels
+                results_dict[0]['reannotated_labels'] = new_labels
+                results_dict[0]['reannotated_phntp'] = cell_phntp_comb
                 results_dict[0]['reannotation_proba'] = reannotation_proba
 
     else:  # Several solutions
@@ -356,9 +356,9 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
                     logging.warning(f'\t\t\t\t\t\tUndefined cells: <{np.sum(is_undef)}>')
                     logging.warning(f'\t\t\t\t\t\tAnnotations: <{len(np.unique(new_labels))}>')
                     # Use default arrays as placeholders for reannotation results
-                    reannotated_labels = np.full(new_labels.shape[0], 'No_reannotation')
                     reannotation_proba = np.full(new_labels.shape[0], np.nan)
-                    results_dict[i]['reannotated_labels'] = reannotated_labels
+                    results_dict[i]['reannotated_labels'] = new_labels
+                    results_dict[i]['reannotated_phntp'] = cell_phntp_comb
                     results_dict[i]['reannotation_proba'] = reannotation_proba
 
                     # Record number of undefined cells after reannotation
