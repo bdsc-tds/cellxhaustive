@@ -605,6 +605,79 @@ fig.figure.savefig('default_xmin.jpg', dpi=600)
 print('Saved default_xmin.jpg')
 
 
+# Plot AMI/Jaccard similarity across maxmarkers - only negative markers
+# Initialise objects
+maxmarkers_dir = '../test_results/default_batch_sample_std_maxmarkers_test/'  # Folder
+maxmarkers_files = [f for f in os.listdir(maxmarkers_dir) if f.endswith('.tsv')]  # tsv files
+maxmarkers_rows_ami = []  # AMI data list
+maxmarkers_rows_jaccard = []  # Jaccard data list
+maxmarkers_exp_df = pd.DataFrame()  # Expression data frame
+
+# Fill dataframe
+for file in maxmarkers_files:
+    # Get std value
+    nb_maxmarkers = float(file.replace('default_cell_expression_4batches_4samples_std0.75_', '').replace('markers_annotated.tsv', ''))
+    # Build path
+    maxmarkers_file = os.path.join(maxmarkers_dir, file)
+    # Load file
+    maxmarkers_res = pd.read_csv(maxmarkers_file, sep='\t', index_col=0)
+    # Get true cell types
+    maxmarkers_labels_true = maxmarkers_res['cell_phntp_full']
+    # Get expression data
+    maxmarkers_exp = maxmarkers_res.loc[:, markers]
+    maxmarkers_exp['nb_maxmarkers'] = nb_maxmarkers
+    # Add it to expression table
+    maxmarkers_exp_df = pd.concat([maxmarkers_exp_df, maxmarkers_exp])
+    # Get columns containing annotations (several optimal combinations --> several columns)
+    maxmarkers_labels_col = [col for col in maxmarkers_res.columns if 'Phenotypes_' in col]
+    for annot in maxmarkers_labels_col:
+        maxmarkers_labels_pred = maxmarkers_res[annot]
+        maxmarkers_score_ami = adjusted_mutual_info_score(maxmarkers_labels_true, maxmarkers_labels_pred)
+        maxmarkers_rows_ami.append({'nb_maxmarkers': nb_maxmarkers, 'maxmarkers_score_ami': maxmarkers_score_ami})
+        maxmarkers_score_jaccard = jaccard_score(maxmarkers_labels_true, maxmarkers_labels_pred, average='weighted')
+        maxmarkers_rows_jaccard.append({'nb_maxmarkers': nb_maxmarkers, 'maxmarkers_score_jaccard': maxmarkers_score_jaccard})
+
+# Build final AMI dataframe, sort by nb_maxmarkers and reset indices
+df_maxmarkers_ami = pd.DataFrame(maxmarkers_rows_ami).sort_values(by='nb_maxmarkers', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_maxmarkers_ami = df_maxmarkers_ami.groupby('nb_maxmarkers', as_index=False)['maxmarkers_score_ami'].mean()
+
+# Build final ARI dataframe, sort by nb_maxmarkers and reset indices
+df_maxmarkers_jaccard = pd.DataFrame(maxmarkers_rows_jaccard).sort_values(by='nb_maxmarkers', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_maxmarkers_jaccard = df_maxmarkers_jaccard.groupby('nb_maxmarkers', as_index=False)['maxmarkers_score_jaccard'].mean()
+
+# Melt expression table
+maxmarkers_exp_df_melted = pd.melt(maxmarkers_exp_df, id_vars='nb_maxmarkers')
+
+# Plot figures
+plt.clf()  # Make sure there are no underlying figure
+sns.set(style='whitegrid')
+fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
+
+# AMI Scatterplot
+g = sns.scatterplot(x=jitter(df_maxmarkers_ami['nb_maxmarkers'], 0, 0.05), y=df_maxmarkers_ami['maxmarkers_score_ami'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_maxmarkers_ami['nb_maxmarkers'], 0, 0.05), y=avg_maxmarkers_ami['maxmarkers_score_ami'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_maxmarkers_jaccard['nb_maxmarkers'], 0, 0.05), y=df_maxmarkers_jaccard['maxmarkers_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_maxmarkers_jaccard['nb_maxmarkers'], 0, 0.05), y=avg_maxmarkers_jaccard['maxmarkers_score_jaccard'], color='red', linewidth=0, ax=ax[0])
+g.set(xlabel='Maximum number of markers per phenotype', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
+ax[0].legend(loc='center right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
+ax[0].title.set_text('Similarity scores')
+
+# Expression density plot
+h = sns.kdeplot(data=maxmarkers_exp_df_melted, x='value', hue='variable', fill=True,
+                common_norm=False, alpha=0.1, palette='crest', ax=ax[1])
+h.set(xlabel='ADT expression')
+ax[1].legend_.set_title('Marker')
+ax[1].title.set_text('Distribution of markers expression')
+fig.figure.suptitle('Impact of maximum markers used on phenotype identification\n(Negative markers)')
+fig.tight_layout()
+fig.figure.savefig('default_maxmarkers.jpg', dpi=600)
+print('Saved default_maxmarkers.jpg')
+
+
 
 
 
@@ -1192,6 +1265,80 @@ fig.figure.savefig('mixed_xmin.jpg', dpi=600)
 print('Saved mixed_xmin.jpg')
 
 
+# Plot AMI/Jaccard similarity across maxmarkers - negative and positive markers
+# Initialise objects
+maxmarkers_dir_mixed = '../test_results/mixed_batch_sample_std_maxmarkers_test/'  # Folder
+maxmarkers_files_mixed = [f for f in os.listdir(maxmarkers_dir_mixed) if f.endswith('.tsv')]  # tsv files
+maxmarkers_rows_ami_mixed = []  # AMI data list
+maxmarkers_rows_jaccard_mixed = []  # Jaccard data list
+maxmarkers_exp_df_mixed = pd.DataFrame()  # Expression data frame
+
+# Fill dataframe
+for file in maxmarkers_files_mixed:
+    # Get std value
+    nb_maxmarkers = float(file.replace('mixed_cell_expression_4batches_4samples_std0.75_', '').replace('markers_annotated.tsv', ''))
+    # Build path
+    maxmarkers_file_mixed = os.path.join(maxmarkers_dir_mixed, file)
+    # Load file
+    maxmarkers_res_mixed = pd.read_csv(maxmarkers_file_mixed, sep='\t', index_col=0)
+    # Get true cell types
+    maxmarkers_labels_true_mixed = maxmarkers_res_mixed['cell_phntp_full']
+    # Get expression data
+    maxmarkers_exp_mixed = maxmarkers_res_mixed.loc[:, markers]
+    maxmarkers_exp_mixed['nb_maxmarkers'] = nb_maxmarkers
+    # Add it to expression table
+    maxmarkers_exp_df_mixed = pd.concat([maxmarkers_exp_df_mixed, maxmarkers_exp_mixed])
+    # Get columns containing annotations (several optimal combinations --> several columns)
+    maxmarkers_labels_col_mixed = [col for col in maxmarkers_res_mixed.columns if 'Phenotypes_' in col]
+    for annot in maxmarkers_labels_col_mixed:
+        maxmarkers_labels_pred_mixed = maxmarkers_res_mixed[annot]
+        maxmarkers_score_ami_mixed = adjusted_mutual_info_score(maxmarkers_labels_true_mixed, maxmarkers_labels_pred_mixed)
+        maxmarkers_rows_ami_mixed.append({'nb_maxmarkers': nb_maxmarkers, 'maxmarkers_score_ami_mixed': maxmarkers_score_ami_mixed})
+        maxmarkers_score_jaccard_mixed = jaccard_score(maxmarkers_labels_true_mixed, maxmarkers_labels_pred_mixed, average='weighted')
+        maxmarkers_rows_jaccard_mixed.append({'nb_maxmarkers': nb_maxmarkers, 'maxmarkers_score_jaccard_mixed': maxmarkers_score_jaccard_mixed})
+
+# Build final AMI dataframe, sort by nb_maxmarkers and reset indices
+df_maxmarkers_ami_mixed = pd.DataFrame(maxmarkers_rows_ami_mixed).sort_values(by='nb_maxmarkers', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_maxmarkers_ami_mixed = df_maxmarkers_ami_mixed.groupby('nb_maxmarkers', as_index=False)['maxmarkers_score_ami_mixed'].mean()
+
+# Build final ARI dataframe, sort by nb_maxmarkers and reset indices
+df_maxmarkers_jaccard_mixed = pd.DataFrame(maxmarkers_rows_jaccard_mixed).sort_values(by='nb_maxmarkers', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_maxmarkers_jaccard_mixed = df_maxmarkers_jaccard_mixed.groupby('nb_maxmarkers', as_index=False)['maxmarkers_score_jaccard_mixed'].mean()
+
+# Melt expression table
+maxmarkers_exp_df_melted_mixed = pd.melt(maxmarkers_exp_df_mixed, id_vars='nb_maxmarkers')
+
+# Plot figures
+plt.clf()  # Make sure there are no underlying figure
+sns.set(style='whitegrid')
+fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
+
+# AMI Scatterplot
+g = sns.scatterplot(x=jitter(df_maxmarkers_ami_mixed['nb_maxmarkers'], 0, 0.05), y=df_maxmarkers_ami_mixed['maxmarkers_score_ami_mixed'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_maxmarkers_ami_mixed['nb_maxmarkers'], 0, 0.05), y=avg_maxmarkers_ami_mixed['maxmarkers_score_ami_mixed'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_maxmarkers_jaccard_mixed['nb_maxmarkers'], 0, 0.05), y=df_maxmarkers_jaccard_mixed['maxmarkers_score_jaccard_mixed'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_maxmarkers_jaccard_mixed['nb_maxmarkers'], 0, 0.05), y=avg_maxmarkers_jaccard_mixed['maxmarkers_score_jaccard_mixed'], color='red', linewidth=0, ax=ax[0])
+g.set(xlabel='Maximum number of markers per phenotype', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
+ax[0].legend(loc='center right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
+ax[0].title.set_text('Similarity scores')
+
+# Expression density plot
+h = sns.kdeplot(data=maxmarkers_exp_df_melted_mixed, x='value', hue='variable', fill=True,
+                common_norm=False, alpha=0.1, palette='crest', ax=ax[1])
+h.set(xlabel='ADT expression')
+ax[1].legend_.set_title('Marker')
+ax[1].title.set_text('Distribution of markers expression')
+fig.figure.suptitle('Impact of maximum markers used on phenotype identification\n(Positive and negative markers)')
+fig.tight_layout()
+fig.figure.savefig('mixed_maxmarkers.jpg', dpi=600)
+print('Saved mixed_maxmarkers.jpg')
+
+
+
 
 
 
@@ -1217,6 +1364,8 @@ print('Saved mixed_xmin.jpg')
 # Others
     # 15. Default with std fixed to 0.75, fake cell type, 4 batches and 4 samples, varying xmin --> default_batch_sample_std_xmin_test
     # 16. Mixed with std fixed to 0.75, fake cell type, 4 batches and 4 samples, varying xmin --> mixed_batch_sample_std_xmin_test
+    # 17. Default with std fixed to 0.75, fake cell type, 4 batches and 4 samples, varying maxmarkers --> default_batch_sample_std_maxmarkers_test
+    # 18. Mixed with std fixed to 0.75, fake cell type, 4 batches and 4 samples, varying maxmarkers --> mixed_batch_sample_std_maxmarkers_test
 
 
 
@@ -1225,11 +1374,6 @@ print('Saved mixed_xmin.jpg')
 
 # Check potential conflict and assignation problem between cell types 0 vs 1 and 0 vs 2? (0 is included both in 1 and 2)
 
-
-
-
-# 10 markers?
-# Check impact of limiting the number of markers. For example, if max-markers = 3, do we see cell types with more than 3 markers?
 
 # Try with only key markers --> only positive??
 # CD3, CD4, CD127
