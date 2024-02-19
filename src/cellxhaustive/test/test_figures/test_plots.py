@@ -88,14 +88,15 @@ h = sns.kdeplot(data=std_exp_df_melted, x='value', hue='std', fill=True,
 h.set(xlabel='ADT expression')
 ax[1].legend_.set_title('Standard deviation')
 ax[1].title.set_text('Distribution of markers expression')
-fig.figure.suptitle('Impact of standard deviation on phenotype identification\n(Negative markers)')
+fig.figure.suptitle('Impact of expression standard deviation on phenotype identification\n(Negative markers)')
 fig.tight_layout()
-fig.figure.savefig('default_std_fake_phenotypes.jpg', dpi=600)
+fig.figure.savefig('default_fake_std.jpg', dpi=600)
+print('Saved default_fake_std.jpg')
 
 
 # Plot AMI/Jaccard similarity across std with 4 batches - only negative markers
 # Initialise objects
-batch_std_dir = '../test_results/batch_std_test/'  # batch_std folder
+batch_std_dir = '../test_results/default_batch_std_test/'  # batch_std folder
 batch_std_files = [f for f in os.listdir(batch_std_dir) if f.endswith('.tsv')]  # batch_std tsv files
 batch_std_rows_ami = []  # AMI data list
 batch_std_rows_jaccard = []  # Jaccard data list
@@ -104,7 +105,7 @@ batch_std_exp_df = pd.DataFrame()  # Expression data frame
 # Fill dataframe
 for file in batch_std_files:
     # Get std value
-    std = float(file.replace('cell_expression_batch_std', '').replace('_annotated.tsv', ''))
+    std = float(file.replace('default_cell_expression_batch_std', '').replace('_annotated.tsv', ''))
     # Build path
     batch_std_file = os.path.join(batch_std_dir, file)
     # Load file
@@ -160,14 +161,15 @@ h = sns.kdeplot(data=batch_std_exp_df_melted, x='value', hue='std', fill=True,
 h.set(xlabel='ADT expression')
 ax[1].legend_.set_title('Standard deviation')
 ax[1].title.set_text('Distribution of markers expression')
-fig.figure.suptitle('Impact of increasing batch number on phenotype identification\n(Negative markers)')
+fig.figure.suptitle('Impact of expression standard deviation and increased batch number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
-fig.figure.savefig('default_std_batch_phenotypes.jpg', dpi=600)
+fig.figure.savefig('default_batch_std.jpg', dpi=600)
+print('Saved default_batch_std.jpg')
 
 
 # Plot AMI/Jaccard similarity across std with 4 samples - only negative markers
 # Initialise objects
-sample_dir = '../test_results/sample_std_test/'  # sample folder
+sample_dir = '../test_results/default_sample_std_test/'  # sample folder
 sample_files = [f for f in os.listdir(sample_dir) if f.endswith('.tsv')]  # sample tsv files
 sample_rows_ami = []  # AMI data list
 sample_rows_jaccard = []  # Jaccard data list
@@ -176,7 +178,7 @@ sample_exp_df = pd.DataFrame()  # Expression data frame
 # Fill dataframe
 for file in sample_files:
     # Get std value
-    std = float(file.replace('cell_expression_sample_std', '').replace('_annotated.tsv', ''))
+    std = float(file.replace('default_cell_expression_sample_std', '').replace('_annotated.tsv', ''))
     # Build path
     sample_file = os.path.join(sample_dir, file)
     # Load file
@@ -232,14 +234,15 @@ h = sns.kdeplot(data=sample_exp_df_melted, x='value', hue='std', fill=True,
 h.set(xlabel='ADT expression')
 ax[1].legend_.set_title('Standard deviation')
 ax[1].title.set_text('Distribution of markers expression')
-fig.figure.suptitle('Impact of increasing sample number on phenotype identification\n(Negative markers)')
+fig.figure.suptitle('Impact of expression standard deviation and increased sample number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
-fig.figure.savefig('default_std_sample_phenotypes.jpg', dpi=600)
+fig.figure.savefig('default_sample_std.jpg', dpi=600)
+print('Saved default_sample_std.jpg')
 
 
 # Plot AMI/Jaccard similarity across std with batches and samples - only negative markers
 # Initialise objects
-batch_sample_dir = '../test_results/batch_sample_std_test/'  # batch_sample folder
+batch_sample_dir = '../test_results/default_batch_sample_std_test/'  # batch_sample folder
 batch_sample_files = [f for f in os.listdir(batch_sample_dir) if f.endswith('.tsv')]  # batch_sample tsv files
 batch_sample_rows_ami = []  # AMI data list
 batch_sample_rows_jaccard = []  # Jaccard data list
@@ -248,7 +251,7 @@ batch_sample_exp_df = pd.DataFrame()  # Expression data frame
 # Fill dataframe
 for file in batch_sample_files:
     # Get std value
-    std = float(file.replace('cell_expression_batch_sample_std', '').replace('_annotated.tsv', ''))
+    std = float(file.replace('default_cell_expression_batch_sample_std', '').replace('_annotated.tsv', ''))
     # Build path
     batch_sample_file = os.path.join(batch_sample_dir, file)
     # Load file
@@ -304,14 +307,15 @@ h = sns.kdeplot(data=batch_sample_exp_df_melted, x='value', hue='std', fill=True
 h.set(xlabel='ADT expression')
 ax[1].legend_.set_title('Standard deviation')
 ax[1].title.set_text('Distribution of markers expression')
-fig.figure.suptitle('Impact of increasing sample and batch number on phenotype identification\n(Negative markers)')
+fig.figure.suptitle('Impact of expression standard deviation and increased sample/batch number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
-fig.figure.savefig('default_std_batch_sample_phenotypes.jpg', dpi=600)
+fig.figure.savefig('default_batch_sample_std.jpg', dpi=600)
+print('Saved default_batch_sample_std.jpg')
 
 
 # Plot AMI/Jaccard similarity across batches - only negative markers
 # Initialise objects
-batch_dir = '../test_results/batch_test/'  # batch folder
+batch_dir = '../test_results/default_batch_test/'  # batch folder
 batch_files = [f for f in os.listdir(batch_dir) if f.endswith('.tsv')]  # batch tsv files
 batch_rows_ami = []  # AMI data list
 batch_rows_jaccard = []  # Jaccard data list
@@ -320,7 +324,7 @@ batch_exp_df = pd.DataFrame()  # Expression data frame
 # Fill dataframe
 for file in batch_files:
     # Get std value
-    nb_batch = float(file.replace('cell_expression_std0.75_', '').replace('batches_annotated.tsv', ''))
+    nb_batch = float(file[:-29].replace('default_cell_expression_', ''))
     # Build path
     batch_file = os.path.join(batch_dir, file)
     # Load file
@@ -378,12 +382,13 @@ ax[1].legend_.set_title('Marker')
 ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of batch number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
-fig.figure.savefig('default_batch_phenotypes.jpg', dpi=600)
+fig.figure.savefig('default_batch.jpg', dpi=600)
+print('Saved default_batch.jpg')
 
 
 # Plot AMI/Jaccard similarity across samples - only negative markers
 # Initialise objects
-sample_dir = '../test_results/sample_test/'  # sample folder
+sample_dir = '../test_results/default_sample_test/'  # sample folder
 sample_files = [f for f in os.listdir(sample_dir) if f.endswith('.tsv')]  # sample tsv files
 sample_rows_ami = []  # AMI data list
 sample_rows_jaccard = []  # Jaccard data list
@@ -392,7 +397,7 @@ sample_exp_df = pd.DataFrame()  # Expression data frame
 # Fill dataframe
 for file in sample_files:
     # Get std value
-    nb_sample = float(file.replace('cell_expression_std0.75_', '').replace('samples_annotated.tsv', ''))
+    nb_sample = float(file[:-29].replace('default_cell_expression_', ''))
     # Build path
     sample_file = os.path.join(sample_dir, file)
     # Load file
@@ -450,12 +455,13 @@ ax[1].legend_.set_title('Marker')
 ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of sample number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
-fig.figure.savefig('default_sample_phenotypes.jpg', dpi=600)
+fig.figure.savefig('default_sample.jpg', dpi=600)
+print('Saved default_sample.jpg')
 
 
 # Plot AMI/Jaccard similarity across batches and samples - only negative markers
 # Initialise objects
-batch_sample_dir = '../test_results/batch_sample_test/'  # batch_sample folder
+batch_sample_dir = '../test_results/default_batch_sample_test/'  # batch_sample folder
 batch_sample_files = [f for f in os.listdir(batch_sample_dir) if f.endswith('.tsv')]  # batch_sample tsv files
 batch_sample_rows_ami = []  # AMI data list
 batch_sample_rows_jaccard = []  # Jaccard data list
@@ -465,7 +471,7 @@ batch_sample_exp_df = pd.DataFrame()  # Expression data frame
 for file in batch_sample_files:
     # Get std value
     # nb_batch_sample = float(file.replace('cell_expression_std0.75_', '').replace('batch_samples_annotated.tsv', ''))
-    nb_batch_sample = float(file[:-30].replace('cell_expression_std0.75_', ''))
+    nb_batch_sample = float(file[:-38].replace('default_cell_expression_', ''))
     # Build path
     batch_sample_file = os.path.join(batch_sample_dir, file)
     # Load file
@@ -523,7 +529,8 @@ ax[1].legend_.set_title('Marker')
 ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of batch and sample number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
-fig.figure.savefig('default_batch_sample_phenotypes.jpg', dpi=600)
+fig.figure.savefig('default_batch_sample.jpg', dpi=600)
+print('Saved default_batch_sample.jpg')
 
 
 
@@ -531,7 +538,7 @@ fig.figure.savefig('default_batch_sample_phenotypes.jpg', dpi=600)
 
 # Plot AMI/Jaccard similarity across std - negative and positive markers
 # Initialise objects
-std_dir_mixed = '../test_results/fake_std_test_mixed/'  # std_mixed folder
+std_dir_mixed = '../test_results/mixed_fake_std_test/'  # std_mixed folder
 std_files_mixed = [f for f in os.listdir(std_dir_mixed) if f.endswith('.tsv')]  # std_mixed tsv files
 std_rows_ami_mixed = []  # AMI data list
 std_rows_jaccard_mixed = []  # Jaccard data list
@@ -540,7 +547,7 @@ std_exp_df_mixed = pd.DataFrame()  # Expression data frame
 # Fill dataframe
 for file in std_files_mixed:
     # Get std value
-    std = float(file.replace('cell_expression_mixed_fake_std', '').replace('_annotated.tsv', ''))
+    std = float(file.replace('mixed_cell_expression_fake_std', '').replace('_annotated.tsv', ''))
     # Build path
     std_file_mixed = os.path.join(std_dir_mixed, file)
     # Load file
@@ -596,14 +603,15 @@ h = sns.kdeplot(data=std_exp_df_melted_mixed, x='value', hue='std', fill=True,
 h.set(xlabel='ADT expression')
 ax[1].legend_.set_title('Standard deviation')
 ax[1].title.set_text('Distribution of markers expression')
-fig.figure.suptitle('Impact of standard deviation on phenotype identification\n(Positive and negative markers)')
+fig.figure.suptitle('Impact of expression standard deviation on phenotype identification\n(Positive and negative markers)')
 fig.tight_layout()
-fig.figure.savefig('mixed_std_fake_phenotypes.jpg', dpi=600)
+fig.figure.savefig('mixed_fake_std.jpg', dpi=600)
+print('Saved mixed_fake_std.jpg')
 
 
 # Plot AMI/Jaccard similarity across std with 4 batches - negative and positive markers
 # Initialise objects
-batch_std_dir_mixed = '../test_results/batch_std_test_mixed/'  # batch_std_mixed folder
+batch_std_dir_mixed = '../test_results/mixed_batch_std_test/'  # batch_std_mixed folder
 batch_std_files_mixed = [f for f in os.listdir(batch_std_dir_mixed) if f.endswith('.tsv')]  # batch_std_mixed tsv files
 batch_std_rows_ami_mixed = []  # AMI data list
 batch_std_rows_jaccard_mixed = []  # Jaccard data list
@@ -612,7 +620,7 @@ batch_std_exp_df_mixed = pd.DataFrame()  # Expression data frame
 # Fill dataframe
 for file in batch_std_files_mixed:
     # Get std value
-    std = float(file.replace('cell_expression_mixed_batch_std', '').replace('_annotated.tsv', ''))
+    std = float(file.replace('mixed_cell_expression_batch_std', '').replace('_annotated.tsv', ''))
     # Build path
     batch_std_file_mixed = os.path.join(batch_std_dir_mixed, file)
     # Load file
@@ -668,14 +676,15 @@ h = sns.kdeplot(data=batch_std_exp_df_melted_mixed, x='value', hue='std', fill=T
 h.set(xlabel='ADT expression')
 ax[1].legend_.set_title('Standard deviation')
 ax[1].title.set_text('Distribution of markers expression')
-fig.figure.suptitle('Impact of increasing batch number on phenotype identification\n(Positive and negative markers)')
+fig.figure.suptitle('Impact of expression standard deviation and increased batch number on phenotype identification\n(Positive and negative markers)')
 fig.tight_layout()
-fig.figure.savefig('mixed_std_batch_phenotypes.jpg', dpi=600)
+fig.figure.savefig('mixed_batch_std.jpg', dpi=600)
+print('Saved mixed_batch_std.jpg')
 
 
 # Plot AMI/Jaccard similarity across std with 4 samples - negative and positive markers
 # Initialise objects
-sample_dir_mixed = '../test_results/sample_std_test_mixed/'  # sample_mixed folder
+sample_dir_mixed = '../test_results/mixed_sample_std_test/'  # sample_mixed folder
 sample_files_mixed = [f for f in os.listdir(sample_dir_mixed) if f.endswith('.tsv')]  # sample_mixed tsv files
 sample_rows_ami_mixed = []  # AMI data list
 sample_rows_jaccard_mixed = []  # Jaccard data list
@@ -684,7 +693,7 @@ sample_exp_df_mixed = pd.DataFrame()  # Expression data frame
 # Fill dataframe
 for file in sample_files_mixed:
     # Get std value
-    std = float(file.replace('cell_expression_mixed_sample_std', '').replace('_annotated.tsv', ''))
+    std = float(file.replace('mixed_cell_expression_sample_std', '').replace('_annotated.tsv', ''))
     # Build path
     sample_file_mixed = os.path.join(sample_dir_mixed, file)
     # Load file
@@ -740,14 +749,15 @@ h = sns.kdeplot(data=sample_exp_df_melted_mixed, x='value', hue='std', fill=True
 h.set(xlabel='ADT expression')
 ax[1].legend_.set_title('Standard deviation')
 ax[1].title.set_text('Distribution of markers expression')
-fig.figure.suptitle('Impact of increasing sample number on phenotype identification\n(Positive and negative markers)')
+fig.figure.suptitle('Impact of expression standard deviation and increased sample number on phenotype identification\n(Positive and negative markers)')
 fig.tight_layout()
-fig.figure.savefig('mixed_std_sample_phenotypes.jpg', dpi=600)
+fig.figure.savefig('mixed_sample_std.jpg', dpi=600)
+print('Saved mixed_sample_std.jpg')
 
 
 # Plot AMI/Jaccard similarity across std with batches and samples - negative and positive markers
 # Initialise objects
-batch_sample_dir_mixed = '../test_results/batch_sample_std_test_mixed/'  # batch_sample_mixed folder
+batch_sample_dir_mixed = '../test_results/mixed_batch_sample_std_test/'  # batch_sample_mixed folder
 batch_sample_files_mixed = [f for f in os.listdir(batch_sample_dir_mixed) if f.endswith('.tsv')]  # batch_sample_mixed tsv files
 batch_sample_rows_ami_mixed = []  # AMI data list
 batch_sample_rows_jaccard_mixed = []  # Jaccard data list
@@ -756,7 +766,7 @@ batch_sample_exp_df_mixed = pd.DataFrame()  # Expression data frame
 # Fill dataframe
 for file in batch_sample_files_mixed:
     # Get std value
-    std = float(file.replace('cell_expression_mixed_batch_sample_std', '').replace('_annotated.tsv', ''))
+    std = float(file.replace('mixed_cell_expression_batch_sample_std', '').replace('_annotated.tsv', ''))
     # Build path
     batch_sample_file_mixed = os.path.join(batch_sample_dir_mixed, file)
     # Load file
@@ -814,12 +824,20 @@ ax[1].legend_.set_title('Standard deviation')
 ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of increasing sample and batch number on phenotype identification\n(Positive and negative markers)')
 fig.tight_layout()
-fig.figure.savefig('mixed_std_batch_sample_phenotypes.jpg', dpi=600)
+fig.figure.savefig('mixed_batch_sample_std.jpg', dpi=600)
+print('Saved mixed_batch_sample_std.jpg')
+
+
+
+
+
+
+
 
 
 # Plot AMI/Jaccard similarity across batches - negative and positive markers
 # Initialise objects
-batch_dir_mixed = '../test_results/batch_test_mixed/'  # batch_mixed folder
+batch_dir_mixed = '../test_results/mixed_batch_test/'  # batch_mixed folder
 batch_files_mixed = [f for f in os.listdir(batch_dir_mixed) if f.endswith('.tsv')]  # batch_mixed tsv files
 batch_rows_ami_mixed = []  # AMI data list
 batch_rows_jaccard_mixed = []  # Jaccard data list
@@ -828,7 +846,7 @@ batch_exp_df_mixed = pd.DataFrame()  # Expression data frame
 # Fill dataframe
 for file in batch_files_mixed:
     # Get std value
-    nb_batch = float(file.replace('cell_expression_mixed_std0.75_', '').replace('batches_annotated.tsv', ''))
+    nb_batch = float(file[:-29].replace('mixed_cell_expression_', ''))
     # Build path
     batch_file_mixed = os.path.join(batch_dir_mixed, file)
     # Load file
@@ -886,12 +904,13 @@ ax[1].legend_.set_title('Marker')
 ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of batch number on phenotype identification\n(Positive and negative markers)')
 fig.tight_layout()
-fig.figure.savefig('mixed_batch_phenotypes.jpg', dpi=600)
+fig.figure.savefig('mixed_batch.jpg', dpi=600)
+print('Saved mixed_batch.jpg')
 
 
 # Plot AMI/Jaccard similarity across samples - negative and positive markers
 # Initialise objects
-sample_dir_mixed = '../test_results/sample_test_mixed/'  # sample_mixed folder
+sample_dir_mixed = '../test_results/mixed_sample_test/'  # sample_mixed folder
 sample_files_mixed = [f for f in os.listdir(sample_dir_mixed) if f.endswith('.tsv')]  # sample_mixed tsv files
 sample_rows_ami_mixed = []  # AMI data list
 sample_rows_jaccard_mixed = []  # Jaccard data list
@@ -900,7 +919,7 @@ sample_exp_df_mixed = pd.DataFrame()  # Expression data frame
 # Fill dataframe
 for file in sample_files_mixed:
     # Get std value
-    nb_sample = float(file.replace('cell_expression_mixed_std0.75_', '').replace('samples_annotated.tsv', ''))
+    nb_sample = float(file[:-29].replace('mixed_cell_expression_', ''))
     # Build path
     sample_file_mixed = os.path.join(sample_dir_mixed, file)
     # Load file
@@ -958,12 +977,13 @@ ax[1].legend_.set_title('Marker')
 ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of sample number on phenotype identification\n(Positive and negative markers)')
 fig.tight_layout()
-fig.figure.savefig('mixed_sample_phenotypes.jpg', dpi=600)
+fig.figure.savefig('mixed_sample.jpg', dpi=600)
+print('Saved mixed_sample.jpg')
 
 
 # Plot AMI/Jaccard similarity across batches and samples - negative and positive markers
 # Initialise objects
-batch_sample_dir_mixed = '../test_results/batch_sample_test_mixed/'  # batch_sample_mixed folder
+batch_sample_dir_mixed = '../test_results/mixed_batch_sample_test/'  # batch_sample_mixed folder
 batch_sample_files_mixed = [f for f in os.listdir(batch_sample_dir_mixed) if f.endswith('.tsv')]  # batch_sample_mixed tsv files
 batch_sample_rows_ami_mixed = []  # AMI data list
 batch_sample_rows_jaccard_mixed = []  # Jaccard data list
@@ -972,8 +992,7 @@ batch_sample_exp_df_mixed = pd.DataFrame()  # Expression data frame
 # Fill dataframe
 for file in batch_sample_files_mixed:
     # Get std value
-    # nb_batch_sample = float(file.replace('cell_expression_mixed_std0.75_', '').replace('batch_samples_annotated.tsv', ''))
-    nb_batch_sample = float(file[:-30].replace('cell_expression_mixed_std0.75_', ''))
+    nb_batch_sample = float(file[:-38].replace('mixed_cell_expression_', ''))
     # Build path
     batch_sample_file_mixed = os.path.join(batch_sample_dir_mixed, file)
     # Load file
@@ -1031,7 +1050,8 @@ ax[1].legend_.set_title('Marker')
 ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of batche and sample number on phenotype identification\n(Positive and negative markers)')
 fig.tight_layout()
-fig.figure.savefig('mixed_batch_sample_phenotypes.jpg', dpi=600)
+fig.figure.savefig('mixed_batch_sample.jpg', dpi=600)
+print('Saved mixed_batch_sample.jpg')
 
 
 
