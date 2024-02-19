@@ -23,7 +23,7 @@ markers = ['a', 'b', 'c', 'd', 'e']  # Markers list
 
 # Plot AMI/Jaccard similarity across std - only negative markers
 # Initialise objects
-std_dir = '../test_results/fake_std_test/'  # std folder
+std_dir = '../test_results/default_fake_std_test/'  # std folder
 std_files = [f for f in os.listdir(std_dir) if f.endswith('.tsv')]  # std tsv files
 std_rows_ami = []  # AMI data list
 std_rows_jaccard = []  # Jaccard data list
@@ -32,7 +32,7 @@ std_exp_df = pd.DataFrame()  # Expression data frame
 # Fill dataframe
 for file in std_files:
     # Get std value
-    std = float(file.replace('cell_expression_fake_std', '').replace('_annotated.tsv', ''))
+    std = float(file.replace('default_cell_expression_fake_std', '').replace('_annotated.tsv', ''))
     # Build path
     std_file = os.path.join(std_dir, file)
     # Load file
@@ -90,7 +90,7 @@ ax[1].legend_.set_title('Standard deviation')
 ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of standard deviation on phenotype identification\n(Negative markers)')
 fig.tight_layout()
-fig.figure.savefig('std_fake_phenotypes.jpg', dpi=600)
+fig.figure.savefig('default_std_fake_phenotypes.jpg', dpi=600)
 
 
 # Plot AMI/Jaccard similarity across std with 4 batches - only negative markers
@@ -162,7 +162,7 @@ ax[1].legend_.set_title('Standard deviation')
 ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of increasing batch number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
-fig.figure.savefig('std_batch_phenotypes.jpg', dpi=600)
+fig.figure.savefig('default_std_batch_phenotypes.jpg', dpi=600)
 
 
 # Plot AMI/Jaccard similarity across std with 4 samples - only negative markers
@@ -234,7 +234,7 @@ ax[1].legend_.set_title('Standard deviation')
 ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of increasing sample number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
-fig.figure.savefig('std_sample_phenotypes.jpg', dpi=600)
+fig.figure.savefig('default_std_sample_phenotypes.jpg', dpi=600)
 
 
 # Plot AMI/Jaccard similarity across std with batches and samples - only negative markers
@@ -306,7 +306,7 @@ ax[1].legend_.set_title('Standard deviation')
 ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of increasing sample and batch number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
-fig.figure.savefig('std_batch_sample_phenotypes.jpg', dpi=600)
+fig.figure.savefig('default_std_batch_sample_phenotypes.jpg', dpi=600)
 
 
 # Plot AMI/Jaccard similarity across batches - only negative markers
@@ -378,7 +378,7 @@ ax[1].legend_.set_title('Marker')
 ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of batch number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
-fig.figure.savefig('batch_phenotypes.jpg', dpi=600)
+fig.figure.savefig('default_batch_phenotypes.jpg', dpi=600)
 
 
 # Plot AMI/Jaccard similarity across samples - only negative markers
@@ -450,7 +450,7 @@ ax[1].legend_.set_title('Marker')
 ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of sample number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
-fig.figure.savefig('sample_phenotypes.jpg', dpi=600)
+fig.figure.savefig('default_sample_phenotypes.jpg', dpi=600)
 
 
 # Plot AMI/Jaccard similarity across batches and samples - only negative markers
@@ -523,7 +523,7 @@ ax[1].legend_.set_title('Marker')
 ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of batch and sample number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
-fig.figure.savefig('batch_sample_phenotypes.jpg', dpi=600)
+fig.figure.savefig('default_batch_sample_phenotypes.jpg', dpi=600)
 
 
 
@@ -1058,10 +1058,6 @@ fig.figure.savefig('mixed_batch_sample_phenotypes.jpg', dpi=600)
 # 13. Mixed with std fixed to 0.75, fake cell type and 1 to 6 samples --> sample_mixed_test
 # 14. Mixed with std fixed to 0.75, fake cell type and 1 to 6 samples/batches --> batch_sample_mixed_test
 
-
-
-# X. Default but non-defining markers can be positive or negative --> mixed_std_test
-# Same but with non-defining markers positive or negative across all cells
 
 
 # Check whether theoretical distribution (truncated normal distribution) fit
