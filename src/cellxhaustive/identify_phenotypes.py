@@ -358,7 +358,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
                     # Use default arrays as placeholders for reannotation results
                     reannotation_proba = np.full(new_labels.shape[0], np.nan)
                     results_dict[i]['reannotated_labels'] = new_labels
-                    results_dict[i]['reannotated_phntp'] = cell_phntp_comb
+                    results_dict[i]['reannotated_phntp'] = cell_phntp_comb[i]
                     results_dict[i]['reannotation_proba'] = reannotation_proba
 
                     # Record number of undefined cells after reannotation
