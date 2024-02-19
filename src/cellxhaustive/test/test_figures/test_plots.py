@@ -444,7 +444,7 @@ g = sns.scatterplot(x=jitter(avg_sample_ami['nb_sample'], 0.05, 0.03), y=avg_sam
 g = sns.scatterplot(x=jitter(df_sample_jaccard['nb_sample'], 0.05, 0.03), y=df_sample_jaccard['sample_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
 g = sns.scatterplot(x=jitter(avg_sample_jaccard['nb_sample'], 0.05, 0.03), y=avg_sample_jaccard['sample_score_jaccard'], color='red', linewidth=0, ax=ax[0])
 g.set(xlabel='Number of samples', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
-ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
+ax[0].legend(loc='center right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
 ax[0].title.set_text('Similarity scores')
 
 # Expression density plot
@@ -517,7 +517,7 @@ g = sns.scatterplot(x=jitter(avg_batch_sample_ami['nb_batch_sample'], 0.05, 0.03
 g = sns.scatterplot(x=jitter(df_batch_sample_jaccard['nb_batch_sample'], 0.05, 0.03), y=df_batch_sample_jaccard['batch_sample_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
 g = sns.scatterplot(x=jitter(avg_batch_sample_jaccard['nb_batch_sample'], 0.05, 0.03), y=avg_batch_sample_jaccard['batch_sample_score_jaccard'], color='red', linewidth=0, ax=ax[0])
 g.set(xlabel='Number of batches/samples', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
-ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
+ax[0].legend(loc='center right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
 ax[0].title.set_text('Similarity scores')
 
 # Expression density plot
@@ -1031,7 +1031,7 @@ g = sns.scatterplot(x=jitter(avg_batch_ami_mixed['nb_batch'], 0.05, 0.03), y=avg
 g = sns.scatterplot(x=jitter(df_batch_jaccard_mixed['nb_batch'], 0.05, 0.03), y=df_batch_jaccard_mixed['batch_score_jaccard_mixed'], color='orange', linewidth=0, ax=ax[0])
 g = sns.scatterplot(x=jitter(avg_batch_jaccard_mixed['nb_batch'], 0.05, 0.03), y=avg_batch_jaccard_mixed['batch_score_jaccard_mixed'], color='red', linewidth=0, ax=ax[0])
 g.set(xlabel='Number of batches', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
-ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
+ax[0].legend(loc='center right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
 ax[0].title.set_text('Similarity scores')
 
 # Expression density plot
@@ -1104,7 +1104,7 @@ g = sns.scatterplot(x=jitter(avg_sample_ami_mixed['nb_sample'], 0.05, 0.03), y=a
 g = sns.scatterplot(x=jitter(df_sample_jaccard_mixed['nb_sample'], 0.05, 0.03), y=df_sample_jaccard_mixed['sample_score_jaccard_mixed'], color='orange', linewidth=0, ax=ax[0])
 g = sns.scatterplot(x=jitter(avg_sample_jaccard_mixed['nb_sample'], 0.05, 0.03), y=avg_sample_jaccard_mixed['sample_score_jaccard_mixed'], color='red', linewidth=0, ax=ax[0])
 g.set(xlabel='Number of samples', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
-ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
+ax[0].legend(loc='center right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
 ax[0].title.set_text('Similarity scores')
 
 # Expression density plot
@@ -1177,7 +1177,7 @@ g = sns.scatterplot(x=jitter(avg_batch_sample_ami_mixed['nb_batch_sample'], 0.05
 g = sns.scatterplot(x=jitter(df_batch_sample_jaccard_mixed['nb_batch_sample'], 0.05, 0.03), y=df_batch_sample_jaccard_mixed['batch_sample_score_jaccard_mixed'], color='orange', linewidth=0, ax=ax[0])
 g = sns.scatterplot(x=jitter(avg_batch_sample_jaccard_mixed['nb_batch_sample'], 0.05, 0.03), y=avg_batch_sample_jaccard_mixed['batch_sample_score_jaccard_mixed'], color='red', linewidth=0, ax=ax[0])
 g.set(xlabel='Number of batches/samples', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
-ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
+ax[0].legend(loc='center right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
 ax[0].title.set_text('Similarity scores')
 
 # Expression density plot
