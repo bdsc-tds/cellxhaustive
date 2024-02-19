@@ -366,10 +366,10 @@ sns.set(style='whitegrid')
 fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
 
 # AMI Scatterplot
-g = sns.scatterplot(x=jitter(df_batch_ami['nb_batch'], 0.05, 0.03), y=df_batch_ami['batch_score_ami'], color='lightblue', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(avg_batch_ami['nb_batch'], 0.05, 0.03), y=avg_batch_ami['batch_score_ami'], color='blue', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(df_batch_jaccard['nb_batch'], 0.05, 0.03), y=df_batch_jaccard['batch_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(avg_batch_jaccard['nb_batch'], 0.05, 0.03), y=avg_batch_jaccard['batch_score_jaccard'], color='red', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_batch_ami['nb_batch'], 0, 0.1), y=df_batch_ami['batch_score_ami'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_batch_ami['nb_batch'], 0, 0.1), y=avg_batch_ami['batch_score_ami'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_batch_jaccard['nb_batch'], 0, 0.1), y=df_batch_jaccard['batch_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_batch_jaccard['nb_batch'], 0, 0.1), y=avg_batch_jaccard['batch_score_jaccard'], color='red', linewidth=0, ax=ax[0])
 g.set(xlabel='Number of batches', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
 ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
 ax[0].title.set_text('Similarity scores')
@@ -439,10 +439,10 @@ sns.set(style='whitegrid')
 fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
 
 # AMI Scatterplot
-g = sns.scatterplot(x=jitter(df_sample_ami['nb_sample'], 0.05, 0.03), y=df_sample_ami['sample_score_ami'], color='lightblue', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(avg_sample_ami['nb_sample'], 0.05, 0.03), y=avg_sample_ami['sample_score_ami'], color='blue', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(df_sample_jaccard['nb_sample'], 0.05, 0.03), y=df_sample_jaccard['sample_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(avg_sample_jaccard['nb_sample'], 0.05, 0.03), y=avg_sample_jaccard['sample_score_jaccard'], color='red', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_sample_ami['nb_sample'], 0, 0.1), y=df_sample_ami['sample_score_ami'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_sample_ami['nb_sample'], 0, 0.1), y=avg_sample_ami['sample_score_ami'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_sample_jaccard['nb_sample'], 0, 0.1), y=df_sample_jaccard['sample_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_sample_jaccard['nb_sample'], 0, 0.1), y=avg_sample_jaccard['sample_score_jaccard'], color='red', linewidth=0, ax=ax[0])
 g.set(xlabel='Number of samples', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
 ax[0].legend(loc='center right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
 ax[0].title.set_text('Similarity scores')
@@ -512,10 +512,10 @@ sns.set(style='whitegrid')
 fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
 
 # AMI Scatterplot
-g = sns.scatterplot(x=jitter(df_batch_sample_ami['nb_batch_sample'], 0.05, 0.03), y=df_batch_sample_ami['batch_sample_score_ami'], color='lightblue', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(avg_batch_sample_ami['nb_batch_sample'], 0.05, 0.03), y=avg_batch_sample_ami['batch_sample_score_ami'], color='blue', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(df_batch_sample_jaccard['nb_batch_sample'], 0.05, 0.03), y=df_batch_sample_jaccard['batch_sample_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(avg_batch_sample_jaccard['nb_batch_sample'], 0.05, 0.03), y=avg_batch_sample_jaccard['batch_sample_score_jaccard'], color='red', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_batch_sample_ami['nb_batch_sample'], 0, 0.1), y=df_batch_sample_ami['batch_sample_score_ami'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_batch_sample_ami['nb_batch_sample'], 0, 0.1), y=avg_batch_sample_ami['batch_sample_score_ami'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_batch_sample_jaccard['nb_batch_sample'], 0, 0.1), y=df_batch_sample_jaccard['batch_sample_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_batch_sample_jaccard['nb_batch_sample'], 0, 0.1), y=avg_batch_sample_jaccard['batch_sample_score_jaccard'], color='red', linewidth=0, ax=ax[0])
 g.set(xlabel='Number of batches/samples', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
 ax[0].legend(loc='center right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
 ax[0].title.set_text('Similarity scores')
@@ -585,10 +585,10 @@ sns.set(style='whitegrid')
 fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
 
 # AMI Scatterplot
-g = sns.scatterplot(x=jitter(df_xmin_ami['nb_xmin'], 0, 1), y=df_xmin_ami['xmin_score_ami'], color='lightblue', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(avg_xmin_ami['nb_xmin'], 0, 1), y=avg_xmin_ami['xmin_score_ami'], color='blue', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(df_xmin_jaccard['nb_xmin'], 0, 1), y=df_xmin_jaccard['xmin_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(avg_xmin_jaccard['nb_xmin'], 0, 1), y=avg_xmin_jaccard['xmin_score_jaccard'], color='red', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_xmin_ami['nb_xmin'], 0, 1.5), y=df_xmin_ami['xmin_score_ami'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_xmin_ami['nb_xmin'], 0, 1.5), y=avg_xmin_ami['xmin_score_ami'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_xmin_jaccard['nb_xmin'], 0, 1.5), y=df_xmin_jaccard['xmin_score_jaccard'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_xmin_jaccard['nb_xmin'], 0, 1.5), y=avg_xmin_jaccard['xmin_score_jaccard'], color='red', linewidth=0, ax=ax[0])
 g.set(xlabel='Minimum cell per phenotype per sample', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
 ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
 ax[0].title.set_text('Similarity scores')
@@ -1026,10 +1026,10 @@ sns.set(style='whitegrid')
 fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
 
 # AMI Scatterplot
-g = sns.scatterplot(x=jitter(df_batch_ami_mixed['nb_batch'], 0.05, 0.03), y=df_batch_ami_mixed['batch_score_ami_mixed'], color='lightblue', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(avg_batch_ami_mixed['nb_batch'], 0.05, 0.03), y=avg_batch_ami_mixed['batch_score_ami_mixed'], color='blue', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(df_batch_jaccard_mixed['nb_batch'], 0.05, 0.03), y=df_batch_jaccard_mixed['batch_score_jaccard_mixed'], color='orange', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(avg_batch_jaccard_mixed['nb_batch'], 0.05, 0.03), y=avg_batch_jaccard_mixed['batch_score_jaccard_mixed'], color='red', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_batch_ami_mixed['nb_batch'], 0, 0.1), y=df_batch_ami_mixed['batch_score_ami_mixed'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_batch_ami_mixed['nb_batch'], 0, 0.1), y=avg_batch_ami_mixed['batch_score_ami_mixed'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_batch_jaccard_mixed['nb_batch'], 0, 0.1), y=df_batch_jaccard_mixed['batch_score_jaccard_mixed'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_batch_jaccard_mixed['nb_batch'], 0, 0.1), y=avg_batch_jaccard_mixed['batch_score_jaccard_mixed'], color='red', linewidth=0, ax=ax[0])
 g.set(xlabel='Number of batches', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
 ax[0].legend(loc='center right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
 ax[0].title.set_text('Similarity scores')
@@ -1099,10 +1099,10 @@ sns.set(style='whitegrid')
 fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
 
 # AMI Scatterplot
-g = sns.scatterplot(x=jitter(df_sample_ami_mixed['nb_sample'], 0.05, 0.03), y=df_sample_ami_mixed['sample_score_ami_mixed'], color='lightblue', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(avg_sample_ami_mixed['nb_sample'], 0.05, 0.03), y=avg_sample_ami_mixed['sample_score_ami_mixed'], color='blue', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(df_sample_jaccard_mixed['nb_sample'], 0.05, 0.03), y=df_sample_jaccard_mixed['sample_score_jaccard_mixed'], color='orange', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(avg_sample_jaccard_mixed['nb_sample'], 0.05, 0.03), y=avg_sample_jaccard_mixed['sample_score_jaccard_mixed'], color='red', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_sample_ami_mixed['nb_sample'], 0, 0.1), y=df_sample_ami_mixed['sample_score_ami_mixed'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_sample_ami_mixed['nb_sample'], 0, 0.1), y=avg_sample_ami_mixed['sample_score_ami_mixed'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_sample_jaccard_mixed['nb_sample'], 0, 0.1), y=df_sample_jaccard_mixed['sample_score_jaccard_mixed'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_sample_jaccard_mixed['nb_sample'], 0, 0.1), y=avg_sample_jaccard_mixed['sample_score_jaccard_mixed'], color='red', linewidth=0, ax=ax[0])
 g.set(xlabel='Number of samples', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
 ax[0].legend(loc='center right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
 ax[0].title.set_text('Similarity scores')
@@ -1172,10 +1172,10 @@ sns.set(style='whitegrid')
 fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
 
 # AMI Scatterplot
-g = sns.scatterplot(x=jitter(df_batch_sample_ami_mixed['nb_batch_sample'], 0.05, 0.03), y=df_batch_sample_ami_mixed['batch_sample_score_ami_mixed'], color='lightblue', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(avg_batch_sample_ami_mixed['nb_batch_sample'], 0.05, 0.03), y=avg_batch_sample_ami_mixed['batch_sample_score_ami_mixed'], color='blue', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(df_batch_sample_jaccard_mixed['nb_batch_sample'], 0.05, 0.03), y=df_batch_sample_jaccard_mixed['batch_sample_score_jaccard_mixed'], color='orange', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(avg_batch_sample_jaccard_mixed['nb_batch_sample'], 0.05, 0.03), y=avg_batch_sample_jaccard_mixed['batch_sample_score_jaccard_mixed'], color='red', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_batch_sample_ami_mixed['nb_batch_sample'], 0, 0.1), y=df_batch_sample_ami_mixed['batch_sample_score_ami_mixed'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_batch_sample_ami_mixed['nb_batch_sample'], 0, 0.1), y=avg_batch_sample_ami_mixed['batch_sample_score_ami_mixed'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_batch_sample_jaccard_mixed['nb_batch_sample'], 0, 0.1), y=df_batch_sample_jaccard_mixed['batch_sample_score_jaccard_mixed'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_batch_sample_jaccard_mixed['nb_batch_sample'], 0, 0.1), y=avg_batch_sample_jaccard_mixed['batch_sample_score_jaccard_mixed'], color='red', linewidth=0, ax=ax[0])
 g.set(xlabel='Number of batches/samples', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
 ax[0].legend(loc='center right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
 ax[0].title.set_text('Similarity scores')
@@ -1245,10 +1245,10 @@ sns.set(style='whitegrid')
 fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
 
 # AMI Scatterplot
-g = sns.scatterplot(x=jitter(df_xmin_ami_mixed['nb_xmin'], 0, 1), y=df_xmin_ami_mixed['xmin_score_ami_mixed'], color='lightblue', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(avg_xmin_ami_mixed['nb_xmin'], 0, 1), y=avg_xmin_ami_mixed['xmin_score_ami_mixed'], color='blue', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(df_xmin_jaccard_mixed['nb_xmin'], 0, 1), y=df_xmin_jaccard_mixed['xmin_score_jaccard_mixed'], color='orange', linewidth=0, ax=ax[0])
-g = sns.scatterplot(x=jitter(avg_xmin_jaccard_mixed['nb_xmin'], 0, 1), y=avg_xmin_jaccard_mixed['xmin_score_jaccard_mixed'], color='red', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_xmin_ami_mixed['nb_xmin'], 0, 1.5), y=df_xmin_ami_mixed['xmin_score_ami_mixed'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_xmin_ami_mixed['nb_xmin'], 0, 1.5), y=avg_xmin_ami_mixed['xmin_score_ami_mixed'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_xmin_jaccard_mixed['nb_xmin'], 0, 1.5), y=df_xmin_jaccard_mixed['xmin_score_jaccard_mixed'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_xmin_jaccard_mixed['nb_xmin'], 0, 1.5), y=avg_xmin_jaccard_mixed['xmin_score_jaccard_mixed'], color='red', linewidth=0, ax=ax[0])
 g.set(xlabel='Minimum cell per phenotype per sample', ylabel='AMI / Jaccard similarity', ylim=[-0.05, 1.1])
 ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'Jaccard similarity', 'Mean Jaccard similarity'])
 ax[0].title.set_text('Similarity scores')
@@ -1369,6 +1369,13 @@ print('Saved mixed_maxmarkers.jpg')
 
 
 
+# Try with KNN phenotypes
+# Try without unidentified cells
+# Try with our dataset without cell type information with high xmin and high ymin --> test if it finds main cell type
+#     Test with only "good" markers
+#     Test relevant markers CD45, CD127, but add noisy fake markers --> Can it discriminate both?
+# Require real annotations
+
 # Check whether theoretical distribution (truncated normal distribution) fit
 # actual marker expression distribution
 
@@ -1380,11 +1387,6 @@ print('Saved mixed_maxmarkers.jpg')
 
 # Use Hao dataset as test?
 
-
-# Try with our dataset without cell type information with high xmin and high ymin --> test if it finds main cell type
-#     Test with only "good" markers
-#     Test relevant markers CD45, CD127, but add noisy fake markers --> Can it discriminate both?
-# Require real annotations
 
 # Parallelization
 # Name assignment
