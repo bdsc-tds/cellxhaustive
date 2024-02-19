@@ -247,7 +247,9 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     for i in range(max_comb):
         col_names.extend([f'Annotations_{i + 1}', f'Phenotypes_{i + 1}'])
         if knn_refine:
-            col_names.extend([f'KNN_annotations_{i + 1}', f'KNN_proba_{i + 1}'])
+            col_names.extend([f'KNN_annotations_{i + 1}',
+                              f'KNN_phenotype_{i + 1}',
+                              f'KNN_proba_{i + 1}'])
 
     # Initialise empty dataframe to store all annotation results
     logging.debug('\tInitialising empty annotation table')
@@ -281,7 +283,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
         # Get column names
         logging.debug('\t\t\tBuilding column names')
-        end = (4 * len(label_nb_comb)) if knn_refine else (2 * len(label_nb_comb))
+        end = (5 * len(label_nb_comb)) if knn_refine else (2 * len(label_nb_comb))
         col_names_sub = col_names[:end]
 
         # Initialise empty dataframe to store annotation results for 'label'
@@ -297,8 +299,8 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
             sub_res_df = pd.DataFrame.from_dict(sub_results[comb_nb], orient='index').transpose()
 
             # Fill 'label' annotation dataframe
-            start = 4 * idx
-            annot_df_label.iloc[:, start:(start + 4)] = sub_res_df.copy()
+            start = 5 * idx
+            annot_df_label.iloc[:, start:(start + 5)] = sub_res_df.copy()
             # Note: copy() is used to avoid reassignation problems
 
         # Fill general annotation dataframe with 'label' annotations
