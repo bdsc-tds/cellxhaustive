@@ -161,4 +161,4 @@ def assign_cell_types(mat_representative,
     # Note: with dict.get method, non-representative phenotypes (missing from
     # 'names_conv') are automatically converted to 'Other {cell_name}'
 
-    return new_labels
+    return new_labels, names_conv

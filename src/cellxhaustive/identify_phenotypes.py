@@ -221,9 +221,9 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
 
         if knn_refine:
             # Use default arrays as placeholders for reannotation results
-            reannotated_labels = np.full(mat_subset_rep_markers.shape[0], 'No_reannotation')
             reannotation_proba = np.full(mat_subset_rep_markers.shape[0], np.nan)
-            results_dict[0]['reannotated_labels'] = reannotated_labels
+            results_dict[0]['reannotated_labels'] = new_labels
+            results_dict[0]['reannotated_phntp'] = cell_phntp_comb
             results_dict[0]['reannotation_proba'] = reannotation_proba
 
     elif nb_solution == 1:
@@ -235,7 +235,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
 
         # Assign cell type using only markers from 'best_marker_comb'
         logging.info('\t\t\tAssigning cell types to each cell')
-        new_labels = assign_cell_types(
+        new_labels, names_conv = assign_cell_types(
             mat_representative=mat_subset_rep_markers_comb,
             batches_label=batches_label,
             samples_label=samples_label,
@@ -255,6 +255,9 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
 
             # At least 2 undefined cells and 2 cell types different from 'Other'
             if ((np.sum(is_undef) > 1) and (len(np.unique(new_labels)) > 2)):
+                # Reverse dictionary to convert cell types into phenotypes
+                rev_names_conv = {val: key for key, val in names_conv.items()}
+
                 # Reannotate cells
                 logging.info('\t\t\t\tRefining annotations with KNN-classifier')
                 reannotated_labels, reannotation_proba = knn_classifier(
@@ -264,7 +267,10 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
                     knn_min_probability=knn_min_probability)
 
                 # Append results to dictionary
+                reannotated_phntp = np.vectorize(rev_names_conv.get)(reannotated_labels,
+                                                                     f'Other {cell_name}')
                 results_dict[0]['reannotated_labels'] = reannotated_labels
+                results_dict[0]['reannotated_phntp'] = reannotated_phntp
                 results_dict[0]['reannotation_proba'] = reannotation_proba
 
             else:  # If conditions are not met, no reannotation
@@ -272,9 +278,9 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
                 logging.warning(f'\t\t\t\t\tUndefined cells: <{np.sum(is_undef)}>')
                 logging.warning(f'\t\t\t\t\tAnnotations: <{len(np.unique(new_labels))}>')
                 # Use default arrays as placeholders for reannotation results
-                reannotated_labels = np.full(new_labels.shape[0], 'No_reannotation')
                 reannotation_proba = np.full(new_labels.shape[0], np.nan)
-                results_dict[0]['reannotated_labels'] = reannotated_labels
+                results_dict[0]['reannotated_labels'] = new_labels
+                results_dict[0]['reannotated_phntp'] = cell_phntp_comb
                 results_dict[0]['reannotation_proba'] = reannotation_proba
 
     else:  # Several solutions
@@ -300,7 +306,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
 
             # Assign cell type using only markers from 'best_marker_comb[i]'
             logging.info('\t\t\t\t\tAssigning cell types to each cell')
-            new_labels = assign_cell_types(
+            new_labels, names_conv = assign_cell_types(
                 mat_representative=mat_subset_rep_markers_comb,
                 batches_label=batches_label,
                 samples_label=samples_label,
@@ -320,6 +326,9 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
 
                 # At least 2 undefined cells and 2 cell types different from 'Other'
                 if ((np.sum(is_undef) > 1) and (len(np.unique(new_labels)) > 2)):
+                    # Reverse dictionary to convert cell types into phenotypes
+                    rev_names_conv = {val: key for key, val in names_conv.items()}
+
                     # Reannotate cells
                     logging.info('\t\t\t\t\tRefining annotations with KNN-classifier')
                     reannotated_labels, reannotation_proba = knn_classifier(
@@ -329,7 +338,10 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
                         knn_min_probability=knn_min_probability)
 
                     # Append results to dictionary
+                    reannotated_phntp = np.vectorize(rev_names_conv.get)(reannotated_labels,
+                                                                         f'Other {cell_name}')
                     results_dict[i]['reannotated_labels'] = reannotated_labels
+                    results_dict[i]['reannotated_phntp'] = reannotated_phntp
                     results_dict[i]['reannotation_proba'] = reannotation_proba
 
                     # Record number of undefined cells after reannotation
@@ -341,9 +353,9 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
                     logging.warning(f'\t\t\t\t\t\tUndefined cells: <{np.sum(is_undef)}>')
                     logging.warning(f'\t\t\t\t\t\tAnnotations: <{len(np.unique(new_labels))}>')
                     # Use default arrays as placeholders for reannotation results
-                    reannotated_labels = np.full(new_labels.shape[0], 'No_reannotation')
                     reannotation_proba = np.full(new_labels.shape[0], np.nan)
-                    results_dict[i]['reannotated_labels'] = reannotated_labels
+                    results_dict[i]['reannotated_labels'] = new_labels
+                    results_dict[i]['reannotated_phntp'] = cell_phntp_comb
                     results_dict[i]['reannotation_proba'] = reannotation_proba
 
                     # Record number of undefined cells after reannotation
