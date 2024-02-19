@@ -23,8 +23,8 @@ markers = ['a', 'b', 'c', 'd', 'e']  # Markers list
 
 # Plot AMI/Jaccard similarity across std - only negative markers
 # Initialise objects
-std_dir = '../test_results/default_fake_std_test/'  # std folder
-std_files = [f for f in os.listdir(std_dir) if f.endswith('.tsv')]  # std tsv files
+std_dir = '../test_results/default_fake_std_test/'  # Folder
+std_files = [f for f in os.listdir(std_dir) if f.endswith('.tsv')]  # tsv files
 std_rows_ami = []  # AMI data list
 std_rows_jaccard = []  # Jaccard data list
 std_exp_df = pd.DataFrame()  # Expression data frame
@@ -96,8 +96,8 @@ print('Saved default_fake_std.jpg')
 
 # Plot AMI/Jaccard similarity across std with 4 batches - only negative markers
 # Initialise objects
-batch_std_dir = '../test_results/default_batch_std_test/'  # batch_std folder
-batch_std_files = [f for f in os.listdir(batch_std_dir) if f.endswith('.tsv')]  # batch_std tsv files
+batch_std_dir = '../test_results/default_batch_std_test/'  # Folder
+batch_std_files = [f for f in os.listdir(batch_std_dir) if f.endswith('.tsv')]  # tsv files
 batch_std_rows_ami = []  # AMI data list
 batch_std_rows_jaccard = []  # Jaccard data list
 batch_std_exp_df = pd.DataFrame()  # Expression data frame
@@ -169,8 +169,8 @@ print('Saved default_batch_std.jpg')
 
 # Plot AMI/Jaccard similarity across std with 4 samples - only negative markers
 # Initialise objects
-sample_dir = '../test_results/default_sample_std_test/'  # sample folder
-sample_files = [f for f in os.listdir(sample_dir) if f.endswith('.tsv')]  # sample tsv files
+sample_dir = '../test_results/default_sample_std_test/'  # Folder
+sample_files = [f for f in os.listdir(sample_dir) if f.endswith('.tsv')]  # tsv files
 sample_rows_ami = []  # AMI data list
 sample_rows_jaccard = []  # Jaccard data list
 sample_exp_df = pd.DataFrame()  # Expression data frame
@@ -242,8 +242,8 @@ print('Saved default_sample_std.jpg')
 
 # Plot AMI/Jaccard similarity across std with batches and samples - only negative markers
 # Initialise objects
-batch_sample_dir = '../test_results/default_batch_sample_std_test/'  # batch_sample folder
-batch_sample_files = [f for f in os.listdir(batch_sample_dir) if f.endswith('.tsv')]  # batch_sample tsv files
+batch_sample_dir = '../test_results/default_batch_sample_std_test/'  # Folder
+batch_sample_files = [f for f in os.listdir(batch_sample_dir) if f.endswith('.tsv')]  # tsv files
 batch_sample_rows_ami = []  # AMI data list
 batch_sample_rows_jaccard = []  # Jaccard data list
 batch_sample_exp_df = pd.DataFrame()  # Expression data frame
@@ -315,8 +315,8 @@ print('Saved default_batch_sample_std.jpg')
 
 # Plot AMI/Jaccard similarity across batches - only negative markers
 # Initialise objects
-batch_dir = '../test_results/default_batch_test/'  # batch folder
-batch_files = [f for f in os.listdir(batch_dir) if f.endswith('.tsv')]  # batch tsv files
+batch_dir = '../test_results/default_batch_test/'  # Folder
+batch_files = [f for f in os.listdir(batch_dir) if f.endswith('.tsv')]  # tsv files
 batch_rows_ami = []  # AMI data list
 batch_rows_jaccard = []  # Jaccard data list
 batch_exp_df = pd.DataFrame()  # Expression data frame
@@ -388,8 +388,8 @@ print('Saved default_batch.jpg')
 
 # Plot AMI/Jaccard similarity across samples - only negative markers
 # Initialise objects
-sample_dir = '../test_results/default_sample_test/'  # sample folder
-sample_files = [f for f in os.listdir(sample_dir) if f.endswith('.tsv')]  # sample tsv files
+sample_dir = '../test_results/default_sample_test/'  # Folder
+sample_files = [f for f in os.listdir(sample_dir) if f.endswith('.tsv')]  # tsv files
 sample_rows_ami = []  # AMI data list
 sample_rows_jaccard = []  # Jaccard data list
 sample_exp_df = pd.DataFrame()  # Expression data frame
@@ -461,8 +461,8 @@ print('Saved default_sample.jpg')
 
 # Plot AMI/Jaccard similarity across batches and samples - only negative markers
 # Initialise objects
-batch_sample_dir = '../test_results/default_batch_sample_test/'  # batch_sample folder
-batch_sample_files = [f for f in os.listdir(batch_sample_dir) if f.endswith('.tsv')]  # batch_sample tsv files
+batch_sample_dir = '../test_results/default_batch_sample_test/'  # Folder
+batch_sample_files = [f for f in os.listdir(batch_sample_dir) if f.endswith('.tsv')]  # tsv files
 batch_sample_rows_ami = []  # AMI data list
 batch_sample_rows_jaccard = []  # Jaccard data list
 batch_sample_exp_df = pd.DataFrame()  # Expression data frame
@@ -470,7 +470,6 @@ batch_sample_exp_df = pd.DataFrame()  # Expression data frame
 # Fill dataframe
 for file in batch_sample_files:
     # Get std value
-    # nb_batch_sample = float(file.replace('cell_expression_std0.75_', '').replace('batch_samples_annotated.tsv', ''))
     nb_batch_sample = float(file[:-38].replace('default_cell_expression_', ''))
     # Build path
     batch_sample_file = os.path.join(batch_sample_dir, file)
@@ -611,8 +610,8 @@ print('Saved mixed_fake_std.jpg')
 
 # Plot AMI/Jaccard similarity across std with 4 batches - negative and positive markers
 # Initialise objects
-batch_std_dir_mixed = '../test_results/mixed_batch_std_test/'  # batch_std_mixed folder
-batch_std_files_mixed = [f for f in os.listdir(batch_std_dir_mixed) if f.endswith('.tsv')]  # batch_std_mixed tsv files
+batch_std_dir_mixed = '../test_results/mixed_batch_std_test/'  # Folder
+batch_std_files_mixed = [f for f in os.listdir(batch_std_dir_mixed) if f.endswith('.tsv')]  # tsv files
 batch_std_rows_ami_mixed = []  # AMI data list
 batch_std_rows_jaccard_mixed = []  # Jaccard data list
 batch_std_exp_df_mixed = pd.DataFrame()  # Expression data frame
@@ -684,8 +683,8 @@ print('Saved mixed_batch_std.jpg')
 
 # Plot AMI/Jaccard similarity across std with 4 samples - negative and positive markers
 # Initialise objects
-sample_dir_mixed = '../test_results/mixed_sample_std_test/'  # sample_mixed folder
-sample_files_mixed = [f for f in os.listdir(sample_dir_mixed) if f.endswith('.tsv')]  # sample_mixed tsv files
+sample_dir_mixed = '../test_results/mixed_sample_std_test/'  # Folder
+sample_files_mixed = [f for f in os.listdir(sample_dir_mixed) if f.endswith('.tsv')]  # tsv files
 sample_rows_ami_mixed = []  # AMI data list
 sample_rows_jaccard_mixed = []  # Jaccard data list
 sample_exp_df_mixed = pd.DataFrame()  # Expression data frame
@@ -757,8 +756,8 @@ print('Saved mixed_sample_std.jpg')
 
 # Plot AMI/Jaccard similarity across std with batches and samples - negative and positive markers
 # Initialise objects
-batch_sample_dir_mixed = '../test_results/mixed_batch_sample_std_test/'  # batch_sample_mixed folder
-batch_sample_files_mixed = [f for f in os.listdir(batch_sample_dir_mixed) if f.endswith('.tsv')]  # batch_sample_mixed tsv files
+batch_sample_dir_mixed = '../test_results/mixed_batch_sample_std_test/'  # Folder
+batch_sample_files_mixed = [f for f in os.listdir(batch_sample_dir_mixed) if f.endswith('.tsv')]  # tsv files
 batch_sample_rows_ami_mixed = []  # AMI data list
 batch_sample_rows_jaccard_mixed = []  # Jaccard data list
 batch_sample_exp_df_mixed = pd.DataFrame()  # Expression data frame
@@ -837,8 +836,8 @@ print('Saved mixed_batch_sample_std.jpg')
 
 # Plot AMI/Jaccard similarity across batches - negative and positive markers
 # Initialise objects
-batch_dir_mixed = '../test_results/mixed_batch_test/'  # batch_mixed folder
-batch_files_mixed = [f for f in os.listdir(batch_dir_mixed) if f.endswith('.tsv')]  # batch_mixed tsv files
+batch_dir_mixed = '../test_results/mixed_batch_test/'  # Folder
+batch_files_mixed = [f for f in os.listdir(batch_dir_mixed) if f.endswith('.tsv')]  # tsv files
 batch_rows_ami_mixed = []  # AMI data list
 batch_rows_jaccard_mixed = []  # Jaccard data list
 batch_exp_df_mixed = pd.DataFrame()  # Expression data frame
@@ -910,8 +909,8 @@ print('Saved mixed_batch.jpg')
 
 # Plot AMI/Jaccard similarity across samples - negative and positive markers
 # Initialise objects
-sample_dir_mixed = '../test_results/mixed_sample_test/'  # sample_mixed folder
-sample_files_mixed = [f for f in os.listdir(sample_dir_mixed) if f.endswith('.tsv')]  # sample_mixed tsv files
+sample_dir_mixed = '../test_results/mixed_sample_test/'  # Folder
+sample_files_mixed = [f for f in os.listdir(sample_dir_mixed) if f.endswith('.tsv')]  # tsv files
 sample_rows_ami_mixed = []  # AMI data list
 sample_rows_jaccard_mixed = []  # Jaccard data list
 sample_exp_df_mixed = pd.DataFrame()  # Expression data frame
@@ -983,8 +982,8 @@ print('Saved mixed_sample.jpg')
 
 # Plot AMI/Jaccard similarity across batches and samples - negative and positive markers
 # Initialise objects
-batch_sample_dir_mixed = '../test_results/mixed_batch_sample_test/'  # batch_sample_mixed folder
-batch_sample_files_mixed = [f for f in os.listdir(batch_sample_dir_mixed) if f.endswith('.tsv')]  # batch_sample_mixed tsv files
+batch_sample_dir_mixed = '../test_results/mixed_batch_sample_test/'  # Folder
+batch_sample_files_mixed = [f for f in os.listdir(batch_sample_dir_mixed) if f.endswith('.tsv')]  # tsv files
 batch_sample_rows_ami_mixed = []  # AMI data list
 batch_sample_rows_jaccard_mixed = []  # Jaccard data list
 batch_sample_exp_df_mixed = pd.DataFrame()  # Expression data frame
@@ -1061,22 +1060,26 @@ print('Saved mixed_batch_sample.jpg')
 
 # Datasets checked:
 # Default = 5000 cells, 5 markers, 1 batch, 1 sample, min = 0, max = 6, nmean = 1.5, pmean = 4.5, all non-defining markers negative
-# 1. Default with varying std and fake cell type --> fake_std_test
-# 2. Default with varying std, fake cell type, 4 batches and 1 sample --> batch_std_test
-# 3. Default with varying std, fake cell type, 1 batch and 4 samples --> sample_std_test
-# 4. Default with varying std, fake cell type, 4 batches and 4 samples --> batch_sample_std_test
-# 5. Default with std fixed to 0.75, fake cell type and 1 to 6 batches --> batch_test
-# 6. Default with std fixed to 0.75, fake cell type and 1 to 6 samples --> sample_test
-# 7. Default with std fixed to 0.75, fake cell type and 1 to 6 samples/batches --> batch_sample_test
+    # 1. Default with varying std and fake cell type --> default_fake_std_test
+    # 2. Default with varying std, fake cell type, 4 batches and 1 sample --> default_batch_std_test
+    # 3. Default with varying std, fake cell type, 1 batch and 4 samples --> default_sample_std_test
+    # 4. Default with varying std, fake cell type, 4 batches and 4 samples --> default_batch_sample_std_test
+    # 5. Default with std fixed to 0.75, fake cell type and 1 to 6 batches --> default_batch_test
+    # 6. Default with std fixed to 0.75, fake cell type and 1 to 6 samples --> default_sample_test
+    # 7. Default with std fixed to 0.75, fake cell type and 1 to 6 samples/batches --> default_batch_sample_test
 
 # Mixed = 5000 cells, 5 markers, 1 batch, 1 sample, min = 0, max = 6, nmean = 1.5, pmean = 4.5, non-defining markers negative and positive
-# 8. Mixed with varying std and fake cell type --> fake_std_mixed_test
-# 9. Mixed with varying std, fake cell type, 4 batches and 1 sample --> batch_std_mixed_test
-# 10. Mixed with varying std, fake cell type, 1 batch and 4 samples --> sample_std_mixed_test
-# 11. Mixed with varying std, fake cell type, 4 batches and 4 samples --> batch_sample_std_mixed_test
-# 12. Mixed with std fixed to 0.75, fake cell type and 1 to 6 batches --> batch_mixed_test
-# 13. Mixed with std fixed to 0.75, fake cell type and 1 to 6 samples --> sample_mixed_test
-# 14. Mixed with std fixed to 0.75, fake cell type and 1 to 6 samples/batches --> batch_sample_mixed_test
+    # 8. Mixed with varying std and fake cell type --> mixed_fake_std_test
+    # 9. Mixed with varying std, fake cell type, 4 batches and 1 sample --> mixed_batch_std_test
+    # 10. Mixed with varying std, fake cell type, 1 batch and 4 samples --> mixed_sample_std_test
+    # 11. Mixed with varying std, fake cell type, 4 batches and 4 samples --> mixed_batch_sample_std_test
+    # 12. Mixed with std fixed to 0.75, fake cell type and 1 to 6 batches --> mixed_batch_test
+    # 13. Mixed with std fixed to 0.75, fake cell type and 1 to 6 samples --> mixed_sample_test
+    # 14. Mixed with std fixed to 0.75, fake cell type and 1 to 6 samples/batches --> mixed_batch_sample_test
+
+# Others
+    # 15. Default with std fixed to 0.75, fake cell type, 4 batches and 4 samples, varying xmin --> default_batch_sample_std_xmin_test
+    # 16. Mixed with std fixed to 0.75, fake cell type, 4 batches and 4 samples, varying xmin --> mixed_batch_sample_std_xmin_test
 
 
 
@@ -1102,7 +1105,7 @@ print('Saved mixed_batch_sample.jpg')
 # Try to vary xmin
 # Try with our dataset without cell type information with high xmin and high ymin --> test if it finds main cell type
 #     Test with only "good" markers
-#     Test relevant markers CD45, CD127, but add noisx fake markers --> Can it discriminate both
+#     Test relevant markers CD45, CD127, but add noisy fake markers --> Can it discriminate both?
 # Require real annotations
 
 # Parallelization
