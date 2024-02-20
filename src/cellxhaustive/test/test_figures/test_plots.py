@@ -380,7 +380,7 @@ ax[0].title.set_text('Similarity scores')
 
 # Expression density plot
 h = sns.kdeplot(data=batch_exp_df_melted, x='value', hue='variable', fill=True,
-                common_norm=False, alpha=0.4, palette='crest', ax=ax[1])
+                common_norm=False, alpha=0.1, palette='crest', ax=ax[1])
 h.set(xlabel='ADT expression')
 ax[1].legend_.set_title('Marker')
 ax[1].title.set_text('Distribution of markers expression')
