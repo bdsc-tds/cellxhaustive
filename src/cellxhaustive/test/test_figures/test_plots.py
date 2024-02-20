@@ -91,6 +91,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of expression standard deviation on phenotype identification\n(Negative markers)')
 fig.tight_layout()
 fig.figure.savefig('default_fake_std.jpg', dpi=600)
+plt.close()
 print('Saved default_fake_std.jpg')
 
 
@@ -164,6 +165,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of expression standard deviation and increased batch number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
 fig.figure.savefig('default_batch_std.jpg', dpi=600)
+plt.close()
 print('Saved default_batch_std.jpg')
 
 
@@ -237,6 +239,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of expression standard deviation and increased sample number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
 fig.figure.savefig('default_sample_std.jpg', dpi=600)
+plt.close()
 print('Saved default_sample_std.jpg')
 
 
@@ -310,6 +313,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of expression standard deviation and increased sample/batch number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
 fig.figure.savefig('default_batch_sample_std.jpg', dpi=600)
+plt.close()
 print('Saved default_batch_sample_std.jpg')
 
 
@@ -383,6 +387,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of batch number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
 fig.figure.savefig('default_batch.jpg', dpi=600)
+plt.close()
 print('Saved default_batch.jpg')
 
 
@@ -456,6 +461,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of sample number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
 fig.figure.savefig('default_sample.jpg', dpi=600)
+plt.close()
 print('Saved default_sample.jpg')
 
 
@@ -529,6 +535,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of batch and sample number on phenotype identification\n(Negative markers)')
 fig.tight_layout()
 fig.figure.savefig('default_batch_sample.jpg', dpi=600)
+plt.close()
 print('Saved default_batch_sample.jpg')
 
 
@@ -602,6 +609,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of minimum number of cells per sample per phenotype on phenotype identification\n(Negative markers)')
 fig.tight_layout()
 fig.figure.savefig('default_xmin.jpg', dpi=600)
+plt.close()
 print('Saved default_xmin.jpg')
 
 
@@ -675,6 +683,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of maximum markers used in phenotype identification\n(Negative markers)')
 fig.tight_layout()
 fig.figure.savefig('default_maxmarkers.jpg', dpi=600)
+plt.close()
 print('Saved default_maxmarkers.jpg')
 
 
@@ -750,6 +759,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of KNN-reclassification on phenotype identification\n(Negative markers)')
 fig.tight_layout()
 fig.figure.savefig('default_fake_knn.jpg', dpi=600)
+plt.close()
 print('Saved default_fake_knn.jpg')
 
 
@@ -826,6 +836,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of expression standard deviation on phenotype identification\n(Positive and negative markers)')
 fig.tight_layout()
 fig.figure.savefig('mixed_fake_std.jpg', dpi=600)
+plt.close()
 print('Saved mixed_fake_std.jpg')
 
 
@@ -899,6 +910,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of expression standard deviation and increased batch number on phenotype identification\n(Positive and negative markers)')
 fig.tight_layout()
 fig.figure.savefig('mixed_batch_std.jpg', dpi=600)
+plt.close()
 print('Saved mixed_batch_std.jpg')
 
 
@@ -972,6 +984,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of expression standard deviation and increased sample number on phenotype identification\n(Positive and negative markers)')
 fig.tight_layout()
 fig.figure.savefig('mixed_sample_std.jpg', dpi=600)
+plt.close()
 print('Saved mixed_sample_std.jpg')
 
 
@@ -1045,6 +1058,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of expression standard deviation and increased sample/batch number on phenotype identification\n(Positive and negative markers)')
 fig.tight_layout()
 fig.figure.savefig('mixed_batch_sample_std.jpg', dpi=600)
+plt.close()
 print('Saved mixed_batch_sample_std.jpg')
 
 
@@ -1118,6 +1132,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of batch number on phenotype identification\n(Positive and negative markers)')
 fig.tight_layout()
 fig.figure.savefig('mixed_batch.jpg', dpi=600)
+plt.close()
 print('Saved mixed_batch.jpg')
 
 
@@ -1191,6 +1206,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of sample number on phenotype identification\n(Positive and negative markers)')
 fig.tight_layout()
 fig.figure.savefig('mixed_sample.jpg', dpi=600)
+plt.close()
 print('Saved mixed_sample.jpg')
 
 
@@ -1264,6 +1280,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of batch and sample number on phenotype identification\n(Positive and negative markers)')
 fig.tight_layout()
 fig.figure.savefig('mixed_batch_sample.jpg', dpi=600)
+plt.close()
 print('Saved mixed_batch_sample.jpg')
 
 
@@ -1337,6 +1354,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of minimum number of cells per sample per phenotype on phenotype identification\n(Positive and negative markers)')
 fig.tight_layout()
 fig.figure.savefig('mixed_xmin.jpg', dpi=600)
+plt.close()
 print('Saved mixed_xmin.jpg')
 
 
@@ -1410,6 +1428,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of maximum markers used in phenotype identification\n(Positive and negative markers)')
 fig.tight_layout()
 fig.figure.savefig('mixed_maxmarkers.jpg', dpi=600)
+plt.close()
 print('Saved mixed_maxmarkers.jpg')
 
 
@@ -1485,6 +1504,7 @@ ax[1].title.set_text('Distribution of markers expression')
 fig.figure.suptitle('Impact of KNN-reclassification on phenotype identification\n(Positive and negative markers)')
 fig.tight_layout()
 fig.figure.savefig('mixed_fake_knn.jpg', dpi=600)
+plt.close()
 print('Saved mixed_fake_knn.jpg')
 
 
