@@ -110,19 +110,19 @@ if __name__ == '__main__':
     # Randomly pick cell types with an equal proportion
     nb_cell_types = len(cell_types_dict)
     proba = np.full(nb_cell_types, (1 / nb_cell_types))
-    cell_type = rng.choice(nb_cell_types, size=nb_cell, p=proba)
+    true_cell_type = rng.choice(nb_cell_types, size=nb_cell, p=proba)
 
     # Create fake cell type
-    fake_type = ['42'] * nb_cell
+    cell_type = ['42'] * nb_cell
 
     # Get cell ontology phenotypes
-    cell_phntp_onto = np.vectorize(cell_types_str.get)(cell_type)
+    cell_phntp_onto = np.vectorize(cell_types_str.get)(true_cell_type)
 
     # Get full cell phenotypes: start with cell ontology and add the missing markers
     # with a random state
     cell_phntp_full = []
     cell_phntp_full_str = []
-    for idx in cell_type:
+    for idx in true_cell_type:
         mker = get_full_phenotype(rng, tot_markers, cell_types_dict, idx)
         cell_phntp_full.append(mker)
         cell_phntp_full_str.append('/'.join(mker))
@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
     # Initialise final dictionary
     tot_dict = {'cell_type': cell_type,
-                'fake_type': fake_type,
+                'true_cell_type': true_cell_type,
                 'cell_phntp_onto': cell_phntp_onto,
                 'cell_phntp_full': cell_phntp_full_str,
                 'batch': batch,
