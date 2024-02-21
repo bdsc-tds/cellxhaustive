@@ -763,6 +763,93 @@ plt.close()
 print('Saved default_fake_knn.jpg')
 
 
+# Plot AMI with and without unidentified cells - only negative markers
+# Initialise objects
+no_ident_dir = '../test_results/default_batch_sample_std_test/'  # Folder
+no_ident_files = [f for f in os.listdir(no_ident_dir) if f.endswith('.tsv')]  # tsv files
+no_ident_rows_ami = []  # AMI data list
+no_ident_rows_ami2 = []  # AMI no unidentified data list
+no_ident_exp_df = pd.DataFrame()  # Expression data frame
+
+# Fill dataframe
+for file in no_ident_files:
+    # Get std value
+    std = float(file.replace('default_cell_expression_batch_sample_std', '').replace('_annotated.tsv', ''))
+    # Build path
+    no_ident_file = os.path.join(no_ident_dir, file)
+    # Load file
+    no_ident_res = pd.read_csv(no_ident_file, sep='\t', index_col=0)
+    # Get true cell types
+    no_ident_labels_true = no_ident_res['cell_phntp_full']
+    # Get expression data
+    no_ident_exp = no_ident_res.loc[:, markers]
+    no_ident_exp['std'] = std
+    # Add it to expression table
+    no_ident_exp_df = pd.concat([no_ident_exp_df, no_ident_exp])
+    # Get columns containing annotations (several optimal combinations --> several columns)
+    no_ident_labels_col = [col for col in no_ident_res.columns if 'Phenotypes_' in col]
+    for annot in no_ident_labels_col:
+        no_ident_labels_pred = no_ident_res[annot]
+        no_ident_score_ami = adjusted_mutual_info_score(no_ident_labels_true, no_ident_labels_pred)
+        no_ident_rows_ami.append({'std': std, 'no_ident_score_ami': no_ident_score_ami})
+    # Get table without unidentified cells
+    no_ident_res2 = no_ident_res[no_ident_res['KNN_annotations_1'] != 'Other 42'].copy()
+    # Get true cell types
+    no_ident_labels_true2 = no_ident_res2['cell_phntp_full']
+    # Get columns containing annotations (several optimal combinations --> several columns)
+    no_ident_labels_col2 = [col for col in no_ident_res2.columns if 'Phenotypes_' in col]
+    for annot2 in no_ident_labels_col2:
+        no_ident_labels_pred2 = no_ident_res2[annot2]
+        no_ident_score_ami2 = adjusted_mutual_info_score(no_ident_labels_true2, no_ident_labels_pred2)
+        no_ident_rows_ami2.append({'std': std, 'no_ident_score_ami2': no_ident_score_ami2})
+
+# Build final AMI dataframe, sort by std and reset indices
+df_no_ident_ami = pd.DataFrame(no_ident_rows_ami).sort_values(by='std', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_no_ident_ami = df_no_ident_ami.groupby('std', as_index=False)['no_ident_score_ami'].mean()
+
+# Build final ARI dataframe, sort by std and reset indices
+df_no_ident_ami2 = pd.DataFrame(no_ident_rows_ami2).sort_values(by='std', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_no_ident_ami2 = df_no_ident_ami2.groupby('std', as_index=False)['no_ident_score_ami2'].mean()
+
+# Melt expression table
+no_ident_exp_df_melted = pd.melt(no_ident_exp_df, id_vars='std')
+
+# Plot figures
+plt.clf()  # Make sure there are no underlying figure
+sns.set(style='whitegrid')
+fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
+
+# AMI Scatterplot
+g = sns.scatterplot(x=jitter(df_no_ident_ami['std'], 0.05, 0.03), y=df_no_ident_ami['no_ident_score_ami'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_no_ident_ami['std'], 0.05, 0.03), y=avg_no_ident_ami['no_ident_score_ami'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_no_ident_ami2['std'], 0.05, 0.03), y=df_no_ident_ami2['no_ident_score_ami2'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_no_ident_ami2['std'], 0.05, 0.03), y=avg_no_ident_ami2['no_ident_score_ami2'], color='red', linewidth=0, ax=ax[0])
+g.set(xlabel='Marker distributions std', ylabel='AMI', ylim=[-0.05, 1.1])
+ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'AMI w.o unIDed', 'Mean AMI w.o unIDed'])
+ax[0].title.set_text('Similarity scores')
+
+# Expression density plot
+h = sns.kdeplot(data=no_ident_exp_df_melted, x='value', hue='std', fill=True,
+                common_norm=False, alpha=0.4, palette='crest', ax=ax[1])
+h.set(xlabel='ADT expression')
+ax[1].legend_.set_title('Standard deviation')
+ax[1].title.set_text('Distribution of markers expression')
+fig.figure.suptitle('Impact of unidentified cells on phenotype identification\n(Negative markers)')
+fig.tight_layout()
+fig.figure.savefig('default_fake_unidentified.jpg', dpi=600)
+plt.close()
+print('Saved default_fake_unidentified.jpg')
+
+
+
+
+
+
+
 
 
 
@@ -1508,6 +1595,88 @@ plt.close()
 print('Saved mixed_fake_knn.jpg')
 
 
+# Plot AMI with and without unidentified cells - only negative markers
+# Initialise objects
+no_ident_dir_mixed = '../test_results/mixed_batch_sample_std_test/'  # Folder
+no_ident_files_mixed = [f for f in os.listdir(no_ident_dir_mixed) if f.endswith('.tsv')]  # tsv files
+no_ident_rows_ami_mixed = []  # AMI data list
+no_ident_rows_ami2_mixed = []  # AMI no unidentified data list
+no_ident_exp_df_mixed = pd.DataFrame()  # Expression data frame
+
+# Fill dataframe
+for file in no_ident_files_mixed:
+    # Get std value
+    std = float(file.replace('mixed_cell_expression_batch_sample_std', '').replace('_annotated.tsv', ''))
+    # Build path
+    no_ident_file_mixed = os.path.join(no_ident_dir_mixed, file)
+    # Load file
+    no_ident_res_mixed = pd.read_csv(no_ident_file_mixed, sep='\t', index_col=0)
+    # Get true cell types
+    no_ident_labels_true_mixed = no_ident_res_mixed['cell_phntp_full']
+    # Get expression data
+    no_ident_exp_mixed = no_ident_res_mixed.loc[:, markers]
+    no_ident_exp_mixed['std'] = std
+    # Add it to expression table
+    no_ident_exp_df_mixed = pd.concat([no_ident_exp_df_mixed, no_ident_exp_mixed])
+    # Get columns containing annotations (several optimal combinations --> several columns)
+    no_ident_labels_col_mixed = [col for col in no_ident_res_mixed.columns if 'Phenotypes_' in col]
+    for annot in no_ident_labels_col_mixed:
+        no_ident_labels_pred_mixed = no_ident_res_mixed[annot]
+        no_ident_score_ami_mixed = adjusted_mutual_info_score(no_ident_labels_true_mixed, no_ident_labels_pred_mixed)
+        no_ident_rows_ami_mixed.append({'std': std, 'no_ident_score_ami_mixed': no_ident_score_ami_mixed})
+    # Get table without unidentified cells
+    no_ident_res2_mixed = no_ident_res_mixed[no_ident_res_mixed['KNN_annotations_1'] != 'Other 42'].copy()
+    # Get true cell types
+    no_ident_labels_true2_mixed = no_ident_res2_mixed['cell_phntp_full']
+    # Get columns containing annotations (several optimal combinations --> several columns)
+    no_ident_labels_col2_mixed = [col for col in no_ident_res2_mixed.columns if 'Phenotypes_' in col]
+    for annot2 in no_ident_labels_col2_mixed:
+        no_ident_labels_pred2_mixed = no_ident_res2_mixed[annot2]
+        no_ident_score_ami2_mixed = adjusted_mutual_info_score(no_ident_labels_true2_mixed, no_ident_labels_pred2_mixed)
+        no_ident_rows_ami2_mixed.append({'std': std, 'no_ident_score_ami2_mixed': no_ident_score_ami2_mixed})
+
+# Build final AMI dataframe, sort by std and reset indices
+df_no_ident_ami_mixed = pd.DataFrame(no_ident_rows_ami_mixed).sort_values(by='std', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_no_ident_ami_mixed = df_no_ident_ami_mixed.groupby('std', as_index=False)['no_ident_score_ami_mixed'].mean()
+
+# Build final ARI dataframe, sort by std and reset indices
+df_no_ident_ami2_mixed = pd.DataFrame(no_ident_rows_ami2_mixed).sort_values(by='std', ignore_index=True)
+
+# Calculate average AMI in case there are several combinations
+avg_no_ident_ami2_mixed = df_no_ident_ami2_mixed.groupby('std', as_index=False)['no_ident_score_ami2_mixed'].mean()
+
+# Melt expression table
+no_ident_exp_df_melted_mixed = pd.melt(no_ident_exp_df_mixed, id_vars='std')
+
+# Plot figures
+plt.clf()  # Make sure there are no underlying figure
+sns.set(style='whitegrid')
+fig, ax = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [.4, .6]})  # To create figures side by side
+
+# AMI Scatterplot
+g = sns.scatterplot(x=jitter(df_no_ident_ami_mixed['std'], 0.05, 0.03), y=df_no_ident_ami_mixed['no_ident_score_ami_mixed'], color='lightblue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_no_ident_ami_mixed['std'], 0.05, 0.03), y=avg_no_ident_ami_mixed['no_ident_score_ami_mixed'], color='blue', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(df_no_ident_ami2_mixed['std'], 0.05, 0.03), y=df_no_ident_ami2_mixed['no_ident_score_ami2_mixed'], color='orange', linewidth=0, ax=ax[0])
+g = sns.scatterplot(x=jitter(avg_no_ident_ami2_mixed['std'], 0.05, 0.03), y=avg_no_ident_ami2_mixed['no_ident_score_ami2_mixed'], color='red', linewidth=0, ax=ax[0])
+g.set(xlabel='Marker distributions std', ylabel='AMI', ylim=[-0.05, 1.1])
+ax[0].legend(loc='upper right', labels=['AMI', 'Mean AMI', 'AMI w.o unIDed', 'Mean AMI w.o unIDed'])
+ax[0].title.set_text('Similarity scores')
+
+# Expression density plot
+h = sns.kdeplot(data=no_ident_exp_df_melted_mixed, x='value', hue='std', fill=True,
+                common_norm=False, alpha=0.4, palette='crest', ax=ax[1])
+h.set(xlabel='ADT expression')
+ax[1].legend_.set_title('Standard deviation')
+ax[1].title.set_text('Distribution of markers expression')
+fig.figure.suptitle('Impact of unidentified cells on phenotype identification\n(Positive and negative markers)')
+fig.tight_layout()
+fig.figure.savefig('mixed_fake_unidentified.jpg', dpi=600)
+plt.close()
+print('Saved mixed_fake_unidentified.jpg')
+
+
 
 
 
@@ -1538,9 +1707,10 @@ print('Saved mixed_fake_knn.jpg')
     # 18. Mixed with std fixed to 0.75, fake cell type, 4 batches and 4 samples, varying maxmarkers --> mixed_batch_sample_std_maxmarkers_test
     # 19. Default with varying std, fake cell type, 4 batches and 4 samples, with and without KNN --> default_batch_sample_std_test
     # 20. Mixed with varying std, fake cell type, 4 batches and 4 samples, with and without KNN --> mixed_batch_sample_std_test
+    # 21. Default with varying std, fake cell type, 4 batches and 4 samples, with and without unidentified cells --> default_batch_sample_std_test
+    # 22. Mixed with varying std, fake cell type, 4 batches and 4 samples, with and without unidentified cells --> mixed_batch_sample_std_test
 
 
-# Try without unidentified cells
 # Try with our dataset without cell type information with high xmin and high ymin --> test if it finds main cell type
 #     Test with only "good" markers
 #     Test relevant markers CD45, CD127, but add noisy fake markers --> Can it discriminate both?
