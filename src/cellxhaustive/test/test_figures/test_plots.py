@@ -1716,6 +1716,13 @@ print('Saved mixed_fake_unidentified.jpg')
 #     Test relevant markers CD45, CD127, but add noisy fake markers --> Can it discriminate both?
 # Require real annotations?
 
+# Try ADT on large std distributions
+# Try with weird markers (bumpy distributions, flat distribution)
+# Try rare cell types
+
+
+# easy cell types vs hard cell types (rarer, closer to the nean)
+
 # Try with only key markers --> only positive??
 # CD3, CD4, CD127
 
