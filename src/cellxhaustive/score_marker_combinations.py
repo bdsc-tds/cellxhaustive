@@ -15,6 +15,12 @@ from determine_marker_status import determine_marker_status  # AT. Double-check 
 # from cellxhaustive.determine_marker_status import cellxhaustive.determine_marker_status
 
 
+# Wrapper function of 'list.append()'
+# Function used in score_marker_combinations()
+def append_wrapper(lst, elt):
+    return lst.append(elt)
+
+
 # Function used in check_all_combinations.py
 def score_marker_combinations(mat_comb, batches_label, samples_label,
                               markers_comb, two_peak_threshold,
@@ -119,10 +125,6 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
     phntp_to_keep = np.reshape(phntp_to_keep, (len(x_samplesxbatch_space),
                                                len(y_cellxsample_space)))
     # Note: using 'dtype=list' fills array with None, hence this trick
-
-    # Wrapper function of 'list.append()'
-    def append_wrapper(lst, elt):
-        return lst.append(elt)
 
     # Vectorized version of append wrapper
     array_appending = np.vectorize(append_wrapper, otypes=[str])
