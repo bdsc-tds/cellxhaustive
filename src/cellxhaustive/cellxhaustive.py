@@ -31,6 +31,8 @@ import numpy as np
 import os
 import pandas as pd
 import pathlib
+from multiprocessing import Pool
+from functools import partial
 
 
 # Import local functions
@@ -202,43 +204,43 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     phenotypes = np.asarray(['undefined'] * len(cell_labels)).astype('U150')
     annot_dict = {}
 
-    # Process cells by pre-annotations
+    # Get array of unique labels
+    uniq_labels = np.unique(cell_labels)
+
+    # Get list of arrays matching each cell type of 'uniq_labels'
+    is_label_list = [(cell_labels == label) for label in uniq_labels]  # AT. Use array format rather than
+
+    # Process cells by pre-existing annotations
     logging.info('Starting analyses')
-    for label in np.unique(cell_labels):
-        # Create boolean array to select cells matching current label
-        logging.info(f'\tProcessing <{label}> cells')
-        is_label = (cell_labels == label)
+    with Pool() as pool:  # AT. CPU param?
+        annot_results_lst = pool.starmap(partial(identify_phenotypes,
+                                                 mat=mat,
+                                                 batches=batches,
+                                                 samples=samples,
+                                                 markers=markers,
+                                                 cell_types_dict=cell_types_dict,
+                                                 two_peak_threshold=two_peak_threshold,
+                                                 three_peak_markers=three_peak_markers,
+                                                 three_peak_low=three_peak_low,
+                                                 three_peak_high=three_peak_high,
+                                                 max_markers=max_markers,
+                                                 min_annotations=min_annotations,
+                                                 max_solutions=max_solutions,
+                                                 min_samplesxbatch=min_samplesxbatch,
+                                                 min_cellxsample=min_cellxsample,
+                                                 knn_refine=knn_refine,
+                                                 knn_min_probability=knn_min_probability),
+                                         zip(is_label_list, uniq_labels))
 
-        # Get annotations for all cells of type 'label'
-        results_dict = identify_phenotypes(
-            mat=mat,
-            batches=batches,
-            samples=samples,
-            markers=markers,
-            is_label=is_label,
-            cell_types_dict=cell_types_dict,
-            two_peak_threshold=two_peak_threshold,
-            three_peak_markers=three_peak_markers,
-            three_peak_low=three_peak_low,
-            three_peak_high=three_peak_high,
-            cell_name=label,
-            max_markers=max_markers,
-            min_annotations=min_annotations,
-            max_solutions=max_solutions,
-            min_cellxsample=min_cellxsample,
-            min_samplesxbatch=min_samplesxbatch,
-            knn_refine=knn_refine,
-            knn_min_probability=knn_min_probability)
-
-        # Store results in another dictionary for post-processing
-        annot_dict[label] = results_dict
+    # Convert results back to dictionary
+    annot_dict = dict(zip(uniq_labels, annot_results_lst))
 
     # Post-process results to add them to original table and save whole table
     logging.info('Gathering results in annotation table')
 
     # Find maximum number of optimal combinations across all 'cell_labels'
     logging.debug('\tDetermining total maximum number of optimal combinations')
-    max_comb = max([len(annot_dict[label].keys()) for label in np.unique(cell_labels)])
+    max_comb = max([len(annot_dict[label].keys()) for label in uniq_labels])
     logging.debug(f"\t\tFound {max_comb} combination{'s' if max_comb > 1 else ''}")
 
     # Build list with all column names
@@ -259,12 +261,8 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Fill annotation dataframe with results
     logging.info('\tFilling annotation table with analyses results')
-    for label in np.unique(cell_labels):
+    for label, is_label in zip(uniq_labels, is_label_list):
         logging.info(f'\t\tCreating result subtable for <{label}> annotations')
-
-        # Create boolean array to select cells matching current 'label'
-        logging.info(f'\t\t\tSelecting matching cells')
-        is_label = (cell_labels == label)
 
         # Slice general results dictionary
         logging.debug(f'\t\t\tSelecting associated results')

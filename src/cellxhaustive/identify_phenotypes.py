@@ -133,6 +133,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
     """
 
     # Main gating: select relevant markers for cell population 'label' in each batch
+    logging.info(f'\tProcessing <{cell_name}> cells')
     logging.info('\t\tPerforming main gating in all batches')
     for batch in np.unique(batches):
         logging.debug(f'\t\t\tProcessing batch <{batch}>')
