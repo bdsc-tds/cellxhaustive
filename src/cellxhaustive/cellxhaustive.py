@@ -131,7 +131,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Get 1-D array for markers
     logging.info(f'Importing markers list from <{args.marker_path}>')
-    markers = pd.read_csv(args.marker_path, sep='\t', header=None).to_numpy().flatten()
+    markers = pd.read_csv(args.marker_path, sep='\t', header=None).to_numpy(dtype=str).flatten()
     logging.info(f'\tFound {len(markers)} markers')
 
     # Parse general input files into several arrays
@@ -140,7 +140,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     logging.info(f'\tFound {len(input_table.index)} cells')
 
     # Get 2-D array for expression using 'markers'
-    mat = input_table.loc[:, markers].to_numpy()
+    mat = input_table.loc[:, markers].to_numpy(dtype=float)
 
     # Get 1-D array for batch; add common batch value if information is missing
     logging.info(f'Retrieving batch information in <{args.input_path}>')
@@ -169,7 +169,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     three_path = args.three_peak_markers
     if (not isinstance(three_path, list) and pathlib.Path(three_path).is_file()):
         with open(three_path) as file:
-            three_peak_markers = file.read().splitlines()
+            three_peak_markers = np.array(file.read().splitlines(), dtype=np.dtype('U15'))
         logging.info(f'\tFound {len(three_peak_markers)} markers in <{three_path}>')
     else:
         three_peak_markers = args.three_peak_markers
