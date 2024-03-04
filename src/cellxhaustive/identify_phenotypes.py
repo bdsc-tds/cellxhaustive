@@ -24,8 +24,8 @@ from knn_classifier import knn_classifier
 def identify_phenotypes(mat, batches, samples, markers, is_label,
                         cell_types_dict, cell_name, two_peak_threshold,
                         three_peak_markers, three_peak_low, three_peak_high,
-                        max_markers, min_annotations,
-                        min_samplesxbatch, min_cellxsample, max_solutions,
+                        max_markers, min_annotations, max_solutions,
+                        min_samplesxbatch, min_cellxsample,
                         knn_refine, knn_min_probability):
     """
     Function that identifies most probable cell type and phenotype for a group of

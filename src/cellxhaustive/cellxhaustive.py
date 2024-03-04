@@ -53,6 +53,10 @@ parser.add_argument('-m', '--markers', dest='marker_path', type=str,
 parser.add_argument('-o', '--output', dest='output_path', type=str,
                     help='Path to output table with annotations',
                     required=True)
+parser.add_argument('-c', '--cell-type-definition', dest='cell_type_path', type=str,
+                    help='Path to file with cell types characterisation \
+                    [../data/config/major_cell_types.json]',
+                    required=False, default='../data/config/major_cell_types.json')
 parser.add_argument('-l', '--log', dest='log_path', type=str,
                     help='Path to log file [output_path.log]',
                     required=False, default='')
@@ -74,10 +78,6 @@ parser.add_argument('-f', '--three-peak-high', dest='three_peak_high', type=floa
                     help='Threshold to determine whether three-peaks marker is\
                     positive or low_positive [4]',
                     required=False, default=4)
-parser.add_argument('-c', '--cell-type-definition', dest='cell_type_path', type=str,
-                    help='Path to file with cell types characterisation \
-                    [../data/config/major_cell_types.json]',
-                    required=False, default='../data/config/major_cell_types.json')
 parser.add_argument('-a', '--max-markers', dest='max_markers', type=int,
                     help="Maximum number of relevant markers to select among \
                     total list of markers. Must be less than or equal to \

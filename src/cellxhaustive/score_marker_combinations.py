@@ -15,7 +15,7 @@ from determine_marker_status import determine_marker_status  # AT. Double-check 
 # from cellxhaustive.determine_marker_status import cellxhaustive.determine_marker_status
 
 
-# Wrapper function of 'list.append()'
+# Wrapper function of 'list.append()' for vectorised use in numpy
 # Function used in score_marker_combinations()
 def append_wrapper(lst, elt):
     return lst.append(elt)
