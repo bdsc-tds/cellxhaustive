@@ -137,19 +137,19 @@ def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,  # AT. C
 
     # Compute marker status using multiprocessing
     with Pool() as pool:  # AT. CPU param?
-        result = pool.map(partial(get_marker_status,
-                                  markers_array=markers_comb,
-                                  tp=two_peak_threshold,
-                                  tpm=three_peak_markers,
-                                  tpl=three_peak_low,
-                                  tph=three_peak_high),
-                          total_expression)
+        status_results_lst = pool.map(partial(get_marker_status,
+                                              markers_array=markers_comb,
+                                              tp=two_peak_threshold,
+                                              tpm=three_peak_markers,
+                                              tpl=three_peak_low,
+                                              tph=three_peak_high),
+                                      total_expression)
     # Notes:
     #   - More efficient to parallelise by cell than marker
     #   - Only 'total_expression' is iterated over, hence the use of 'partial()'
     #   to keep the other parameters constant
 
     # Convert results back to str array
-    phntp_per_cell = np.array(result, dtype=str)
+    phntp_per_cell = np.array(status_results_lst, dtype=str)
 
     return phntp_per_cell
