@@ -71,7 +71,7 @@ parser.add_argument('-g', '--two-peak-threshold', dest='two_peak_threshold', typ
                     required=False, default=3)
 parser.add_argument('-d', '--three-peaks', dest='three_peak_markers', type=str,
                     help='Path to file with markers that have three peaks []',
-                    required=False, default=[])
+                    required=False, default='')
 parser.add_argument('-e', '--three-peak-low', dest='three_peak_low', type=float,
                     help='Threshold to determine whether three-peaks marker is\
                     negative or low_positive [2]',
@@ -174,7 +174,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
             three_peak_markers = np.array(file.read().splitlines(), dtype=np.dtype('U15'))
         logging.info(f'\tFound {len(three_peak_markers)} markers in <{three_path}>')
     else:
-        three_peak_markers = args.three_peak_markers
+        three_peak_markers = np.empty(0, dtype=np.dtype('U15'))
         logging.warning('\tNo file provided, using default empty list')
 
     # Import cell types definitions
