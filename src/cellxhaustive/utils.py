@@ -5,9 +5,12 @@ Functions shared between several scripts.
 
 # Import utility modules
 import logging
+import multiprocessing
+import multiprocessing.pool
 import sys
 
 
+# Log-related functions and classes
 # Custom logging format
 class CustomFormatter(logging.Formatter):
 
@@ -64,3 +67,28 @@ def setup_log(logfile, loglevel):
         level=level,
         handlers=handlers
     )
+
+
+# Multiprocessing-related classes
+# Custom multiprocessing process without daemons
+class NoDaemonProcess(multiprocessing.Process):
+    @property
+    def daemon(self):
+        return False
+
+    @daemon.setter
+    def daemon(self, value):
+        pass
+
+
+# Custom multiprocessing context
+class NoDaemonContext(type(multiprocessing.get_context())):
+    Process = NoDaemonProcess
+
+
+# Sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool because
+# latter is only a wrapper function, not a proper class
+class NestablePool(multiprocessing.pool.Pool):
+    def __init__(self, *args, **kwargs):
+        kwargs['context'] = NoDaemonContext()
+        super(NestablePool, self).__init__(*args, **kwargs)
