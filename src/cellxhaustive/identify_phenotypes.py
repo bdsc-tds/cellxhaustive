@@ -157,7 +157,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
         markers_rep = markers[is_center_greater]  # Select markers with center higher than max_markers-th center
 
         # Store list of relevant markers for every batch
-        # Note: try/except avoids an error if dict doesn't exist yet
+        # Note: try/except avoids an error if dictionary doesn't exist yet
         logging.debug('\t\t\t\tStoring relevant markers')
         try:
             markers_rep_batches[batch] = list(markers_rep)
