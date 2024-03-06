@@ -207,10 +207,10 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     # Get array of unique labels
     uniq_labels = np.unique(cell_labels)
 
-    # Get list of arrays matching each cell type of 'uniq_labels'
+    # Get list of arrays describing cells matching each cell type of 'uniq_labels'
     is_label_list = [(cell_labels == label) for label in uniq_labels]  # AT. Use array format rather than
 
-    # Process cells by pre-existing annotations
+    # Process cells by pre-existing annotations using multiprocessing
     logging.info('Starting analyses')
     with Pool() as pool:  # AT. CPU param?
         annot_results_lst = pool.starmap(partial(identify_phenotypes,

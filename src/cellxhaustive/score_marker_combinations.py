@@ -14,7 +14,7 @@ from functools import partial
 
 # Import local functions
 from determine_marker_status import determine_marker_status  # AT. Double-check path
-# from cellxhaustive.determine_marker_status import cellxhaustive.determine_marker_status
+# from cellxhaustive.determine_marker_status import determine_marker_status
 
 
 # Wrapper function of 'list.append()' for vectorised use in numpy
@@ -247,5 +247,6 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
         if np.any(keep_phenotype):
             _ = array_appending(phntp_to_keep[keep_phenotype], phenotype)
         # '_' is used to avoid 'array_appending' printing something to stdout
+    logging.debug(f'\t\t\t\t\t\tFinished check')
 
     return nb_phntp, phntp_to_keep, nb_undef_cells, phntp_per_cell
