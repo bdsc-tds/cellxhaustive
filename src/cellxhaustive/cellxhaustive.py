@@ -111,6 +111,10 @@ parser.add_argument('-p', '--knn-min-probability', dest='knn_min_probability', t
                     help='Confidence threshold for KNN classifier to reassign a new \
                     cell type to previously undefined cells [0.5]',
                     required=False, default=0.5)
+parser.add_argument('-t', '--threads', dest='threads', type=int,
+                    help='Number of cores to use. Specifying more than one thread \
+                    will run parallel jobs which should increase program speed [1]',
+                    required=False, default=1)
 args = parser.parse_args()
 
 
