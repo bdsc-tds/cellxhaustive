@@ -24,8 +24,8 @@ def append_wrapper(lst, elt):
 
 
 # Function used in score_marker_combinations()
-def keep_phenotype(batches_label, batch, samples_label, phntp_per_cell, phntp,
-                   x_samplesxbatch_space, y_cellxsample_space):
+def keep_relevant_phntp(batch, batches_label, samples_label, phntp_per_cell,
+                        phntp, x_samplesxbatch_space, y_cellxsample_space):
     """
     Function that determines whether a phenotype is relevant, depending on
     samplesxbatch and cellxsample thresholds.
@@ -223,7 +223,7 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
 
         # Process batches using multiprocessing
         with Pool() as pool:  # AT. CPU param?
-            keep_phntp_lst = pool.map(partial(keep_phenotype,
+            keep_phntp_lst = pool.map(partial(keep_relevant_phntp,
                                               batches_label=batches_label,
                                               samples_label=samples_label,
                                               phntp_per_cell=phntp_per_cell,
