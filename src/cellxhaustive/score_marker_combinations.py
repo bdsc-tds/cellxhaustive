@@ -218,9 +218,6 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
     # check whether they are worth keeping
     logging.debug(f'\t\t\t\t\t\tChecking which phenotypes are passing thresholds')
     for phenotype in np.unique(phntp_per_cell):
-        # Initialise temporary array to store 'phenotype' results
-        keep_phenotype = np.full(nb_phntp.shape, True)
-
         # Process batches using multiprocessing
         with Pool() as pool:  # AT. CPU param?
             keep_phntp_lst = pool.map(partial(keep_relevant_phntp,
