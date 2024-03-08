@@ -139,7 +139,7 @@ def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,  # AT. C
     total_expression = np.fromiter(mat_comb, dtype=list)
 
     # Compute marker status using multiprocessing
-    with Pool(nb_cpu_keep) as pool:  # AT. CPU param?
+    with Pool(nb_cpu_keep) as pool:
         status_results_lst = pool.map(partial(get_marker_status,
                                               markers_array=markers_comb,
                                               tp=two_peak_threshold,
