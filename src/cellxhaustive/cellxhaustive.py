@@ -173,10 +173,17 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     logging.info(f'Retrieving cell type information in <{args.input_path}>')
     if 'cell_type' in input_table.columns:
         cell_labels = input_table.loc[:, 'cell_type'].to_numpy(dtype=str)
+        logging.info(f'Found {np.unique(cell_labels)} pre-annotated cell types')
     else:
         logging.warning(f'\tNo cell type information in <{args.input_path}>')
         logging.warning('\tSetting cell type value to <cell_type0> for all cells')
         cell_labels = np.full(input_table.shape[0], 'cell_type0')
+
+    # Get array of unique labels
+    uniq_labels = np.unique(cell_labels)
+
+    # Get list of arrays describing cells matching each cell type of 'uniq_labels'
+    is_label_list = [(cell_labels == label) for label in uniq_labels]
 
     # Get three peaks markers if a file is specified, otherwise use default list
     logging.info('Checking for existence of markers with 3 peaks')
@@ -229,12 +236,6 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     annotations = np.asarray(['undefined'] * len(cell_labels)).astype('U150')
     phenotypes = np.asarray(['undefined'] * len(cell_labels)).astype('U150')
     annot_dict = {}
-
-    # Get array of unique labels
-    uniq_labels = np.unique(cell_labels)
-
-    # Get list of arrays describing cells matching each cell type of 'uniq_labels'
-    is_label_list = [(cell_labels == label) for label in uniq_labels]  # AT. Use array format rather than
 
     # Process cells by pre-existing annotations using multiprocessing
     logging.info('Starting analyses')
