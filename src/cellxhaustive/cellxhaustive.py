@@ -31,6 +31,7 @@ import numpy as np
 import os
 import pandas as pd
 import pathlib
+import sys
 from functools import partial
 
 
@@ -64,18 +65,18 @@ parser.add_argument('-l', '--log', dest='log_path', type=str,
 parser.add_argument('-n', '--log-level', dest='log_level', type=str,
                     help='Verbosity level of log file [info]',
                     required=False, default='info', choices=['debug', 'info', 'warning'])
-parser.add_argument('-g', '--two-peak-threshold', dest='two_peak_threshold', type=float,
+parser.add_argument('-j', '--two-peak-threshold', dest='two_peak_threshold', type=float,
                     help='Threshold to determine whether a two-peaks marker is\
                     negative or positive [3]',
                     required=False, default=3)
-parser.add_argument('-d', '--three-peaks', dest='three_peak_markers', type=str,
+parser.add_argument('-e', '--three-peaks', dest='three_peak_markers', type=str,
                     help='Path to file with markers that have three peaks []',
                     required=False, default='')
-parser.add_argument('-e', '--three-peak-low', dest='three_peak_low', type=float,
+parser.add_argument('-f', '--three-peak-low', dest='three_peak_low', type=float,
                     help='Threshold to determine whether three-peaks marker is\
                     negative or low_positive [2]',
                     required=False, default=2)
-parser.add_argument('-f', '--three-peak-high', dest='three_peak_high', type=float,
+parser.add_argument('-g', '--three-peak-high', dest='three_peak_high', type=float,
                     help='Threshold to determine whether three-peaks marker is\
                     positive or low_positive [4]',
                     required=False, default=4)
@@ -114,6 +115,9 @@ parser.add_argument('-t', '--threads', dest='cores', type=int,
                     help='Number of cores to use. Specifying more than one core \
                     will run parallel jobs which will increase speed [1]',
                     required=False, default=1)
+parser.add_argument('-d', '--dry-run', dest='dryrun',
+                    help='Use dry-run mode to check input files and configuration [False]',
+                    required=False, default=False, action="store_true")
 args = parser.parse_args()
 
 
@@ -215,6 +219,10 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     else:  # Maximise CPU usage
         logging.info(f'\t{args.cores} CPUs provided')
         nb_cpu_id, nb_cpu_eval, nb_cpu_keep = get_cpu(args.cores, len(uniq_labels))
+
+    if args.dryrun:
+        logging.info('Dryrun finished. Exiting...')
+        sys.exit(0)
 
     # Initialise empty arrays and dictionary to store new annotations and results
     logging.debug('Initialising empty objects to store results')
