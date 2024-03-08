@@ -31,11 +31,13 @@ import numpy as np
 import os
 import pandas as pd
 import pathlib
+import sys
+from functools import partial
 
 
 # Import local functions
 from cellxhaustive.identify_phenotypes import identify_phenotypes
-from cellxhaustive.utils import setup_log
+from cellxhaustive.utils import get_cpu, setup_log, NestablePool
 
 
 # Parse arguments
@@ -51,31 +53,31 @@ parser.add_argument('-m', '--markers', dest='marker_path', type=str,
 parser.add_argument('-o', '--output', dest='output_path', type=str,
                     help='Path to output table with annotations',
                     required=True)
+parser.add_argument('-c', '--cell-type-definition', dest='cell_type_path', type=str,
+                    help='Path to file with cell types characterisation \
+                    [../data/config/major_cell_types.json]',
+                    required=False, default='../data/config/major_cell_types.json')
 parser.add_argument('-l', '--log', dest='log_path', type=str,
                     help='Path to log file [output_path.log]',
                     required=False, default='')
 parser.add_argument('-n', '--log-level', dest='log_level', type=str,
                     help='Verbosity level of log file [info]',
                     required=False, default='info', choices=['debug', 'info', 'warning'])
-parser.add_argument('-g', '--two-peak-threshold', dest='two_peak_threshold', type=float,
+parser.add_argument('-j', '--two-peak-threshold', dest='two_peak_threshold', type=float,
                     help='Threshold to determine whether a two-peaks marker is\
                     negative or positive [3]',
                     required=False, default=3)
-parser.add_argument('-d', '--three-peaks', dest='three_peak_markers', type=str,
+parser.add_argument('-e', '--three-peaks', dest='three_peak_markers', type=str,
                     help='Path to file with markers that have three peaks []',
-                    required=False, default=[])
-parser.add_argument('-e', '--three-peak-low', dest='three_peak_low', type=float,
+                    required=False, default='')
+parser.add_argument('-f', '--three-peak-low', dest='three_peak_low', type=float,
                     help='Threshold to determine whether three-peaks marker is\
                     negative or low_positive [2]',
                     required=False, default=2)
-parser.add_argument('-f', '--three-peak-high', dest='three_peak_high', type=float,
+parser.add_argument('-g', '--three-peak-high', dest='three_peak_high', type=float,
                     help='Threshold to determine whether three-peaks marker is\
                     positive or low_positive [4]',
                     required=False, default=4)
-parser.add_argument('-c', '--cell-type-definition', dest='cell_type_path', type=str,
-                    help='Path to file with cell types characterisation \
-                    [../data/config/major_cell_types.json]',
-                    required=False, default='../data/config/major_cell_types.json')
 parser.add_argument('-a', '--max-markers', dest='max_markers', type=int,
                     help="Maximum number of relevant markers to select among \
                     total list of markers. Must be less than or equal to \
@@ -107,6 +109,13 @@ parser.add_argument('-p', '--knn-min-probability', dest='knn_min_probability', t
                     help='Confidence threshold for KNN classifier to reassign a new \
                     cell type to previously undefined cells [0.5]',
                     required=False, default=0.5)
+parser.add_argument('-t', '--threads', dest='cores', type=int,
+                    help='Number of cores to use. Specifying more than one core \
+                    will run parallel jobs which will increase speed [1]',
+                    required=False, default=1)
+parser.add_argument('-d', '--dry-run', dest='dryrun',
+                    help='Use dry-run mode to check input files and configuration [False]',
+                    required=False, default=False, action="store_true")
 args = parser.parse_args()
 
 
@@ -129,7 +138,7 @@ if __name__ == '__main__':
 
     # Get 1-D array for markers
     logging.info(f'Importing markers list from <{args.marker_path}>')
-    markers = pd.read_csv(args.marker_path, sep='\t', header=None).to_numpy().flatten()
+    markers = pd.read_csv(args.marker_path, sep='\t', header=None).to_numpy(dtype=str).flatten()
     logging.info(f'\tFound {len(markers)} markers')
 
     # Parse general input files into several arrays
@@ -138,7 +147,7 @@ if __name__ == '__main__':
     logging.info(f'\tFound {len(input_table.index)} cells')
 
     # Get 2-D array for expression using 'markers'
-    mat = input_table.loc[:, markers].to_numpy()
+    mat = input_table.loc[:, markers].to_numpy(dtype=float)
 
     # Get 1-D array for batch; add common batch value if information is missing
     logging.info(f'Retrieving batch information in <{args.input_path}>')
@@ -160,17 +169,29 @@ if __name__ == '__main__':
 
     # Get 1-D array for pre-annotated cell type
     logging.info(f'Retrieving cell type information in <{args.input_path}>')
-    cell_labels = input_table.loc[:, 'cell_type'].to_numpy(dtype=str)
+    if 'cell_type' in input_table.columns:
+        cell_labels = input_table.loc[:, 'cell_type'].to_numpy(dtype=str)
+        logging.info(f'Found {np.unique(cell_labels)} pre-annotated cell types')
+    else:
+        logging.warning(f'\tNo cell type information in <{args.input_path}>')
+        logging.warning('\tSetting cell type value to <cell_type0> for all cells')
+        cell_labels = np.full(input_table.shape[0], 'cell_type0')
+
+    # Get array of unique labels
+    uniq_labels = np.unique(cell_labels)
+
+    # Get list of arrays describing cells matching each cell type of 'uniq_labels'
+    is_label_list = [(cell_labels == label) for label in uniq_labels]
 
     # Get three peaks markers if a file is specified, otherwise use default list
     logging.info('Checking for existence of markers with 3 peaks')
     three_path = args.three_peak_markers
     if (not isinstance(three_path, list) and pathlib.Path(three_path).is_file()):
         with open(three_path) as file:
-            three_peak_markers = file.read().splitlines()
+            three_peak_markers = np.array(file.read().splitlines(), dtype=np.dtype('U15'))
         logging.info(f'\tFound {len(three_peak_markers)} markers in <{three_path}>')
     else:
-        three_peak_markers = args.three_peak_markers
+        three_peak_markers = np.empty(0, dtype=np.dtype('U15'))
         logging.warning('\tNo file provided, using default empty list')
 
     # Import cell types definitions
@@ -194,49 +215,58 @@ if __name__ == '__main__':
     knn_refine = args.knn_refine
     knn_min_probability = args.knn_min_probability
 
+    # Get CPU settings
+    logging.info('Determining parallelisation settings')
+    if args.cores == 1:  # Can't multiprocess with only 1 core
+        logging.info('\tOnly 1 CPU provided, no parallelisation possible')
+        nb_cpu_id = nb_cpu_eval = nb_cpu_keep = 1
+        logging.info('\tSetting nb_cpu_id, nb_cpu_eval, and nb_cpu_keep to 1')
+    else:  # Maximise CPU usage
+        logging.info(f'\t{args.cores} CPUs provided')
+        nb_cpu_id, nb_cpu_eval, nb_cpu_keep = get_cpu(args.cores, len(uniq_labels))
+
+    if args.dryrun:
+        logging.info('Dryrun finished. Exiting...')
+        sys.exit(0)
+
     # Initialise empty arrays and dictionary to store new annotations and results
     logging.debug('Initialising empty objects to store results')
     annotations = np.asarray(['undefined'] * len(cell_labels)).astype('U150')
     phenotypes = np.asarray(['undefined'] * len(cell_labels)).astype('U150')
     annot_dict = {}
 
-    # Process cells by pre-annotations
+    # Process cells by pre-existing annotations using multiprocessing
     logging.info('Starting analyses')
-    for label in np.unique(cell_labels):
-        # Create boolean array to select cells matching current label
-        logging.info(f'\tProcessing <{label}> cells')
-        is_label = (cell_labels == label)
+    with NestablePool(nb_cpu_id) as pool:
+        annot_results_lst = pool.starmap(partial(identify_phenotypes,
+                                                 mat=mat,
+                                                 batches=batches,
+                                                 samples=samples,
+                                                 markers=markers,
+                                                 cell_types_dict=cell_types_dict,
+                                                 two_peak_threshold=two_peak_threshold,
+                                                 three_peak_markers=three_peak_markers,
+                                                 three_peak_low=three_peak_low,
+                                                 three_peak_high=three_peak_high,
+                                                 max_markers=max_markers,
+                                                 min_annotations=min_annotations,
+                                                 max_solutions=max_solutions,
+                                                 min_samplesxbatch=min_samplesxbatch,
+                                                 min_cellxsample=min_cellxsample,
+                                                 knn_refine=knn_refine,
+                                                 knn_min_probability=knn_min_probability,
+                                                 cpu_eval_keep=(nb_cpu_eval, nb_cpu_keep)),
+                                         zip(is_label_list, uniq_labels))
 
-        # Get annotations for all cells of type 'label'
-        results_dict = identify_phenotypes(
-            mat=mat,
-            batches=batches,
-            samples=samples,
-            markers=markers,
-            is_label=is_label,
-            cell_types_dict=cell_types_dict,
-            two_peak_threshold=two_peak_threshold,
-            three_peak_markers=three_peak_markers,
-            three_peak_low=three_peak_low,
-            three_peak_high=three_peak_high,
-            cell_name=label,
-            max_markers=max_markers,
-            min_annotations=min_annotations,
-            max_solutions=max_solutions,
-            min_cellxsample=min_cellxsample,
-            min_samplesxbatch=min_samplesxbatch,
-            knn_refine=knn_refine,
-            knn_min_probability=knn_min_probability)
-
-        # Store results in another dictionary for post-processing
-        annot_dict[label] = results_dict
+    # Convert results back to dictionary
+    annot_dict = dict(zip(uniq_labels, annot_results_lst))
 
     # Post-process results to add them to original table and save whole table
     logging.info('Gathering results in annotation table')
 
     # Find maximum number of optimal combinations across all 'cell_labels'
     logging.debug('\tDetermining total maximum number of optimal combinations')
-    max_comb = max([len(annot_dict[label].keys()) for label in np.unique(cell_labels)])
+    max_comb = max([len(annot_dict[label].keys()) for label in uniq_labels])
     logging.debug(f"\t\tFound {max_comb} combination{'s' if max_comb > 1 else ''}")
 
     # Build list with all column names
@@ -257,12 +287,8 @@ if __name__ == '__main__':
 
     # Fill annotation dataframe with results
     logging.info('\tFilling annotation table with analyses results')
-    for label in np.unique(cell_labels):
+    for label, is_label in zip(uniq_labels, is_label_list):
         logging.info(f'\t\tCreating result subtable for <{label}> annotations')
-
-        # Create boolean array to select cells matching current 'label'
-        logging.info(f'\t\t\tSelecting matching cells')
-        is_label = (cell_labels == label)
 
         # Slice general results dictionary
         logging.debug(f'\t\t\tSelecting associated results')
