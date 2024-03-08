@@ -106,11 +106,11 @@ python cellxhaustive.py -h
 
 ## Contributing
 
-Interested in contributing? Check out the contributing guidelines. Please note that this project is released with a Code of Conduct. By contributing to this project, you agree to abide by its terms.
+Interested in contributing? Check out the [contributing guidelines](CONTRIBUTING.md). Please note that this project is released with a [Code of Conduct](CONDUCT.md). By contributing to this project, you agree to abide by its terms.
 
 ## License
 
-`cellxhaustive` was created by Bernat Bramon Mora and Antonin Thiebaut. It is licensed under the terms of the MIT license.
+`cellxhaustive` was created by Bernat Bramon Mora and Antonin Thiébaut. It is licensed under the terms of the [MIT license](LICENSE).
 
 ## Credits
 
