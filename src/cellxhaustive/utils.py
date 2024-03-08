@@ -4,10 +4,12 @@ Functions shared between several scripts.
 
 
 # Import utility modules
+import itertools as ite
 import logging
 import multiprocessing
 import multiprocessing.pool
 import sys
+from math import prod
 
 
 # Log-related functions and classes
@@ -80,7 +82,81 @@ def setup_log(logfile, loglevel):
     )
 
 
-# Multiprocessing-related classes
+# Multiprocessing-related functions and classes
+# Function to distribute CPUs across functions
+def get_cpu(nb_cpu, nb_cell_type):
+    """
+    Function to split provided cores across the different tasks.
+
+    Parameters:
+    -----------
+    nb_cpu: int
+      Total number of cores provided to workflow.
+
+    nb_cell_type: int
+      Number of unique cell types in input_dataset.
+
+    Returns:
+    --------
+    nb_cpu_id: int
+      Number of cores dedicated to 'identify_phenotypes' (from cellxhaustive.py).
+
+    nb_cpu_eval: int
+      Number of cores dedicated to 'evaluate_comb' (from check_all_combinations.py).
+
+    nb_cpu_keep: int
+      Number of cores dedicated to 'keep_relevant_phntp' and 'get_marker_status'
+      (from score_marker_combinations.py and determine_marker_status.py, respectively).
+    """
+
+    # Create possible CPU amounts
+    if nb_cell_type == 1:  # Can't multiprocess by cell type, so increase nb_cpu_keep
+        cpu_id = [1]
+        cpu_eval = range(1, 9)
+        cpu_keep = range(1, 9)
+
+    else:
+        cpu_id = range(1, nb_cell_type + 1)
+        cpu_eval = range(1, 9)
+        cpu_keep = range(1, 3)
+
+    # Create all possible CPU combinations
+    cpu_comb = list(ite.product(cpu_id, cpu_eval, cpu_keep))
+
+    # Compute all products
+    results = []
+    for item in cpu_comb:
+        results.append(nb_cpu - prod(item))  # Subtract CPU given by user
+
+    # Find positive minimum
+    min_diff = min(n for n in results if n >= 0)
+
+    # Find minimum indices
+    min_idx = [i for i, x in enumerate(results) if x == min_diff]
+
+    # Get list of solution
+    cpu_solutions = [cpu_comb[i] for i in min_idx]
+
+    # Sort by nb_cpu_eval then nb_cpu_id then nb_cpu_keep
+    cpu_solutions = sorted(cpu_solutions, key=lambda x: (-x[1], -x[0], -x[2]))
+
+    # Extract CPU values
+    nb_cpu_id, nb_cpu_eval, nb_cpu_keep = cpu_solutions[0]
+
+    logging.info(f'\tSetting nb_cpu_id to {nb_cpu_id}, nb_cpu_eval to {nb_cpu_eval}, and nb_cpu_keep to {nb_cpu_keep}')
+
+    if min_diff == 0:
+        logging.info('\tThere will be no idle CPU.')
+
+    else:
+        cpu_tot = prod(cpu_solutions[0])
+        logging.warning(f'\tThere will be {min_diff} idle CPUs. Consider decreasing')
+        logging.warning(f"\t'-t' parameter to {cpu_tot} to save resources or increase")
+        logging.warning(f"\tby 1 to speed up analyses")
+
+    return nb_cpu_id, nb_cpu_eval, nb_cpu_keep
+
+
 # Custom multiprocessing process without daemons
 class NoDaemonProcess(multiprocessing.Process):
     @property
