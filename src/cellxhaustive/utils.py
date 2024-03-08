@@ -39,6 +39,17 @@ class CustomFormatter(logging.Formatter):
 
 # Function to configurate logging, used in cellxhaustive.py
 def setup_log(logfile, loglevel):
+    """
+    Function to set-up logging format, log file and log level.
+
+    Parameters:
+    -----------
+    logfile: str
+      Path to log file.
+
+    nb_cell_type: str
+      Verbosity level of log file.
+    """
 
     # Reset logging handler to avoid conflicts
     logging.root.handlers = []
