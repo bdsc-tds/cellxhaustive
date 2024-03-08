@@ -19,7 +19,7 @@ from sklearn.preprocessing import StandardScaler
 
 # Function used in identify_phenotypes.py
 def knn_classifier(mat_representative, new_labels, is_undef,
-                   knn_min_probability=0.5):
+                   knn_min_probability, knn_cpu):
     """
     Reclassify unidentified cells using a KNN-classifier and return predicted
     probability for reclassification.
@@ -43,6 +43,9 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     knn_min_probability: float (default=0.5)
       Confidence threshold for KNN-classifier to reassign a new cell type to
       previously undefined cells.
+
+    knn_cpu: int (default=1)
+      Integer to set up number of CPUs in multiprocessing jobs.
 
     Returns:
     --------
@@ -79,7 +82,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     scaler = StandardScaler()
 
     # Initialise KNN-classifier
-    clf = KNeighborsClassifier(p=2, metric='minkowski', n_jobs=12)
+    clf = KNeighborsClassifier(p=2, metric='minkowski', n_jobs=knn_cpu)
     # Note: default arguments "p=2, metric='minkowski'" are equivalent to
     # calculating Euclidean distances
 
@@ -93,7 +96,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
 
     # Build parameters grid object
     knn_grid = GridSearchCV(pipeline, param_grid=param_grid, scoring='accuracy',
-                            cv=5, n_jobs=12, refit=True, verbose=0)
+                            cv=5, n_jobs=knn_cpu, refit=True, verbose=0)
 
     # Find best parameters
     logging.info('\t\t\t\t\t\tTuning hyperparameters')

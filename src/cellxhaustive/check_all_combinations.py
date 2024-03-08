@@ -32,7 +32,7 @@ def return_outputs(dict1, dict2, dict3, idx1, idx2):
 def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
                   markers_representative, two_peak_threshold, three_peak_markers,
                   three_peak_low, three_peak_high, min_annotations,
-                  x_samplesxbatch_space, y_cellxsample_space):
+                  x_samplesxbatch_space, y_cellxsample_space, nb_cpu_keep):
     """
     Function that scores a marker combination and checks whether it contains
     relevant solutions depending on number of phenotypes detected, proportion of
@@ -102,6 +102,9 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
       100 cells/sample in at least 50%, 60%... 100% of samples (see description
       of previous parameter) within a batch to be considered.
 
+    nb_cpu_keep: int (default=1)
+      Integer to set up CPU numbers in downstream nested functions.
+
     Returns:
     --------
     comb_result_dict: dict {str: obj}
@@ -119,7 +122,7 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
     # Find number of phenotypes and undefined cells for a given marker combination
     # 'comb' across 'samplesxbatch' and 'cellxsample' grid
     logging.debug(f'\t\t\t\t\tScoring combination')
-    nb_phntp, phntp_to_keep, nb_undef_cells, phntp_per_cell = score_marker_combinations(  # AT. CPU param?
+    nb_phntp, phntp_to_keep, nb_undef_cells, phntp_per_cell = score_marker_combinations(
         mat_comb=mat_comb,
         batches_label=batches_label,
         samples_label=samples_label,
@@ -129,7 +132,8 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
         three_peak_low=three_peak_low,
         three_peak_high=three_peak_high,
         x_samplesxbatch_space=x_samplesxbatch_space,
-        y_cellxsample_space=y_cellxsample_space)
+        y_cellxsample_space=y_cellxsample_space,
+        nb_cpu_keep=nb_cpu_keep)
 
     # Constrain matrix given minimum number of phenotype conditions
     mask = (nb_phntp < min_annotations)
@@ -185,7 +189,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                            markers_representative, two_peak_threshold,
                            three_peak_markers, three_peak_low, three_peak_high,
                            max_markers, min_annotations,
-                           min_samplesxbatch, min_cellxsample):
+                           min_samplesxbatch, min_cellxsample, cpu_eval_keep):
     """
     Function that determines best marker combinations representing a cell type by
     maximizing number of phenotypes detected, proportion of samples within a batch
@@ -251,6 +255,9 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
       default, an annotation needs to be assigned to at least 10 cells/sample in at
       least 50% of samples (see description of previous parameter) within a batch
       to be considered.
+
+    cpu_eval_keep: tuple(int) (default=(1, 1))
+      Tuple of integers to set up CPU numbers in downstream nested functions.
 
     Returns:
     --------
@@ -323,7 +330,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
         poss_comb = ite.combinations(markers_representative, marker_counter)
 
         # For a given number of markers, check all possible combinations using multiprocessing
-        with NestablePool() as pool:  # AT. CPU param?
+        with NestablePool(cpu_eval_keep[0]) as pool:
             score_results_lst = pool.starmap(partial(evaluate_comb,
                                                      mat_representative=mat_representative,
                                                      batches_label=batches_label,
@@ -335,7 +342,8 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                                                      three_peak_high=three_peak_high,
                                                      min_annotations=min_annotations,
                                                      x_samplesxbatch_space=x_samplesxbatch_space,
-                                                     y_cellxsample_space=y_cellxsample_space),
+                                                     y_cellxsample_space=y_cellxsample_space,
+                                                     nb_cpu_keep=cpu_eval_keep[1]),
                                              enumerate(poss_comb, enum_start))
 
         # Remove combinations without solution and turn list into dict using idx as keys

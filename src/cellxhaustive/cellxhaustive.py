@@ -31,15 +31,14 @@ import numpy as np
 import os
 import pandas as pd
 import pathlib
-from multiprocessing import Pool
 from functools import partial
 
 
 # Import local functions
 from identify_phenotypes import identify_phenotypes  # AT. Double-check path
-from utils import setup_log  # AT. Double-check path
+from utils import get_cpu, setup_log, NestablePool  # AT. Double-check path
 # from cellxhaustive.identify_phenotypes import identify_phenotypes
-# from cellxhaustive.utils import setup_log
+# from cellxhaustive.utils import get_cpu, setup_log, NestablePool
 
 
 # Parse arguments
@@ -111,9 +110,9 @@ parser.add_argument('-p', '--knn-min-probability', dest='knn_min_probability', t
                     help='Confidence threshold for KNN classifier to reassign a new \
                     cell type to previously undefined cells [0.5]',
                     required=False, default=0.5)
-parser.add_argument('-t', '--threads', dest='threads', type=int,
-                    help='Number of cores to use. Specifying more than one thread \
-                    will run parallel jobs which should increase program speed [1]',
+parser.add_argument('-t', '--threads', dest='cores', type=int,
+                    help='Number of cores to use. Specifying more than one core \
+                    will run parallel jobs which will increase speed [1]',
                     required=False, default=1)
 args = parser.parse_args()
 
@@ -207,6 +206,16 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     knn_refine = args.knn_refine
     knn_min_probability = args.knn_min_probability
 
+    # Get CPU settings
+    logging.info('Determining parallelisation settings')
+    if args.cores == 1:  # Can't multiprocess with only 1 core
+        logging.info('\tOnly 1 CPU provided, no parallelisation possible')
+        nb_cpu_id = nb_cpu_eval = nb_cpu_keep = 1
+        logging.info('\tSetting nb_cpu_id, nb_cpu_eval, and nb_cpu_keep to 1')
+    else:  # Maximise CPU usage
+        logging.info(f'\t{args.cores} CPUs provided')
+        nb_cpu_id, nb_cpu_eval, nb_cpu_keep = get_cpu(args.cores, len(uniq_labels))
+
     # Initialise empty arrays and dictionary to store new annotations and results
     logging.debug('Initialising empty objects to store results')
     annotations = np.asarray(['undefined'] * len(cell_labels)).astype('U150')
@@ -221,7 +230,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Process cells by pre-existing annotations using multiprocessing
     logging.info('Starting analyses')
-    with Pool() as pool:  # AT. CPU param?
+    with NestablePool(nb_cpu_id) as pool:
         annot_results_lst = pool.starmap(partial(identify_phenotypes,
                                                  mat=mat,
                                                  batches=batches,
@@ -238,7 +247,8 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                                  min_samplesxbatch=min_samplesxbatch,
                                                  min_cellxsample=min_cellxsample,
                                                  knn_refine=knn_refine,
-                                                 knn_min_probability=knn_min_probability),
+                                                 knn_min_probability=knn_min_probability,
+                                                 cpu_eval_keep=(nb_cpu_eval, nb_cpu_keep)),
                                          zip(is_label_list, uniq_labels))
 
     # Convert results back to dictionary

@@ -107,7 +107,7 @@ def keep_relevant_phntp(batch, batches_label, samples_label, phntp_per_cell,
 def score_marker_combinations(mat_comb, batches_label, samples_label,
                               markers_comb, two_peak_threshold,
                               three_peak_markers, three_peak_low, three_peak_high,
-                              x_samplesxbatch_space, y_cellxsample_space):
+                              x_samplesxbatch_space, y_cellxsample_space, nb_cpu_keep):
     """
     Function that determines number of unique cell phenotypes (combination of
     positive and negative markers) and number of cells without phenotype in an
@@ -165,6 +165,9 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
       100 cells/sample in at least 50%, 60%... 100% of samples (see description
       of previous parameter) within a batch to be considered.
 
+    nb_cpu_keep: int (default=1)
+      Integer to set up CPU numbers in downstream nested functions.
+
     Returns:
     --------
     nb_phntp: array(float)
@@ -196,7 +199,8 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
         two_peak_threshold=two_peak_threshold,
         three_peak_markers=three_peak_markers,
         three_peak_low=three_peak_low,
-        three_peak_high=three_peak_high)
+        three_peak_high=three_peak_high,
+        nb_cpu_keep=nb_cpu_keep)
 
     # Initialise arrays to store results
     nb_phntp = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
@@ -219,7 +223,7 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
     logging.debug(f'\t\t\t\t\t\tChecking which phenotypes are passing thresholds')
     for phenotype in np.unique(phntp_per_cell):
         # Process batches using multiprocessing
-        with Pool() as pool:  # AT. CPU param?
+        with Pool(nb_cpu_keep) as pool:
             keep_phntp_lst = pool.map(partial(keep_relevant_phntp,
                                               batches_label=batches_label,
                                               samples_label=samples_label,

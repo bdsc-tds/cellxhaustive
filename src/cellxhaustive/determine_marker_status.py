@@ -87,7 +87,7 @@ def get_marker_status(expression_array, markers_array, tp, tpm, tpl, tph):
 
 # Function used in score_marker_combinations.py
 def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,  # AT. CPU param?
-                            three_peak_markers, three_peak_low, three_peak_high):
+                            three_peak_markers, three_peak_low, three_peak_high, nb_cpu_keep):
     """
     Function that multiprocesses marker status computing.
 
@@ -123,6 +123,9 @@ def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,  # AT. C
       will be considered positive. Expression between 'three_peak_low' and
       'three_peak_high' means marker will be considered low_positive.
 
+    nb_cpu_keep: int (default=1)
+      Integer to set up CPU numbers in downstream nested functions.
+
     Returns:
     --------
     phntp_per_cell: array(str)
@@ -136,7 +139,7 @@ def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,  # AT. C
     total_expression = np.fromiter(mat_comb, dtype=list)
 
     # Compute marker status using multiprocessing
-    with Pool() as pool:  # AT. CPU param?
+    with Pool(nb_cpu_keep) as pool:  # AT. CPU param?
         status_results_lst = pool.map(partial(get_marker_status,
                                               markers_array=markers_comb,
                                               tp=two_peak_threshold,
