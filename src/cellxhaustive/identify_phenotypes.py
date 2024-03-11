@@ -21,8 +21,8 @@ from knn_classifier import knn_classifier  # AT. Double-check path
 
 
 # Function used in cellxhaustive.py
-def identify_phenotypes(mat, batches, samples, markers, is_label,
-                        cell_types_dict, cell_name, two_peak_threshold,
+def identify_phenotypes(is_label, cell_name, mat, batches, samples, markers,
+                        cell_types_dict, two_peak_threshold,
                         three_peak_markers, three_peak_low, three_peak_high,
                         max_markers, min_annotations, max_solutions,
                         min_samplesxbatch, min_cellxsample,
@@ -33,6 +33,12 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
 
     Parameters
     ----------
+    is_label: array(bool)
+      1-D numpy array with booleans to indicate cells matching current cell type.
+
+    cell_name: str or None
+      Base name for cell types (e.g. CD4 T-cells for 'CD4T').
+
     mat: array(float)
       2-D numpy array expression matrix, with cells in D0 and markers in D1.
       In other words, rows contain cells and columns contain markers.
@@ -46,15 +52,9 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
     markers: array(str)
       1-D numpy array with markers matching each column of 'mat'.
 
-    is_label: array(bool)
-      1-D numpy array with booleans to indicate cells matching current cell type.
-
     cell_types_dict: {str: list()}
       Dictionary with cell types as keys and list of cell-type defining markers
       as values.
-
-    cell_name: str or None
-      Base name for cell types (e.g. CD4 T-cells for 'CD4T').
 
     two_peak_threshold: float (default=3)
       Threshold to consider when determining whether a two-peaks marker is
