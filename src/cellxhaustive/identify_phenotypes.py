@@ -12,21 +12,21 @@ from collections import defaultdict
 
 
 # Import local functions
-from assign_cell_types import assign_cell_types
-from check_all_combinations import check_all_combinations
-from knn_classifier import knn_classifier
-# from cellxhaustive.assign_cell_types import assign_cell_types  # AT. Double-check path
-# from cellxhaustive.check_all_combinations import check_all_combinations  # AT. Double-check path
-# from cellxhaustive.knn_classifier import knn_classifier  # AT. Double-check path
+from assign_cell_types import assign_cell_types  # AT. Double-check path
+from check_all_combinations import check_all_combinations  # AT. Double-check path
+from knn_classifier import knn_classifier  # AT. Double-check path
+# from cellxhaustive.assign_cell_types import assign_cell_types
+# from cellxhaustive.check_all_combinations import check_all_combinations
+# from cellxhaustive.knn_classifier import knn_classifier
 
 
 # Function used in cellxhaustive.py
 def identify_phenotypes(mat, batches, samples, markers, is_label,
                         cell_types_dict, cell_name, two_peak_threshold,
                         three_peak_markers, three_peak_low, three_peak_high,
-                        max_markers, min_annotations,
-                        min_samplesxbatch, min_cellxsample, max_solutions,
-                        knn_refine, knn_min_probability):
+                        max_markers, min_annotations, max_solutions,
+                        min_samplesxbatch, min_cellxsample,
+                        knn_refine, knn_min_probability, cpu_eval_keep):
     """
     Function that identifies most probable cell type and phenotype for a group of
     cells using expression of its most relevant markers.
@@ -113,6 +113,9 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
       Confidence threshold for KNN-classifier to reassign a new cell type
       to previously undefined cells.
 
+    cpu_eval_keep: tuple(int) (default=(1, 1))
+      Tuple of integers to set up CPU numbers in downstream nested functions.
+
     Returns:
     --------
     results_dict: dict {str: list(array(str, float, np.nan))}
@@ -133,6 +136,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
     """
 
     # Main gating: select relevant markers for cell population 'label' in each batch
+    logging.info(f'\tProcessing <{cell_name}> cells')
     logging.info('\t\tPerforming main gating in all batches')
     for batch in np.unique(batches):
         logging.debug(f'\t\t\tProcessing batch <{batch}>')
@@ -156,7 +160,7 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
         markers_rep = markers[is_center_greater]  # Select markers with center higher than max_markers-th center
 
         # Store list of relevant markers for every batch
-        # Note: try/except avoids an error if dict doesn't exist yet
+        # Note: try/except avoids an error if dictionary doesn't exist yet
         logging.debug('\t\t\t\tStoring relevant markers')
         try:
             markers_rep_batches[batch] = list(markers_rep)
@@ -201,7 +205,8 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
         max_markers=max_markers,
         min_annotations=min_annotations,
         min_samplesxbatch=min_samplesxbatch,
-        min_cellxsample=min_cellxsample)
+        min_cellxsample=min_cellxsample,
+        cpu_eval_keep=cpu_eval_keep)
 
     # Initialise result dictionary with empty lists
     # Note: even if lists end up with only 1 element, it makes processing results
@@ -260,11 +265,13 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
             if ((np.sum(is_undef) > 1) and (len(np.unique(new_labels)) > 2)):
                 # Reannotate cells
                 logging.info('\t\t\t\tRefining annotations with KNN-classifier')
+                knn_cpu = cpu_eval_keep[0] * cpu_eval_keep[1]
                 reannotated_labels, reannotation_proba = knn_classifier(
                     mat_representative=mat_subset_rep_markers_comb,
                     new_labels=new_labels,
                     is_undef=is_undef,
-                    knn_min_probability=knn_min_probability)
+                    knn_min_probability=knn_min_probability,
+                    knn_cpu=knn_cpu)
 
                 # Reverse dictionary to convert cell types back into phenotypes
                 rev_names_conv = {val: key for key, val in names_conv.items()}
@@ -336,11 +343,13 @@ def identify_phenotypes(mat, batches, samples, markers, is_label,
                 if ((np.sum(is_undef) > 1) and (len(np.unique(new_labels)) > 2)):
                     # Reannotate cells
                     logging.info('\t\t\t\t\tRefining annotations with KNN-classifier')
+                    knn_cpu = cpu_eval_keep[0] * cpu_eval_keep[1]
                     reannotated_labels, reannotation_proba = knn_classifier(
                         mat_representative=mat_subset_rep_markers_comb,
                         new_labels=new_labels,
                         is_undef=is_undef,
-                        knn_min_probability=knn_min_probability)
+                        knn_min_probability=knn_min_probability,
+                        knn_cpu=knn_cpu)
 
                     # Reverse dictionary to convert cell types into phenotypes
                     rev_names_conv = {val: key for key, val in names_conv.items()}
