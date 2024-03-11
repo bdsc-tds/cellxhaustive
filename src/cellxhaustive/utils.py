@@ -23,7 +23,7 @@ class CustomFormatter(logging.Formatter):
     red = '\x1b[31;20m'
     bold_red = '\x1b[1;31;20m'
     reset = '\x1b[0m'
-    format = '[%(asctime)s]  %(filename)28s  %(levelname)-8s  %(message)s'
+    format = '[%(asctime)s]  [PID:%(process)9d]  %(filename)28s  %(levelname)-8s  %(message)s'
     datefmt = '%Y.%m.%d - %H:%M:%S'
 
     FORMATS = {logging.DEBUG: grey + format + reset,
@@ -65,7 +65,7 @@ def setup_log(logfile, loglevel):
 
     # Sets handlers with proper redirection and format
     # File handler
-    fh_formatter = logging.Formatter(fmt='[%(asctime)s]  %(filename)28s  %(levelname)-8s  %(message)s',
+    fh_formatter = logging.Formatter(fmt='[%(asctime)s]  [PID:%(process)9d]  %(filename)28s  %(levelname)-8s  %(message)s',
                                      datefmt='%Y.%m.%d - %H:%M:%S')
     handler_fh = logging.FileHandler(logfile, mode='w')
     handler_fh.setFormatter(fh_formatter)
