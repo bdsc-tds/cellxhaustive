@@ -78,6 +78,13 @@ def keep_relevant_phntp(batch, batches_label, samples_label, phntp_per_cell,
     # Calculate number of different samples in current batch and cell type
     smpl_nb = float(len(np.unique(phntp_smpl)))
 
+    # If there are no cells of type 'phntp' in 'batch', there is no need to go
+    # further, so return a False array with right dimensions
+    if smpl_nb == 0:
+        array_dim = (len(x_samplesxbatch_space), len(y_cellxsample_space))
+        keep_phntp_batch = np.full(array_dim, False)
+        return keep_phntp_batch
+
     # Count number of cells per phntp in each sample
     cell_count_smpl = np.asarray([np.sum(phntp_smpl == smpl)
                                   for smpl in np.unique(phntp_smpl)])
