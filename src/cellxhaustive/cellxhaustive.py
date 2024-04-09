@@ -259,6 +259,8 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                                  knn_min_probability=knn_min_probability,
                                                  cpu_eval_keep=(nb_cpu_eval, nb_cpu_keep)),
                                          zip(is_label_list, uniq_labels))
+    # Note: only 'is_label_list' and 'uniq_labels' are iterated over, hence the
+    # use of 'partial()' to keep the other parameters constant
 
     # Convert results back to dictionary
     annot_dict = dict(zip(uniq_labels, annot_results_lst))

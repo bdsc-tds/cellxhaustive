@@ -86,7 +86,7 @@ def get_marker_status(expression_array, markers_array, tp, tpm, tpl, tph):
 
 
 # Function used in score_marker_combinations.py
-def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,  # AT. CPU param?
+def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,
                             three_peak_markers, three_peak_low, three_peak_high, nb_cpu_keep):
     """
     Function that multiprocesses marker status computing.

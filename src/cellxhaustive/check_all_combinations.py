@@ -1,5 +1,5 @@
 """
-Function that determines best marker combinations representing a cell type by
+Script that determines best marker combinations representing a cell type by
 maximizing number of phenotypes detected, proportion of samples within a batch
 displaying the phenotypes, number of cells within each sample displaying the
 phenotypes and minimizing number of cells without phenotypes.
@@ -345,6 +345,8 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                                                      y_cellxsample_space=y_cellxsample_space,
                                                      nb_cpu_keep=cpu_eval_keep[1]),
                                              enumerate(poss_comb, enum_start))
+        # Notes: only 'poss_comb' is iterated over, hence the use of 'partial()'
+        # to keep the other parameters constant
 
         # Remove combinations without solution and turn list into dict using idx as keys
         score_results_dict = {}

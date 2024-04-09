@@ -32,14 +32,14 @@ def keep_relevant_phntp(batch, batches_label, samples_label, phntp_per_cell,
 
     Parameters:
     -----------
-    batches_label: array(str)
-      1-D numpy array with batch names of each cell of 'mat_comb'.
-
     batch: str
       Value of batch to process.
 
+    batches_label: array(str)
+      1-D numpy array with batch names of each cell.
+
     samples_label: array(str)
-      1-D numpy array with sample names of each cell of 'mat_comb'.
+      1-D numpy array with sample names of each cell.
 
     phntp_per_cell: array(str)
       1-D numpy array with best phenotype determined for each cell.
@@ -232,6 +232,8 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
                                               x_samplesxbatch_space=x_samplesxbatch_space,
                                               y_cellxsample_space=y_cellxsample_space),
                                       uniq_batches)
+        # Notes: only 'uniq_batches' is iterated over, hence the use of 'partial()'
+        # to keep the other parameters constant
 
         # Intersect all batch results to retain phenotypes present in all
         keep_phenotype = np.logical_and.reduce(keep_phntp_lst)
