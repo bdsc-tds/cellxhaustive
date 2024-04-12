@@ -1,13 +1,11 @@
 """
-Functions shared between several scripts.
+Functions and classes shared between several scripts.
 """
 
 
 # Import utility modules
 import itertools as ite
 import logging
-import multiprocessing
-import multiprocessing.pool
 import sys
 from math import prod
 

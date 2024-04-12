@@ -9,9 +9,9 @@ helps, and credit will always be given.
 
 If you are reporting a bug, please include:
 
-* Your operating system name and version.
-* Any details about your local setup that might be helpful in troubleshooting.
-* Detailed steps to reproduce the bug.
+* Your operating system name and version
+* Any details about your local setup that might be helpful in troubleshooting
+* Detailed steps to reproduce the bug
 
 ### Fix Bugs
 
@@ -33,8 +33,8 @@ on the web in blog posts, articles, and such.
 
 If you are proposing a feature:
 
-* Explain in detail how it would work.
-* Keep the scope as narrow as possible, to make it easier to implement.
+* Explain in detail how it would work
+* Keep the scope as narrow as possible, to make it easier to implement
 * Remember that this is a volunteer-driven project, and that contributions
   are welcome :)
 
@@ -42,7 +42,7 @@ If you are proposing a feature:
 
 Ready to contribute? Here's how to set up `cellxhaustive` for local development.
 
-1. Download a copy of `cellxhaustive` locally.
+1. Download a copy of `cellxhaustive` locally
 2. Install `cellxhaustive` using `poetry`:
 
     ```console
@@ -55,19 +55,19 @@ Ready to contribute? Here's how to set up `cellxhaustive` for local development.
     $ git checkout -b name-of-your-bugfix-or-feature
     ```
 
-4. When you're done making changes, check that your changes conform to any code formatting requirements and pass any tests.
+4. When you're done making changes, check that your changes conform to any code formatting requirements and pass any tests
 
-5. Commit your changes and open a pull request.
+5. Commit your changes and open a pull request
 
 ## Pull Request Guidelines
 
 Before you submit a pull request, check that it meets these guidelines:
 
-1. The pull request should include additional tests if appropriate.
-2. If the pull request adds functionality, the docs should be updated.
-3. The pull request should work for all currently supported operating systems and versions of Python.
+1. The pull request should include additional tests if appropriate
+2. If the pull request adds functionality, the docs should be updated
+3. The pull request should work for all currently supported operating systems and versions of Python
 
 ## Code of Conduct
 
 Please note that the `cellxhaustive` project is released with a
-Code of Conduct. By contributing to this project you agree to abide by its terms.
+[Code of Conduct](CONDUCT.md). By contributing to this project you agree to abide by its terms.
