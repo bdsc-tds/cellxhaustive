@@ -39,7 +39,7 @@ class CustomFormatter(logging.Formatter):
         return formatter.format(record)
 
 
-# Function to configurate logging, used in cellxhaustive.py
+# Function to configurate logging; used in cellxhaustive.py
 def setup_log(logfile, loglevel):
     """
     Function to set-up logging format, log file and log level.
@@ -83,7 +83,7 @@ def setup_log(logfile, loglevel):
 
 
 # Multiprocessing-related functions and classes
-# Function to distribute CPUs across functions
+# Function to distribute CPUs across functions; used in cellxhaustive.py
 def get_cpu(nb_cpu, nb_cell_type):
     """
     Function to split provided cores across the different tasks.
@@ -157,25 +157,29 @@ def get_cpu(nb_cpu, nb_cell_type):
     return nb_cpu_id, nb_cpu_eval, nb_cpu_keep
 
 
-# Custom multiprocessing process without daemons
-class NoDaemonProcess(multiprocessing.Process):
-    @property
-    def daemon(self):
-        return False
+# Function to determine chunksize to split an iterable; used in cellxhaustive.py,
+# check_all_combinations.py, score_marker_combinations.py and determine_marker_status.py
+def get_chunksize(iterable, nb_cpu):
+    """
+    In parallelised computing methods such as 'map()', it is often faster to split
+    an iterable into a number of chunks which are submitted to the process pool
+    as separate tasks. This function aims to determine the chunksize. It is
+    identical to the one used in multiprocessing package.
 
-    @daemon.setter
-    def daemon(self, value):
-        pass
+    Parameters:
+    -----------
+    iterable: iter()
+      Iterable to split for parallel-computing.
 
+    nb_cpu: int
+      Number of cores provided to process 'iterable'.
 
-# Custom multiprocessing context
-class NoDaemonContext(type(multiprocessing.get_context())):
-    Process = NoDaemonProcess
-
-
-# Sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool because
-# latter is only a wrapper function, not a proper class
-class NestablePool(multiprocessing.pool.Pool):
-    def __init__(self, *args, **kwargs):
-        kwargs['context'] = NoDaemonContext()
-        super(NestablePool, self).__init__(*args, **kwargs)
+    Returns:
+    --------
+    chunksize: int
+      Value of the chunksize parameter in 'map()' functions.
+    """
+    chunksize, extra = divmod(len(iterable), nb_cpu * 4)
+    if extra:
+        chunksize += 1
+    return chunksize

@@ -32,14 +32,15 @@ import os
 import pandas as pd
 import pathlib
 import sys
+from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
 
 # Import local functions
 from identify_phenotypes import identify_phenotypes  # AT. Double-check path
-from utils import get_cpu, setup_log, NestablePool  # AT. Double-check path
+from utils import get_chunksize, get_cpu, setup_log  # AT. Double-check path
 # from cellxhaustive.identify_phenotypes import identify_phenotypes
-# from cellxhaustive.utils import get_cpu, setup_log, NestablePool
+# from cellxhaustive.utils import get_chunksize, get_cpu, setup_log
 
 
 # Parse arguments
@@ -239,26 +240,28 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Process cells by pre-existing annotations using multiprocessing
     logging.info('Starting analyses')
-    with NestablePool(nb_cpu_id) as pool:
-        annot_results_lst = pool.starmap(partial(identify_phenotypes,
-                                                 mat=mat,
-                                                 batches=batches,
-                                                 samples=samples,
-                                                 markers=markers,
-                                                 cell_types_dict=cell_types_dict,
-                                                 two_peak_threshold=two_peak_threshold,
-                                                 three_peak_markers=three_peak_markers,
-                                                 three_peak_low=three_peak_low,
-                                                 three_peak_high=three_peak_high,
-                                                 max_markers=max_markers,
-                                                 min_annotations=min_annotations,
-                                                 max_solutions=max_solutions,
-                                                 min_samplesxbatch=min_samplesxbatch,
-                                                 min_cellxsample=min_cellxsample,
-                                                 knn_refine=knn_refine,
-                                                 knn_min_probability=knn_min_probability,
-                                                 cpu_eval_keep=(nb_cpu_eval, nb_cpu_keep)),
-                                         zip(is_label_list, uniq_labels))
+    chunksize = get_chunksize(uniq_labels, nb_cpu_id)
+    with ProcessPoolExecutor(max_workers=nb_cpu_id) as executor:
+        annot_results_lst = list(executor.map(partial(identify_phenotypes,
+                                                      mat=mat,
+                                                      batches=batches,
+                                                      samples=samples,
+                                                      markers=markers,
+                                                      cell_types_dict=cell_types_dict,
+                                                      two_peak_threshold=two_peak_threshold,
+                                                      three_peak_markers=three_peak_markers,
+                                                      three_peak_low=three_peak_low,
+                                                      three_peak_high=three_peak_high,
+                                                      max_markers=max_markers,
+                                                      min_annotations=min_annotations,
+                                                      max_solutions=max_solutions,
+                                                      min_samplesxbatch=min_samplesxbatch,
+                                                      min_cellxsample=min_cellxsample,
+                                                      knn_refine=knn_refine,
+                                                      knn_min_probability=knn_min_probability,
+                                                      cpu_eval_keep=(nb_cpu_eval, nb_cpu_keep)),
+                                              is_label_list, uniq_labels,
+                                              chunksize=chunksize))
     # Note: only 'is_label_list' and 'uniq_labels' are iterated over, hence the
     # use of 'partial()' to keep the other parameters constant
 
