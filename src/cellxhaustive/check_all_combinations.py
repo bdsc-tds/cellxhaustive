@@ -10,6 +10,7 @@ phenotypes and minimizing number of cells without phenotypes.
 import itertools as ite
 import logging
 import numpy as np
+from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
 
@@ -325,24 +326,30 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
         max_nb_phntp_tot = max_nb_phntp_marker
 
         # Get all possible combinations containing 'marker_counter' markers
-        poss_comb = ite.combinations(markers_representative, marker_counter)
+        poss_comb = list(ite.combinations(markers_representative, marker_counter))
+        # Note: iterator is converted to list because it is used several times
 
         # For a given number of markers, check all possible combinations using multiprocessing
-        with NestablePool(cpu_eval_keep[0]) as pool:
-            score_results_lst = pool.starmap(partial(evaluate_comb,
-                                                     mat_representative=mat_representative,
-                                                     batches_label=batches_label,
-                                                     samples_label=samples_label,
-                                                     markers_representative=markers_representative,
-                                                     two_peak_threshold=two_peak_threshold,
-                                                     three_peak_markers=three_peak_markers,
-                                                     three_peak_low=three_peak_low,
-                                                     three_peak_high=three_peak_high,
-                                                     min_annotations=min_annotations,
-                                                     x_samplesxbatch_space=x_samplesxbatch_space,
-                                                     y_cellxsample_space=y_cellxsample_space,
-                                                     nb_cpu_keep=cpu_eval_keep[1]),
-                                             enumerate(poss_comb, enum_start))
+        chunksize = get_chunksize(list(poss_comb), cpu_eval_keep[0])
+        indices = range(enum_start, enum_start + len(poss_comb))
+        with ProcessPoolExecutor(max_workers=cpu_eval_keep[0]) as executor:
+            score_results_lst = list(executor.map(partial(evaluate_comb,
+                                                          mat_representative=mat_representative,
+                                                          batches_label=batches_label,
+                                                          samples_label=samples_label,
+                                                          markers_representative=markers_representative,
+                                                          two_peak_threshold=two_peak_threshold,
+                                                          three_peak_markers=three_peak_markers,
+                                                          three_peak_low=three_peak_low,
+                                                          three_peak_high=three_peak_high,
+                                                          min_annotations=min_annotations,
+                                                          x_samplesxbatch_space=x_samplesxbatch_space,
+                                                          y_cellxsample_space=y_cellxsample_space,
+                                                          nb_cpu_keep=cpu_eval_keep[1]),
+                                                  indices, poss_comb,
+                                                  chunksize=chunksize))
+        # Notes: 'indices' and 'poss_comb' are iterated over, hence the use of
+        # 'partial()' to keep the other parameters constant
 
         # Remove combinations without solution and turn list into dict using idx as keys
         score_results_dict = {}

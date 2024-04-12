@@ -8,7 +8,7 @@ across different metrics thresholds.
 # Import utility modules
 import logging
 import numpy as np
-from multiprocessing import Pool
+from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
 
@@ -31,14 +31,14 @@ def keep_relevant_phntp(batch, batches_label, samples_label, phntp_per_cell,
 
     Parameters:
     -----------
-    batches_label: array(str)
-      1-D numpy array with batch names of each cell of 'mat_comb'.
-
     batch: str
       Value of batch to process.
 
+    batches_label: array(str)
+      1-D numpy array with batch names of each cell.
+
     samples_label: array(str)
-      1-D numpy array with sample names of each cell of 'mat_comb'.
+      1-D numpy array with sample names of each cell.
 
     phntp_per_cell: array(str)
       1-D numpy array with best phenotype determined for each cell.
@@ -76,6 +76,13 @@ def keep_relevant_phntp(batch, batches_label, samples_label, phntp_per_cell,
 
     # Calculate number of different samples in current batch and cell type
     smpl_nb = float(len(np.unique(phntp_smpl)))
+
+    # If there are no cells of type 'phntp' in 'batch', there is no need to go
+    # further, so return a False array with right dimensions
+    if smpl_nb == 0:
+        array_dim = (len(x_samplesxbatch_space), len(y_cellxsample_space))
+        keep_phntp_batch = np.full(array_dim, False)
+        return keep_phntp_batch
 
     # Count number of cells per phntp in each sample
     cell_count_smpl = np.asarray([np.sum(phntp_smpl == smpl)
@@ -222,15 +229,19 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
     logging.debug(f'\t\t\t\t\t\tChecking which phenotypes are passing thresholds')
     for phenotype in np.unique(phntp_per_cell):
         # Process batches using multiprocessing
-        with Pool(nb_cpu_keep) as pool:
-            keep_phntp_lst = pool.map(partial(keep_relevant_phntp,
-                                              batches_label=batches_label,
-                                              samples_label=samples_label,
-                                              phntp_per_cell=phntp_per_cell,
-                                              phntp=phenotype,
-                                              x_samplesxbatch_space=x_samplesxbatch_space,
-                                              y_cellxsample_space=y_cellxsample_space),
-                                      uniq_batches)
+        chunksize = get_chunksize(uniq_batches, nb_cpu_keep)
+        with ProcessPoolExecutor(max_workers=nb_cpu_keep) as executor:
+            keep_phntp_lst = list(executor.map(partial(keep_relevant_phntp,
+                                                       batches_label=batches_label,
+                                                       samples_label=samples_label,
+                                                       phntp_per_cell=phntp_per_cell,
+                                                       phntp=phenotype,
+                                                       x_samplesxbatch_space=x_samplesxbatch_space,
+                                                       y_cellxsample_space=y_cellxsample_space),
+                                               uniq_batches,
+                                               chunksize=chunksize))
+        # Notes: only 'uniq_batches' is iterated over, hence the use of
+        # 'partial()' to keep the other parameters constant
 
         # Intersect all batch results to retain phenotypes present in all
         keep_phenotype = np.logical_and.reduce(keep_phntp_lst)

@@ -7,8 +7,13 @@ depending on their expression.
 
 # Import utility modules
 import numpy as np
-from multiprocessing import Pool
+from concurrent.futures import ProcessPoolExecutor
 from functools import partial
+
+
+# Import local functions
+from utils import get_chunksize  # AT. Double-check path
+# from cellxhaustive.utils import get_chunksize
 
 
 # Function used in determine_marker_status()
@@ -86,7 +91,7 @@ def get_marker_status(expression_array, markers_array, tp, tpm, tpl, tph):
 
 
 # Function used in score_marker_combinations.py
-def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,  # AT. CPU param?
+def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,
                             three_peak_markers, three_peak_low, three_peak_high, nb_cpu_keep):
     """
     Function that multiprocesses marker status computing.
@@ -139,16 +144,18 @@ def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,  # AT. C
     total_expression = np.fromiter(mat_comb, dtype=list)
 
     # Compute marker status using multiprocessing
-    with Pool(nb_cpu_keep) as pool:
-        status_results_lst = pool.map(partial(get_marker_status,
-                                              markers_array=markers_comb,
-                                              tp=two_peak_threshold,
-                                              tpm=three_peak_markers,
-                                              tpl=three_peak_low,
-                                              tph=three_peak_high),
-                                      total_expression)
+    chunksize = get_chunksize(total_expression, nb_cpu_keep)
+    with ProcessPoolExecutor(max_workers=nb_cpu_keep) as executor:
+        status_results_lst = list(executor.map(partial(get_marker_status,
+                                                       markers_array=markers_comb,
+                                                       tp=two_peak_threshold,
+                                                       tpm=three_peak_markers,
+                                                       tpl=three_peak_low,
+                                                       tph=three_peak_high),
+                                               total_expression,
+                                               chunksize=chunksize))
     # Notes:
-    #   - More efficient to parallelise by cell than marker
+    #   - It is more efficient to parallelise by cell than marker
     #   - Only 'total_expression' is iterated over, hence the use of 'partial()'
     #   to keep the other parameters constant
 

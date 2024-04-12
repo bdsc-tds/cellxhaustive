@@ -262,13 +262,12 @@ def identify_phenotypes(is_label, cell_name, mat, batches, samples, markers,
             if ((np.sum(is_undef) > 1) and (len(np.unique(new_labels)) > 2)):
                 # Reannotate cells
                 logging.info('\t\t\t\tRefining annotations with KNN-classifier')
-                knn_cpu = (cpu_eval_keep[0] * cpu_eval_keep[1])
                 reannotated_labels, reannotation_proba = knn_classifier(
                     mat_representative=mat_subset_rep_markers_comb,
                     new_labels=new_labels,
                     is_undef=is_undef,
                     knn_min_probability=knn_min_probability,
-                    knn_cpu=knn_cpu)
+                    knn_cpu=cpu_eval_keep)
 
                 # Reverse dictionary to convert cell types back into phenotypes
                 rev_names_conv = {val: key for key, val in names_conv.items()}
@@ -340,13 +339,12 @@ def identify_phenotypes(is_label, cell_name, mat, batches, samples, markers,
                 if ((np.sum(is_undef) > 1) and (len(np.unique(new_labels)) > 2)):
                     # Reannotate cells
                     logging.info('\t\t\t\t\tRefining annotations with KNN-classifier')
-                    knn_cpu = (cpu_eval_keep[0] * cpu_eval_keep[1])
                     reannotated_labels, reannotation_proba = knn_classifier(
                         mat_representative=mat_subset_rep_markers_comb,
                         new_labels=new_labels,
                         is_undef=is_undef,
                         knn_min_probability=knn_min_probability,
-                        knn_cpu=knn_cpu)
+                        knn_cpu=cpu_eval_keep)
 
                     # Reverse dictionary to convert cell types into phenotypes
                     rev_names_conv = {val: key for key, val in names_conv.items()}
