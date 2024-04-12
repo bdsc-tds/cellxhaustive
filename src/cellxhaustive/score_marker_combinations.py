@@ -14,6 +14,7 @@ from functools import partial
 
 # Import local functions
 from cellxhaustive.determine_marker_status import determine_marker_status
+from utils import get_chunksize
 
 
 # Wrapper function of 'list.append()' for vectorised use in numpy

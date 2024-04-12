@@ -38,7 +38,7 @@ from functools import partial
 
 # Import local functions
 from cellxhaustive.identify_phenotypes import identify_phenotypes
-from cellxhaustive.utils import get_cpu, setup_log, NestablePool
+from cellxhaustive.utils import get_chunksize, get_cpu, setup_log
 
 
 # Parse arguments

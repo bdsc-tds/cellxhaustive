@@ -16,7 +16,7 @@ from functools import partial
 
 # Import local functions
 from cellxhaustive.score_marker_combinations import score_marker_combinations
-from cellxhaustive.utils import NestablePool
+from cellxhaustive.utils import get_chunksize
 
 
 # Convenience function to return specific dictionary values
