@@ -8,6 +8,8 @@ probability for reclassification.
 import copy
 import logging
 import numpy as np
+import os
+from joblib import parallel_config
 
 
 # Import ML modules
@@ -58,6 +60,12 @@ def knn_classifier(mat_representative, new_labels, is_undef,
       cell types and phenotypes for each cell of 'mat_representative'.
     """
 
+    # Set environment variables to prevent sklearn from using all cores
+    tot_cpu = knn_cpu[0] * knn_cpu[1]
+    os.environ['OPENBLAS_NUM_THREADS'] = f'{tot_cpu}'
+    os.environ['OMP_NUM_THREADS'] = f'{tot_cpu}'
+    os.environ['MKL_NUM_THREADS'] = f'{tot_cpu}'
+
     # Copy 'new_labels' array to avoid changing the original array
     reannotated_labels = copy.deepcopy(new_labels)
 
@@ -82,7 +90,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     scaler = StandardScaler()
 
     # Initialise KNN-classifier
-    clf = KNeighborsClassifier(p=2, metric='minkowski', n_jobs=knn_cpu)
+    clf = KNeighborsClassifier(p=2, metric='minkowski', n_jobs=knn_cpu[1])
     # Note: default arguments "p=2, metric='minkowski'" are equivalent to
     # calculating Euclidean distances
 
@@ -96,11 +104,14 @@ def knn_classifier(mat_representative, new_labels, is_undef,
 
     # Build parameters grid object
     knn_grid = GridSearchCV(pipeline, param_grid=param_grid, scoring='accuracy',
-                            cv=5, n_jobs=knn_cpu, refit=True, verbose=0)
+                            cv=5, n_jobs=knn_cpu[0], refit=True, verbose=0)
 
     # Find best parameters
     logging.info('\t\t\t\t\t\tTuning hyperparameters')
-    best_model = knn_grid.fit(X_train, y_train)
+    # Use different backend for parallel computing to avoid GridSearchCV hanging
+    # and returning joblib loky 'resource_tracker' warnings
+    with parallel_config(backend='multiprocessing'):
+        best_model = knn_grid.fit(X_train, y_train)
     logging.info(f'\t\t\t\t\t\t\tBest parameters found: {best_model.best_params_}')
     logging.info(f'\t\t\t\t\t\t\twith a max accuracy of: {best_model.best_score_:.3f}')
 
@@ -135,5 +146,10 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     # Assign new annotations to original array
     logging.info('\t\t\t\t\t\tAssigning new annotations passing threshold')
     reannotated_labels[is_undef] = reannotated
+
+    # Reset environment variables
+    del os.environ['OPENBLAS_NUM_THREADS']
+    del os.environ['OMP_NUM_THREADS']
+    del os.environ['MKL_NUM_THREADS']
 
     return reannotated_labels, reannotation_proba
