@@ -140,6 +140,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     setup_log(log_file, args.log_level)
 
     # Get 1-D array for markers
+    pd.options.mode.copy_on_write = True  # Save memory by using COW mode
     logging.info(f'Importing markers list from <{args.marker_path}>')
     markers = pd.read_csv(args.marker_path, sep='\t', header=None).to_numpy(dtype=str).flatten()
     logging.info(f'\tFound {len(markers)} markers')
@@ -234,8 +235,6 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Initialise empty arrays and dictionary to store new annotations and results
     logging.debug('Initialising empty objects to store results')
-    annotations = np.asarray(['undefined'] * len(cell_labels)).astype('U150')
-    phenotypes = np.asarray(['undefined'] * len(cell_labels)).astype('U150')
     annot_dict = {}
 
     # Process cells by pre-existing annotations using multiprocessing
@@ -331,12 +330,11 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
             # Fill 'label' annotation dataframe
             start = 5 * idx
-            annot_df_label.iloc[:, start:(start + 5)] = sub_res_df.copy()
-            # Note: copy() is used to avoid reassignation problems
+            annot_df_label.iloc[:, start:(start + 5)] = sub_res_df
 
         # Fill general annotation dataframe with 'label' annotations
         logging.info(f'\t\t\tIntegrating subtable to general annotation table')
-        annot_df.iloc[is_label, :end] = annot_df_label.copy()
+        annot_df.iloc[is_label, :end] = annot_df_label.copy(deep=True)
 
     # Merge input dataframe and annotation dataframe
     logging.info('\tMerging input data and annotation table')
