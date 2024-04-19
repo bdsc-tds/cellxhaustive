@@ -55,7 +55,7 @@ def assign_cell_types(mat_representative,
       1-D numpy array with markers matching each column of 'mat_representative'.
 
     cell_types_dict: dict {str: list()}
-      Dictionary with cell types as keys and list of cell-type defining markers
+      Dictionary with cell types as keys and list of cell type defining markers
       as values.
 
     cell_name: str or None

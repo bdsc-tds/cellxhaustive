@@ -29,8 +29,8 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                         min_samplesxbatch, min_cellxsample,
                         knn_refine, knn_min_probability, cpu_eval_keep):
     """
-    Function that identifies most probable cell type and phenotype for a group of
-    cells using expression of its most relevant markers.
+    Function that identifies most probable cell type and phenotype for a group
+    of cells using expression of its most relevant markers.
 
     Parameters
     ----------
@@ -40,27 +40,27 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
     cell_name: str or None
       Base name for cell types (e.g. CD4 T-cells for 'CD4T').
 
-    mat: array(float)
+    mat_representative: array(float)
       2-D numpy array expression matrix, with cells in D0 and markers in D1.
       In other words, rows contain cells and columns contain markers.
 
-    batches: array(str)
-      1-D numpy array with batch names of each cell of 'mat'.
+    batches_label: array(str)
+      1-D numpy array with batch names of each cell of 'mat_representative'.
 
-    samples: array(str)
-      1-D numpy array with sample names of each cell of 'mat'.
+    samples_label: array(str)
+      1-D numpy array with sample names of each cell of 'mat_representative'.
 
-    markers: array(str)
-      1-D numpy array with markers matching each column of 'mat'.
+    markers_representative: array(str)
+      1-D numpy array with markers matching each column of 'mat_representative'.
 
     cell_types_dict: {str: list()}
-      Dictionary with cell types as keys and list of cell-type defining markers
+      Dictionary with cell types as keys and list of cell type defining markers
       as values.
 
     two_peak_threshold: float (default=3)
       Threshold to consider when determining whether a two-peaks marker is
-      negative or positive. Expression below this threshold means marker will be
-      considered negative. Conversely, expression above this threshold means
+      negative or positive. Expression below this threshold means marker will
+      be considered negative. Conversely, expression above this threshold means
       marker will be considered positive.
 
     three_peak_markers: list(str) (default=[])
@@ -68,43 +68,44 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
 
     three_peak_low: float (default=2)
       Threshold to consider when determining whether a three-peaks marker is
-      negative or low positive. Expression below this threshold means marker will
-      be considered negative. See description of 'three_peak_high' for
-      more information on low_positive markers.
+      negative or low positive. Expression below this threshold means marker
+      will be considered negative. See description of 'three_peak_high' for more
+      information on low_positive markers.
 
     three_peak_high: float (default=4)
       Threshold to consider when determining whether a three-peaks marker is
-      low_positive or positive. Expression above this threshold means marker will
-      be considered positive. Expression between 'three_peak_low' and
+      low_positive or positive. Expression above this threshold means marker
+      will be considered positive. Expression between 'three_peak_low' and
       'three_peak_high' means marker will be considered low_positive.
 
     max_markers: int (default=15)
       Maximum number of relevant markers to select among total list of markers
-      from total markers array. Must be less than or equal to 'len(markers)'.
+      from total markers array. Must be less than or equal to 'len(markers_representative)'.
 
     min_annotations: int (default=3)
       Minimum number of phenotypes for a combination of markers to be taken into
-      account as a potential cell population. Must be in '[2; len(markers)]',
-      but it is advised to choose a value in '[3; len(markers) - 1]'.
+      account as a potential cell population. Must be in '[2; len(markers_representative)]',
+      but it is advised to choose a value in '[3; len(markers_representative) - 1]'.
 
     max_solutions: int (default=10)
       Maximum number of optimal solutions to keep. If script finds more than
       'max_solutions' optimal marker combinations, 'max_solutions' combinations
-      will be randomly chosen to be further processed and appear in final output.
-      This parameter aims to limit computational burden.
+      will be randomly chosen to be further processed and appear in final
+      output. This parameter aims to limit computational burden.
 
     min_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least 'min_cellxsample'
-      cells for a new annotation to be considered. In other words, by default, an
-      annotation needs to be assigned to at least 10 cells/sample (see description
-      of next parameter) in at least 50% of samples within a batch to be considered.
+      cells for a new annotation to be considered. In other words, by default,
+      an annotation needs to be assigned to at least 10 cells/sample (see
+      description of next parameter) in at least 50% of samples within a batch
+      to be considered.
 
     min_cellxsample: float (default=10)
-      Minimum number of cells within each sample in 'min_samplesxbatch' % of samples
-      within each batch for a new annotation to be considered. In other words, by
-      default, an annotation needs to be assigned to at least 10 cells/sample in at
-      least 50% of samples (see description of previous parameter) within a batch
-      to be considered.
+      Minimum number of cells within each sample in 'min_samplesxbatch' % of
+      samples within each batch for a new annotation to be considered. In other
+      words, by default, an annotation needs to be assigned to at least 10
+      cells/sample in at least 50% of samples (see description of previous
+      parameter) within a batch to be considered.
 
     knn_refine: bool (default=True)
       If True, clustering done via permutations of relevant markers will be
@@ -121,19 +122,20 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
     --------
     results_dict: dict {str: list(array(str, float, np.nan))}
       Dictionary with 2 mandatory keys and 2 optional keys:
-        - 'new_labels' (mandatory): list of 1-D numpy arrays with cell type for each
-          cell of 'mat[is_label]'. 1 array corresponds to 1 optimal marker combination.
-        - 'cell_phntp_comb' (mandatory): list of 1-D numpy arrays with full phenotype
-          for each cell of 'mat[is_label]'. 1 array corresponds to 1 optimal marker
-          combination.
-        - 'reannotated_labels' (optional): list of 1-D numpy arrays with cell type
-          for each cell of 'mat[is_label]'. 1 array corresponds to 1 optimal marker
-          combination. Undefined cell types were reannotated using a KNN-classifier.
-          Available only if 'knn_refine=True'.
-        - 'reannotation_proba' (optional): list of 1-D numpy arrays with reannotation
-          prediction probability determined by a KNN-classifier for each undefined cell
-          of 'mat[is_label]'. 1 array corresponds to 1 optimal marker combination.
-          Available only if 'knn_refine=True'.
+        - 'new_labels' (mandatory): list of 1-D numpy arrays with cell type for
+          each cell of 'mat_representative[is_label]'. 1 array per optimal
+          marker combination.
+        - 'cell_phntp_comb' (mandatory): list of 1-D numpy arrays with full
+          phenotype for each cell of 'mat_representative[is_label]'. 1 array per
+          optimal marker combination.
+        - 'reannotated_labels' (optional): list of 1-D numpy arrays with cell
+          type for each cell of 'mat_representative[is_label]'. 1 array per
+          optimal marker combination. Undefined cell types are reannotated by a
+          KNN-classifier. Available only if 'knn_refine=True'.
+        - 'reannotation_proba' (optional): list of 1-D numpy arrays with
+          reannotation prediction probability determined by a KNN-classifier for
+          each undefined cell of 'mat_representative[is_label]'. 1 array per
+          optimal marker combination. Available only if 'knn_refine=True'.
     """
 
     # Evaluate combinations of markers: go over every combination and find all
