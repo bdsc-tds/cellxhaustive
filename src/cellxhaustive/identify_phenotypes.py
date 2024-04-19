@@ -21,9 +21,10 @@ from knn_classifier import knn_classifier  # AT. Double-check path
 
 
 # Function used in cellxhaustive.py
-def identify_phenotypes(is_label, cell_name, mat, batches, samples, markers,
-                        cell_types_dict, two_peak_threshold,
-                        three_peak_markers, three_peak_low, three_peak_high,
+def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
+                        samples_label, markers_representative, cell_types_dict,
+                        two_peak_threshold, three_peak_markers,
+                        three_peak_low, three_peak_high,
                         max_markers, min_annotations, max_solutions,
                         min_samplesxbatch, min_cellxsample,
                         knn_refine, knn_min_probability, cpu_eval_keep):
@@ -135,69 +136,16 @@ def identify_phenotypes(is_label, cell_name, mat, batches, samples, markers,
           Available only if 'knn_refine=True'.
     """
 
-    # Main gating: select relevant markers for cell population 'label' in each batch
-    logging.info(f'\tProcessing <{cell_name}> cells')
-    logging.info('\t\tPerforming main gating in all batches')
-    for batch in np.unique(batches):
-        logging.debug(f'\t\t\tProcessing batch <{batch}>')
-        # Create boolean array to select cells matching current 'batch'
-        logging.debug('\t\t\t\tSelecting matching cells')
-        is_batch = (batches == batch)
-
-        # Create boolean array to select cells matching current 'label' and 'batch'
-        is_label_batch = np.logical_and(is_batch, is_label)
-
-        # Subset expression matrix to cells of current 'batch' and 'label' only
-        logging.debug('\t\t\t\tSelecting corresponding expression data')
-        mat_subset = mat[is_label_batch, :]
-
-        # Check bimodality of markers and select best ones
-        logging.debug('\t\t\t\tEvaluating marker bimodality')
-        marker_center_values = -np.abs(np.mean(mat_subset, axis=0) - 3)
-        marker_threshold_value = np.sort(marker_center_values)[::-1][max_markers - 1]  # Select max_markers-th center value (in descending order)
-        # Note: '- 1' is used to compensate 0-based indexing
-        is_center_greater = (marker_center_values >= marker_threshold_value)
-        markers_rep = markers[is_center_greater]  # Select markers with center higher than max_markers-th center
-
-        # Store list of relevant markers for every batch
-        # Note: try/except avoids an error if dictionary doesn't exist yet
-        logging.debug('\t\t\t\tStoring relevant markers')
-        try:
-            markers_rep_batches[batch] = list(markers_rep)
-        except NameError:
-            markers_rep_batches = {}
-            markers_rep_batches[batch] = list(markers_rep)
-
-    # Marker selection and matrix slicing: select relevant markers shared across
-    # all batches and extract related data
-
-    # Extract markers present in all batches
-    logging.info('\t\tSelecting markers present in all batches')
-    markers_rep_all = set.intersection(*map(set, markers_rep_batches.values()))
-    markers_rep_all = np.array(list(markers_rep_all))  # Converts format back to array
-    logging.info(f'\t\t\tFound {len(markers_rep_all)} markers')
-
-    # Extract expression, batch and sample information across all batches for
-    # cell population 'label'
-    logging.info('\t\tExtracting matching expression, batch and sample information')
-    mat_subset_label = mat[is_label, :]
-    batches_label = batches[is_label]
-    samples_label = samples[is_label]
-
-    # Slice matrix to keep only expression of relevant markers
-    markers_rep_all = markers[np.isin(markers, markers_rep_all)]  # Reorders markers
-    mat_subset_rep_markers = mat_subset_label[:, np.isin(markers, markers_rep_all)]
-
     # Evaluate combinations of markers: go over every combination and find all
     # possible best combinations, phenotypes of all 'mat_subset_rep_markers'
     # cells and among those, phenotypes passing various thresholds (see function
     # definition for more information on those)
     logging.info('\t\tChecking all possible marker combinations')
     nb_solution, best_marker_comb, cell_phntp_comb, best_phntp_comb = check_all_combinations(
-        mat_representative=mat_subset_rep_markers,
+        mat_representative=mat_representative,
         batches_label=batches_label,
         samples_label=samples_label,
-        markers_representative=markers_rep_all,
+        markers_representative=markers_representative,
         two_peak_threshold=two_peak_threshold,
         three_peak_markers=three_peak_markers,
         three_peak_low=three_peak_low,
@@ -238,8 +186,8 @@ def identify_phenotypes(is_label, cell_name, mat, batches, samples, markers,
         logging.info('\t\t\t<1> optimal combination found, building new cell types on it')
         logging.info(f'\t\t\t\tBest combination is {best_marker_comb}')
         # Slice matrix to keep only expression of best combination
-        markers_rep_comb = markers[np.isin(markers, best_marker_comb)]
-        mat_subset_rep_markers_comb = mat_subset_label[:, np.isin(markers, best_marker_comb)]
+        markers_rep_comb = markers_representative[np.isin(markers_representative, best_marker_comb)]
+        mat_subset_rep_markers_comb = mat_representative[:, np.isin(markers_representative, best_marker_comb)]
 
         # Assign cell type using only markers from 'best_marker_comb'
         logging.info('\t\t\tAssigning cell types to each cell')
@@ -315,8 +263,8 @@ def identify_phenotypes(is_label, cell_name, mat, batches, samples, markers,
         for i in solutions:
             logging.info(f'\t\t\t\tProcessing combination {i}: {best_marker_comb[i]}')
             # Slice matrix to keep only expression of best combination
-            markers_rep_comb = markers[np.isin(markers, best_marker_comb[i])]
-            mat_subset_rep_markers_comb = mat_subset_label[:, np.isin(markers, best_marker_comb[i])]
+            markers_rep_comb = markers_representative[np.isin(markers_representative, best_marker_comb[i])]
+            mat_subset_rep_markers_comb = mat_representative[:, np.isin(markers_representative, best_marker_comb[i])]
 
             # Assign cell type using only markers from 'best_marker_comb[i]'
             logging.info('\t\t\t\t\tAssigning cell types to each cell')

@@ -233,19 +233,79 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         logging.info('Dryrun finished. Exiting...')
         sys.exit(0)
 
-    # Initialise empty arrays and dictionary to store new annotations and results
-    logging.debug('Initialising empty objects to store results')
-    annot_dict = {}
+    logging.info('Gating markers and extracting associated data in each cell type')
+    # Initialise list of arrays to store results
+    mat_subset_rep_list = []
+    batches_label_list = []
+    samples_label_list = []
+    markers_rep_all_list = []
+    for label, is_label in zip(uniq_labels, is_label_list):
+        logging.info(f'\tProcessing <{label}> cells')
+        # Main gating: select relevant markers in each batch of each cell population
+        for batch in np.unique(batches):
+            logging.debug(f'\t\tProcessing batch <{batch}>')
+            logging.debug('\t\t\tSelecting cells matching current batch')
+            is_batch = (batches == batch)
+            # Create boolean array to select cells matching current 'label' and 'batch'
+            is_label_batch = np.logical_and(is_batch, is_label)
+
+            # Subset expression matrix to cells of current 'batch' and 'label' only
+            logging.debug('\t\t\tSelecting corresponding expression data')
+            mat_subset = mat[is_label_batch, :]
+
+            # Check bimodality of markers and select best ones
+            logging.debug('\t\t\tEvaluating marker bimodality')
+            marker_center_values = -np.abs(np.mean(mat_subset, axis=0) - 3)
+            marker_threshold_value = np.sort(marker_center_values)[::-1][max_markers - 1]  # Select max_markers-th center value (in descending order)
+            # Note: '- 1' is used to compensate 0-based indexing
+            is_center_greater = (marker_center_values >= marker_threshold_value)
+            markers_rep = markers[is_center_greater]  # Select markers with center higher than max_markers-th center
+
+            # Store list of relevant markers for every batch
+            # Note: try/except avoids an error if dictionary doesn't exist yet
+            logging.debug('\t\t\tStoring relevant markers')
+            try:
+                markers_rep_batches[batch] = list(markers_rep)
+            except NameError:
+                markers_rep_batches = {}
+                markers_rep_batches[batch] = list(markers_rep)
+
+        # Marker selection and matrix slicing: select relevant markers shared across
+        # all batches and extract related data
+        logging.info('\t\tSelecting markers present in all batches')
+        markers_rep_all = set.intersection(*map(set, markers_rep_batches.values()))
+        markers_rep_all = np.array(list(markers_rep_all))  # Convert format back to array
+        logging.info(f'\t\t\tFound {len(markers_rep_all)} markers')
+
+        # Extract expression, batch and sample information across all batches
+        # for cell population 'label'
+        logging.info('\t\tExtracting matching expression, batch and sample information')
+        mat_subset_label = mat[is_label, :]
+        batches_label = batches[is_label]
+        samples_label = samples[is_label]
+
+        # Slice matrix to keep only expression of relevant markers
+        markers_rep_all = markers[np.isin(markers, markers_rep_all)]  # Reorder markers
+        mat_subset_rep_markers = mat_subset_label[:, np.isin(markers, markers_rep_all)]
+
+        logging.info('\t\tStoring data in arrays')
+        mat_subset_rep_list.append(mat_subset_rep_markers)  # Store slice matrix
+        batches_label_list.append(batches_label)  # Store batch information
+        samples_label_list.append(samples_label)  # Store sample information
+        markers_rep_all_list.append(markers_rep_all)  # Store representative markers
+        # Note: keeping data in list of arrays makes multiprocessing easier and
+        # reduce overall memory usage
+
+    # Free memory by deleting heavy objects
+    del (is_batch, is_label_batch, mat_subset, mat_subset_label, batches_label,
+         samples_label, mat, batches, samples)
 
     # Process cells by pre-existing annotations using multiprocessing
     logging.info('Starting analyses')
+    annot_dict = {}
     chunksize = get_chunksize(uniq_labels, nb_cpu_id)
     with ProcessPoolExecutor(max_workers=nb_cpu_id) as executor:
         annot_results_lst = list(executor.map(partial(identify_phenotypes,
-                                                      mat=mat,
-                                                      batches=batches,
-                                                      samples=samples,
-                                                      markers=markers,
                                                       cell_types_dict=cell_types_dict,
                                                       two_peak_threshold=two_peak_threshold,
                                                       three_peak_markers=three_peak_markers,
@@ -259,7 +319,12 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                                       knn_refine=knn_refine,
                                                       knn_min_probability=knn_min_probability,
                                                       cpu_eval_keep=(nb_cpu_eval, nb_cpu_keep)),
-                                              is_label_list, uniq_labels,
+                                              is_label_list,
+                                              uniq_labels,
+                                              mat_subset_rep_list,
+                                              batches_label_list,
+                                              samples_label_list,
+                                              markers_rep_all_list,
                                               chunksize=chunksize))
     # Note: only 'is_label_list' and 'uniq_labels' are iterated over, hence the
     # use of 'partial()' to keep the other parameters constant
