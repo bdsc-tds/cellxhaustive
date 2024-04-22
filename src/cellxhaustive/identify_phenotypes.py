@@ -169,9 +169,9 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
         # was found to properly represent cell type 'label' (from annotate(), so
         # keep original annotation
         logging.warning('\t\t\tNo optimal combination found, reverting to original cell types')
-        new_labels = np.full(mat_subset_rep_markers.shape[0], cell_name)
+        new_labels = np.full(mat_representative.shape[0], cell_name)
         # No marker combination means no phenotype can be assigned to cells
-        cell_phntp_comb = np.full(mat_subset_rep_markers.shape[0], 'No_phenotype')
+        cell_phntp_comb = np.full(mat_representative.shape[0], 'No_phenotype')
 
         # Append results to dictionary
         results_dict[0]['new_labels'] = new_labels
@@ -179,7 +179,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
 
         if knn_refine:
             # Use default arrays as placeholders for reannotation results
-            reannotation_proba = np.full(mat_subset_rep_markers.shape[0], np.nan)
+            reannotation_proba = np.full(mat_representative.shape[0], np.nan)
             results_dict[0]['reannotated_labels'] = new_labels
             results_dict[0]['reannotated_phntp'] = cell_phntp_comb
             results_dict[0]['reannotation_proba'] = reannotation_proba
