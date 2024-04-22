@@ -410,7 +410,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                     best_x_values = np.fromiter((d['max_x_values'] for d in score_final.values()), dtype=float)
                     best_y_values = np.fromiter((d['max_y_values'] for d in score_final.values()), dtype=float)
 
-                # Free memory
+                # Free memory by deleting heavy objects
                 del score_max_phntp, score_min_undef, score_max_x, score_final
 
     # If no marker combination was found, stop now
