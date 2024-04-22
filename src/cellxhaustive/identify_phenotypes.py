@@ -18,15 +18,16 @@ from cellxhaustive.knn_classifier import knn_classifier
 
 
 # Function used in cellxhaustive.py
-def identify_phenotypes(is_label, cell_name, mat, batches, samples, markers,
-                        cell_types_dict, two_peak_threshold,
-                        three_peak_markers, three_peak_low, three_peak_high,
+def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
+                        samples_label, markers_representative, cell_types_dict,
+                        two_peak_threshold, three_peak_markers,
+                        three_peak_low, three_peak_high,
                         max_markers, min_annotations, max_solutions,
                         min_samplesxbatch, min_cellxsample,
                         knn_refine, knn_min_probability, cpu_eval_keep):
     """
-    Function that identifies most probable cell type and phenotype for a group of
-    cells using expression of its most relevant markers.
+    Function that identifies most probable cell type and phenotype for a group
+    of cells using expression of its most relevant markers.
 
     Parameters
     ----------
@@ -36,27 +37,27 @@ def identify_phenotypes(is_label, cell_name, mat, batches, samples, markers,
     cell_name: str or None
       Base name for cell types (e.g. CD4 T-cells for 'CD4T').
 
-    mat: array(float)
+    mat_representative: array(float)
       2-D numpy array expression matrix, with cells in D0 and markers in D1.
       In other words, rows contain cells and columns contain markers.
 
-    batches: array(str)
-      1-D numpy array with batch names of each cell of 'mat'.
+    batches_label: array(str)
+      1-D numpy array with batch names of each cell of 'mat_representative'.
 
-    samples: array(str)
-      1-D numpy array with sample names of each cell of 'mat'.
+    samples_label: array(str)
+      1-D numpy array with sample names of each cell of 'mat_representative'.
 
-    markers: array(str)
-      1-D numpy array with markers matching each column of 'mat'.
+    markers_representative: array(str)
+      1-D numpy array with markers matching each column of 'mat_representative'.
 
     cell_types_dict: {str: list()}
-      Dictionary with cell types as keys and list of cell-type defining markers
+      Dictionary with cell types as keys and list of cell type defining markers
       as values.
 
     two_peak_threshold: float (default=3)
       Threshold to consider when determining whether a two-peaks marker is
-      negative or positive. Expression below this threshold means marker will be
-      considered negative. Conversely, expression above this threshold means
+      negative or positive. Expression below this threshold means marker will
+      be considered negative. Conversely, expression above this threshold means
       marker will be considered positive.
 
     three_peak_markers: list(str) (default=[])
@@ -64,43 +65,44 @@ def identify_phenotypes(is_label, cell_name, mat, batches, samples, markers,
 
     three_peak_low: float (default=2)
       Threshold to consider when determining whether a three-peaks marker is
-      negative or low positive. Expression below this threshold means marker will
-      be considered negative. See description of 'three_peak_high' for
-      more information on low_positive markers.
+      negative or low positive. Expression below this threshold means marker
+      will be considered negative. See description of 'three_peak_high' for more
+      information on low_positive markers.
 
     three_peak_high: float (default=4)
       Threshold to consider when determining whether a three-peaks marker is
-      low_positive or positive. Expression above this threshold means marker will
-      be considered positive. Expression between 'three_peak_low' and
+      low_positive or positive. Expression above this threshold means marker
+      will be considered positive. Expression between 'three_peak_low' and
       'three_peak_high' means marker will be considered low_positive.
 
     max_markers: int (default=15)
       Maximum number of relevant markers to select among total list of markers
-      from total markers array. Must be less than or equal to 'len(markers)'.
+      from total markers array. Must be less than or equal to 'len(markers_representative)'.
 
     min_annotations: int (default=3)
       Minimum number of phenotypes for a combination of markers to be taken into
-      account as a potential cell population. Must be in '[2; len(markers)]',
-      but it is advised to choose a value in '[3; len(markers) - 1]'.
+      account as a potential cell population. Must be in '[2; len(markers_representative)]',
+      but it is advised to choose a value in '[3; len(markers_representative) - 1]'.
 
     max_solutions: int (default=10)
       Maximum number of optimal solutions to keep. If script finds more than
       'max_solutions' optimal marker combinations, 'max_solutions' combinations
-      will be randomly chosen to be further processed and appear in final output.
-      This parameter aims to limit computational burden.
+      will be randomly chosen to be further processed and appear in final
+      output. This parameter aims to limit computational burden.
 
     min_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least 'min_cellxsample'
-      cells for a new annotation to be considered. In other words, by default, an
-      annotation needs to be assigned to at least 10 cells/sample (see description
-      of next parameter) in at least 50% of samples within a batch to be considered.
+      cells for a new annotation to be considered. In other words, by default,
+      an annotation needs to be assigned to at least 10 cells/sample (see
+      description of next parameter) in at least 50% of samples within a batch
+      to be considered.
 
     min_cellxsample: float (default=10)
-      Minimum number of cells within each sample in 'min_samplesxbatch' % of samples
-      within each batch for a new annotation to be considered. In other words, by
-      default, an annotation needs to be assigned to at least 10 cells/sample in at
-      least 50% of samples (see description of previous parameter) within a batch
-      to be considered.
+      Minimum number of cells within each sample in 'min_samplesxbatch' % of
+      samples within each batch for a new annotation to be considered. In other
+      words, by default, an annotation needs to be assigned to at least 10
+      cells/sample in at least 50% of samples (see description of previous
+      parameter) within a batch to be considered.
 
     knn_refine: bool (default=True)
       If True, clustering done via permutations of relevant markers will be
@@ -117,73 +119,21 @@ def identify_phenotypes(is_label, cell_name, mat, batches, samples, markers,
     --------
     results_dict: dict {str: list(array(str, float, np.nan))}
       Dictionary with 2 mandatory keys and 2 optional keys:
-        - 'new_labels' (mandatory): list of 1-D numpy arrays with cell type for each
-          cell of 'mat[is_label]'. 1 array corresponds to 1 optimal marker combination.
-        - 'cell_phntp_comb' (mandatory): list of 1-D numpy arrays with full phenotype
-          for each cell of 'mat[is_label]'. 1 array corresponds to 1 optimal marker
-          combination.
-        - 'reannotated_labels' (optional): list of 1-D numpy arrays with cell type
-          for each cell of 'mat[is_label]'. 1 array corresponds to 1 optimal marker
-          combination. Undefined cell types were reannotated using a KNN-classifier.
-          Available only if 'knn_refine=True'.
-        - 'reannotation_proba' (optional): list of 1-D numpy arrays with reannotation
-          prediction probability determined by a KNN-classifier for each undefined cell
-          of 'mat[is_label]'. 1 array corresponds to 1 optimal marker combination.
-          Available only if 'knn_refine=True'.
+        - 'new_labels' (mandatory): list of 1-D numpy arrays with cell type for
+          each cell of 'mat_representative[is_label]'. 1 array per optimal
+          marker combination.
+        - 'cell_phntp_comb' (mandatory): list of 1-D numpy arrays with full
+          phenotype for each cell of 'mat_representative[is_label]'. 1 array per
+          optimal marker combination.
+        - 'reannotated_labels' (optional): list of 1-D numpy arrays with cell
+          type for each cell of 'mat_representative[is_label]'. 1 array per
+          optimal marker combination. Undefined cell types are reannotated by a
+          KNN-classifier. Available only if 'knn_refine=True'.
+        - 'reannotation_proba' (optional): list of 1-D numpy arrays with
+          reannotation prediction probability determined by a KNN-classifier for
+          each undefined cell of 'mat_representative[is_label]'. 1 array per
+          optimal marker combination. Available only if 'knn_refine=True'.
     """
-
-    # Main gating: select relevant markers for cell population 'label' in each batch
-    logging.info(f'\tProcessing <{cell_name}> cells')
-    logging.info('\t\tPerforming main gating in all batches')
-    for batch in np.unique(batches):
-        logging.debug(f'\t\t\tProcessing batch <{batch}>')
-        # Create boolean array to select cells matching current 'batch'
-        logging.debug('\t\t\t\tSelecting matching cells')
-        is_batch = (batches == batch)
-
-        # Create boolean array to select cells matching current 'label' and 'batch'
-        is_label_batch = np.logical_and(is_batch, is_label)
-
-        # Subset expression matrix to cells of current 'batch' and 'label' only
-        logging.debug('\t\t\t\tSelecting corresponding expression data')
-        mat_subset = mat[is_label_batch, :]
-
-        # Check bimodality of markers and select best ones
-        logging.debug('\t\t\t\tEvaluating marker bimodality')
-        marker_center_values = -np.abs(np.mean(mat_subset, axis=0) - 3)
-        marker_threshold_value = np.sort(marker_center_values)[::-1][max_markers - 1]  # Select max_markers-th center value (in descending order)
-        # Note: '- 1' is used to compensate 0-based indexing
-        is_center_greater = (marker_center_values >= marker_threshold_value)
-        markers_rep = markers[is_center_greater]  # Select markers with center higher than max_markers-th center
-
-        # Store list of relevant markers for every batch
-        # Note: try/except avoids an error if dictionary doesn't exist yet
-        logging.debug('\t\t\t\tStoring relevant markers')
-        try:
-            markers_rep_batches[batch] = list(markers_rep)
-        except NameError:
-            markers_rep_batches = {}
-            markers_rep_batches[batch] = list(markers_rep)
-
-    # Marker selection and matrix slicing: select relevant markers shared across
-    # all batches and extract related data
-
-    # Extract markers present in all batches
-    logging.info('\t\tSelecting markers present in all batches')
-    markers_rep_all = set.intersection(*map(set, markers_rep_batches.values()))
-    markers_rep_all = np.array(list(markers_rep_all))  # Converts format back to array
-    logging.info(f'\t\t\tFound {len(markers_rep_all)} markers')
-
-    # Extract expression, batch and sample information across all batches for
-    # cell population 'label'
-    logging.info('\t\tExtracting matching expression, batch and sample information')
-    mat_subset_label = mat[is_label, :]
-    batches_label = batches[is_label]
-    samples_label = samples[is_label]
-
-    # Slice matrix to keep only expression of relevant markers
-    markers_rep_all = markers[np.isin(markers, markers_rep_all)]  # Reorders markers
-    mat_subset_rep_markers = mat_subset_label[:, np.isin(markers, markers_rep_all)]
 
     # Evaluate combinations of markers: go over every combination and find all
     # possible best combinations, phenotypes of all 'mat_subset_rep_markers'
@@ -191,10 +141,10 @@ def identify_phenotypes(is_label, cell_name, mat, batches, samples, markers,
     # definition for more information on those)
     logging.info('\t\tChecking all possible marker combinations')
     nb_solution, best_marker_comb, cell_phntp_comb, best_phntp_comb = check_all_combinations(
-        mat_representative=mat_subset_rep_markers,
+        mat_representative=mat_representative,
         batches_label=batches_label,
         samples_label=samples_label,
-        markers_representative=markers_rep_all,
+        markers_representative=markers_representative,
         two_peak_threshold=two_peak_threshold,
         three_peak_markers=three_peak_markers,
         three_peak_low=three_peak_low,
@@ -216,9 +166,9 @@ def identify_phenotypes(is_label, cell_name, mat, batches, samples, markers,
         # was found to properly represent cell type 'label' (from annotate(), so
         # keep original annotation
         logging.warning('\t\t\tNo optimal combination found, reverting to original cell types')
-        new_labels = np.full(mat_subset_rep_markers.shape[0], cell_name)
+        new_labels = np.full(mat_representative.shape[0], cell_name)
         # No marker combination means no phenotype can be assigned to cells
-        cell_phntp_comb = np.full(mat_subset_rep_markers.shape[0], 'No_phenotype')
+        cell_phntp_comb = np.full(mat_representative.shape[0], 'No_phenotype')
 
         # Append results to dictionary
         results_dict[0]['new_labels'] = new_labels
@@ -226,7 +176,7 @@ def identify_phenotypes(is_label, cell_name, mat, batches, samples, markers,
 
         if knn_refine:
             # Use default arrays as placeholders for reannotation results
-            reannotation_proba = np.full(mat_subset_rep_markers.shape[0], np.nan)
+            reannotation_proba = np.full(mat_representative.shape[0], np.nan)
             results_dict[0]['reannotated_labels'] = new_labels
             results_dict[0]['reannotated_phntp'] = cell_phntp_comb
             results_dict[0]['reannotation_proba'] = reannotation_proba
@@ -235,8 +185,8 @@ def identify_phenotypes(is_label, cell_name, mat, batches, samples, markers,
         logging.info('\t\t\t<1> optimal combination found, building new cell types on it')
         logging.info(f'\t\t\t\tBest combination is {best_marker_comb}')
         # Slice matrix to keep only expression of best combination
-        markers_rep_comb = markers[np.isin(markers, best_marker_comb)]
-        mat_subset_rep_markers_comb = mat_subset_label[:, np.isin(markers, best_marker_comb)]
+        markers_rep_comb = markers_representative[np.isin(markers_representative, best_marker_comb)]
+        mat_subset_rep_markers_comb = mat_representative[:, np.isin(markers_representative, best_marker_comb)]
 
         # Assign cell type using only markers from 'best_marker_comb'
         logging.info('\t\t\tAssigning cell types to each cell')
@@ -312,8 +262,8 @@ def identify_phenotypes(is_label, cell_name, mat, batches, samples, markers,
         for i in solutions:
             logging.info(f'\t\t\t\tProcessing combination {i}: {best_marker_comb[i]}')
             # Slice matrix to keep only expression of best combination
-            markers_rep_comb = markers[np.isin(markers, best_marker_comb[i])]
-            mat_subset_rep_markers_comb = mat_subset_label[:, np.isin(markers, best_marker_comb[i])]
+            markers_rep_comb = markers_representative[np.isin(markers_representative, best_marker_comb[i])]
+            mat_subset_rep_markers_comb = mat_representative[:, np.isin(markers_representative, best_marker_comb[i])]
 
             # Assign cell type using only markers from 'best_marker_comb[i]'
             logging.info('\t\t\t\t\tAssigning cell types to each cell')

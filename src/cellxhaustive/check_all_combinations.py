@@ -369,31 +369,47 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
             max_nb_phntp_marker = 0  # Re-initialise counter of maximum phenotype
             continue
         else:  # One or more combination are relevant
-            # Filter out combinations not reaching maximum number of phenotype
+            # Get maximum number of phenotypes with 'marker_counter' markers
             max_nb_phntp_marker = max(dct['max_nb_phntp'] for dct in score_results_dict.values())
-            score_max_phntp = {k: v for k, v in score_results_dict.items() if v['max_nb_phntp'] == max_nb_phntp_marker}
 
-            # Filter out combinations not reaching minimum number of undefined cells
-            min_nb_undef = max(dct['min_undefined'] for dct in score_max_phntp.values())
-            score_min_undef = {k: v for k, v in score_max_phntp.items() if v['min_undefined'] == min_nb_undef}
+            if max_nb_phntp_marker >= max_nb_phntp_tot:  # Only process results if they are equally good or better
+                # Filter out combinations not reaching maximum number of phenotype
+                score_max_phntp = {k: v for k, v in score_results_dict.items() if v['max_nb_phntp'] == max_nb_phntp_marker}
 
-            # Filter out combinations not reaching maximum samplesxbatch
-            max_x_val = max(dct['max_x_values'] for dct in score_min_undef.values())
-            score_max_x = {k: v for k, v in score_min_undef.items() if v['max_x_values'] == max_x_val}
+                # Filter out combinations not reaching minimum number of undefined cells
+                min_nb_undef = max(dct['min_undefined'] for dct in score_max_phntp.values())
+                score_min_undef = {k: v for k, v in score_max_phntp.items() if v['min_undefined'] == min_nb_undef}
 
-            # Filter out combinations not reaching maximum cellxsample
-            max_y_val = max(dct['max_y_values'] for dct in score_max_x.values())
-            score_final = {k: v for k, v in score_max_x.items() if v['max_y_values'] == max_y_val}
+                # Filter out combinations not reaching maximum samplesxbatch
+                max_x_val = max(dct['max_x_values'] for dct in score_min_undef.values())
+                score_max_x = {k: v for k, v in score_min_undef.items() if v['max_x_values'] == max_x_val}
 
-            # Save best results in general dictionaries and arrays
-            comb_dict |= {k: v['comb'] for k, v in score_final.items()}
-            cell_phntp_dict |= {k: v['phntp_per_cell'] for k, v in score_final.items()}
-            phntp_list_dict |= {k: v['best_phntp_lst'] for k, v in score_final.items()}
-            best_comb_idx = np.append(best_comb_idx, np.fromiter((score_final.keys()), dtype=int))
-            best_nb_phntp = np.append(best_nb_phntp, np.fromiter((d['max_nb_phntp'] for d in score_final.values()), dtype=float))
-            best_nb_undefined = np.append(best_nb_undefined, np.fromiter((d['min_undefined'] for d in score_final.values()), dtype=float))
-            best_x_values = np.append(best_x_values, np.fromiter((d['max_x_values'] for d in score_final.values()), dtype=float))
-            best_y_values = np.append(best_y_values, np.fromiter((d['max_y_values'] for d in score_final.values()), dtype=float))
+                # Filter out combinations not reaching maximum cellxsample
+                max_y_val = max(dct['max_y_values'] for dct in score_max_x.values())
+                score_final = {k: v for k, v in score_max_x.items() if v['max_y_values'] == max_y_val}
+
+                # Save best results in general dictionaries and arrays
+                if max_nb_phntp_marker == max_nb_phntp_tot:  # Current results are as good as previous ones, so keep all
+                    comb_dict |= {k: v['comb'] for k, v in score_final.items()}
+                    cell_phntp_dict |= {k: v['phntp_per_cell'] for k, v in score_final.items()}
+                    phntp_list_dict |= {k: v['best_phntp_lst'] for k, v in score_final.items()}
+                    best_comb_idx = np.append(best_comb_idx, np.fromiter((score_final.keys()), dtype=int))
+                    best_nb_phntp = np.append(best_nb_phntp, np.fromiter((d['max_nb_phntp'] for d in score_final.values()), dtype=float))
+                    best_nb_undefined = np.append(best_nb_undefined, np.fromiter((d['min_undefined'] for d in score_final.values()), dtype=float))
+                    best_x_values = np.append(best_x_values, np.fromiter((d['max_x_values'] for d in score_final.values()), dtype=float))
+                    best_y_values = np.append(best_y_values, np.fromiter((d['max_y_values'] for d in score_final.values()), dtype=float))
+                else:  # Current results are better than previous ones, so keep only new results
+                    comb_dict = {k: v['comb'] for k, v in score_final.items()}
+                    cell_phntp_dict = {k: v['phntp_per_cell'] for k, v in score_final.items()}
+                    phntp_list_dict = {k: v['best_phntp_lst'] for k, v in score_final.items()}
+                    best_comb_idx = np.fromiter((score_final.keys()), dtype=int)
+                    best_nb_phntp = np.fromiter((d['max_nb_phntp'] for d in score_final.values()), dtype=float)
+                    best_nb_undefined = np.fromiter((d['min_undefined'] for d in score_final.values()), dtype=float)
+                    best_x_values = np.fromiter((d['max_x_values'] for d in score_final.values()), dtype=float)
+                    best_y_values = np.fromiter((d['max_y_values'] for d in score_final.values()), dtype=float)
+
+                # Free memory by deleting heavy objects
+                del score_max_phntp, score_min_undef, score_max_x, score_final
 
     # If no marker combination was found, stop now
     if len(best_nb_phntp) == 0:
@@ -411,7 +427,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     # Find combination(s) with maximum number of phenotypes
     max_phntp_idx = np.where(best_nb_phntp == np.max(best_nb_phntp))[0]
 
-    # Most likely only one solution, but will be updated if there are more
+    # Most likely only one solution, but it will be updated if there are more
     nb_solution = 1
 
     # Further refine results according to number of phntp
