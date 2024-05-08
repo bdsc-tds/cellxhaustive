@@ -169,7 +169,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
         # was found to properly represent cell type 'label' (from annotate(), so
         # keep original annotation
         logging.warning('\t\t\tNo optimal combination found, reverting to original cell types')
-        new_labels = np.full(mat_representative.shape[0], cell_name)
+        new_labels = np.full(mat_representative.shape[0], f'Other {cell_name}')
         # No marker combination means no phenotype can be assigned to cells
         cell_phntp_comb = np.full(mat_representative.shape[0], 'No_phenotype')
 
@@ -203,15 +203,21 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
             cell_phntp=cell_phntp_comb,
             best_phntp=best_phntp_comb)
 
+        # Update non-significant phenotypes to make final results easier to
+        # understand and process
+        cell_phntp_comb[np.in1d(cell_phntp_comb,
+                                best_phntp_comb,
+                                invert=True)] = f'Other {cell_name} phenotype'
+
         # Append results to dictionary
         results_dict[0]['new_labels'] = new_labels
         results_dict[0]['cell_phntp_comb'] = cell_phntp_comb
 
         if knn_refine:
             # Reannotate only if conditions to run KNN-classifier are met
-            is_undef = (new_labels == f'Other {cell_name}')  # Get number of undefined cells
+            is_undef = (new_labels == f'Unannotated {cell_name}')  # Get number of undefined cells
 
-            # At least 2 undefined cells and 2 cell types different from 'Other'
+            # At least 2 undefined cells and 2 cell types different from 'Unannotated'
             if ((np.sum(is_undef) > 1) and (len(np.unique(new_labels)) > 2)):
                 # Reannotate cells
                 logging.info('\t\t\t\tRefining annotations with KNN-classifier')
@@ -280,15 +286,21 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                 cell_phntp=cell_phntp_comb[i],
                 best_phntp=best_phntp_comb[i])
 
+            # Update non-significant phenotypes to make final results easier to
+            # understand and process
+            cell_phntp_comb[i][np.in1d(cell_phntp_comb[i],
+                                       best_phntp_comb[i],
+                                       invert=True)] = f'Other {cell_name} phenotype'
+
             # Append results to dictionary
             results_dict[i]['new_labels'] = new_labels
             results_dict[i]['cell_phntp_comb'] = cell_phntp_comb[i]
 
             if knn_refine:
                 # Reannotate only if conditions to run KNN-classifier are met
-                is_undef = (new_labels == f'Other {cell_name}')  # Get number of undefined cells
+                is_undef = (new_labels == f'Unannotated {cell_name}')  # Get number of undefined cells
 
-                # At least 2 undefined cells and 2 cell types different from 'Other'
+                # At least 2 undefined cells and 2 cell types different from 'Unannotated'
                 if ((np.sum(is_undef) > 1) and (len(np.unique(new_labels)) > 2)):
                     # Reannotate cells
                     logging.info('\t\t\t\t\tRefining annotations with KNN-classifier')
@@ -315,7 +327,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                     results_dict[i]['reannotation_proba'] = reannotation_proba
 
                     # Record number of undefined cells after reannotation
-                    nb_undef = np.sum(reannotated_labels == f'Other {cell_name}')
+                    nb_undef = np.sum(reannotated_labels == f'Unannotated {cell_name}')
                     undef_counter.append(nb_undef)
 
                 else:  # If conditions are not met, no reannotation
