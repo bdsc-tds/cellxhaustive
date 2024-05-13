@@ -297,7 +297,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     enum_start = 0
     marker_counter = 2
     max_nb_phntp_marker = 0
-    max_nb_phntp_tot = 0
+    max_nb_phntp_tot = -1
     comb_dict = {}
     cell_phntp_dict = {}
     phntp_list_dict = {}
@@ -315,14 +315,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     # means scores can still be improved
     logging.info('\t\t\tTesting all combinations')
     while ((marker_counter <= max_combination)
-           and (max_nb_phntp_tot <= max_nb_phntp_marker)):
-
-        # If max number of phenotypes does not increase and is not null, stop now.
-        # This avoids both a 'plateau effect' (increase number of markers without
-        # improving number of phenotypes) and finding no phenotype
-        if (max_nb_phntp_tot == max_nb_phntp_marker) and (max_nb_phntp_tot != 0):
-            logging.info("\t\t\t\tNumber of phenotypes didn't improve with last iteration, stopping now")
-            break
+           and (max_nb_phntp_tot < max_nb_phntp_marker)):
 
         # Save new higher (or equal) maximum number of phenotypes
         max_nb_phntp_tot = max_nb_phntp_marker
