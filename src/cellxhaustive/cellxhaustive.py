@@ -275,7 +275,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         logging.info('\t\tSelecting markers present in all batches')
         markers_rep_all = set.intersection(*map(set, markers_rep_batches.values()))
         markers_rep_all = np.array(list(markers_rep_all))  # Convert format back to array
-        logging.info(f'\t\t\tFound {len(markers_rep_all)} markers')
+        logging.info(f"\t\t\tFound {len(markers_rep_all)} markers: {', '.join(markers_rep_all)}")
 
         # Extract expression, batch and sample information across all batches
         # for cell population 'label'
