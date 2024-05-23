@@ -12,6 +12,7 @@ import logging
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
+from multiprocessing import get_context
 
 
 # Import local functions
@@ -327,7 +328,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
         # For a given number of markers, check all possible combinations using multiprocessing
         chunksize = get_chunksize(list(poss_comb), cpu_eval_keep[0])
         indices = range(enum_start, enum_start + len(poss_comb))
-        with ProcessPoolExecutor(max_workers=cpu_eval_keep[0]) as executor:
+        with ProcessPoolExecutor(max_workers=cpu_eval_keep[0], mp_context=get_context('spawn')) as executor:
             score_results_lst = list(executor.map(partial(evaluate_comb,
                                                           mat_representative=mat_representative,
                                                           batches_label=batches_label,
@@ -342,6 +343,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                                                           y_cellxsample_space=y_cellxsample_space,
                                                           nb_cpu_keep=cpu_eval_keep[1]),
                                                   indices, poss_comb,
+                                                  timeout=None,
                                                   chunksize=chunksize))
         # Notes: 'indices' and 'poss_comb' are iterated over, hence the use of
         # 'partial()' to keep the other parameters constant

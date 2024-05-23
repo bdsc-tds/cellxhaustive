@@ -9,6 +9,7 @@ depending on their expression.
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
+from multiprocessing import get_context
 
 
 # Import local functions
@@ -145,7 +146,7 @@ def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,
 
     # Compute marker status using multiprocessing
     chunksize = get_chunksize(total_expression, nb_cpu_keep)
-    with ProcessPoolExecutor(max_workers=nb_cpu_keep) as executor:
+    with ProcessPoolExecutor(max_workers=nb_cpu_keep, mp_context=get_context('spawn')) as executor:
         status_results_lst = list(executor.map(partial(get_marker_status,
                                                        markers_array=markers_comb,
                                                        tp=two_peak_threshold,
@@ -153,6 +154,7 @@ def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,
                                                        tpl=three_peak_low,
                                                        tph=three_peak_high),
                                                total_expression,
+                                               timeout=None,
                                                chunksize=chunksize))
     # Notes:
     #   - It is more efficient to parallelise by cell than marker

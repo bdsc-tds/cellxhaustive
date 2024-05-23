@@ -34,6 +34,7 @@ import pathlib
 import sys
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
+from multiprocessing import get_context
 
 
 # Import local functions
@@ -304,7 +305,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     logging.info('Starting analyses')
     annot_dict = {}
     chunksize = get_chunksize(uniq_labels, nb_cpu_id)
-    with ProcessPoolExecutor(max_workers=nb_cpu_id) as executor:
+    with ProcessPoolExecutor(max_workers=nb_cpu_id, mp_context=get_context('spawn')) as executor:
         annot_results_lst = list(executor.map(partial(identify_phenotypes,
                                                       cell_types_dict=cell_types_dict,
                                                       two_peak_threshold=two_peak_threshold,
@@ -325,6 +326,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                               batches_label_list,
                                               samples_label_list,
                                               markers_rep_all_list,
+                                              timeout=None,
                                               chunksize=chunksize))
     # Note: only 'is_label_list' and 'uniq_labels' are iterated over, hence the
     # use of 'partial()' to keep the other parameters constant
