@@ -17,6 +17,8 @@ from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from utils import setup_log  # AT. Double-check path
+# from cellxhaustive.utils import setup_log
 
 
 # Function used in identify_phenotypes.py
@@ -59,6 +61,9 @@ def knn_classifier(mat_representative, new_labels, is_undef,
       1-D numpy array with prediction probability from KNN-classifier for reannotated
       cell types and phenotypes for each cell of 'mat_representative'.
     """
+
+    # Set-up logging configuration
+    setup_log(os.environ['LOG_FILE'], os.environ['LOG_LEVEL'], 'a')
 
     # Set environment variables to prevent sklearn from using all cores
     tot_cpu = knn_cpu[0] * knn_cpu[1]

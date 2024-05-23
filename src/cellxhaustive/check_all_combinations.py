@@ -10,6 +10,7 @@ phenotypes and minimizing number of cells without phenotypes.
 import itertools as ite
 import logging
 import numpy as np
+import os
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from multiprocessing import get_context
@@ -17,9 +18,9 @@ from multiprocessing import get_context
 
 # Import local functions
 from score_marker_combinations import score_marker_combinations  # AT. Double-check path
-from utils import get_chunksize  # AT. Double-check path
+from utils import get_chunksize, setup_log  # AT. Double-check path
 # from cellxhaustive.score_marker_combinations import score_marker_combinations
-# from cellxhaustive.utils import get_chunksize
+# from cellxhaustive.utils import get_chunksize, setup_log
 
 
 # Convenience function to return specific dictionary values
@@ -115,6 +116,9 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
       was found, keys will be 'idx', 'comb', 'phntp_per_cell', 'max_nb_phntp',
       'min_undefined', 'max_x_values', 'max_y_values', and 'best_phntp_lst'
     """
+
+    # Set-up logging configuration
+    setup_log(os.environ['LOG_FILE'], os.environ['LOG_LEVEL'], 'a')
 
     logging.debug(f'\t\t\t\tTesting {comb}')
     # Slice data based on current marker combination 'comb'
@@ -282,6 +286,9 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
       representative phenotypes among all possible phenotypes from 'best_marker_comb'.
       Number of arrays in 'best_phntp_comb' is equal to 'nb_solution'.
     """
+
+    # Set-up logging configuration
+    setup_log(os.environ['LOG_FILE'], os.environ['LOG_LEVEL'], 'a')
 
     # Create total space for each metrics ('samplesxbatch' and 'cellxsample')
     logging.info('\t\t\tCreating spaces for each test metric')

@@ -8,11 +8,14 @@ across different metrics thresholds.
 # Import utility modules
 import logging
 import numpy as np
+import os
 
 
 # Import local functions
 from determine_marker_status import determine_marker_status  # AT. Double-check path
+from utils import setup_log  # AT. Double-check path
 # from cellxhaustive.determine_marker_status import determine_marker_status
+# from cellxhaustive.utils import setup_log
 
 
 # Wrapper function of 'list.append()' for vectorised use in numpy
@@ -108,6 +111,9 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
       1-D numpy array with best phenotype determined for each cell using markers
       from 'markers_comb'.
     """
+
+    # Set-up logging configuration
+    setup_log(os.environ['LOG_FILE'], os.environ['LOG_LEVEL'], 'a')
 
     # Determine markers status of 'markers_comb' using expression data
     logging.debug(f'\t\t\t\t\t\tDetermining marker status for each cell')

@@ -126,11 +126,16 @@ args = parser.parse_args()
 # Main script execution
 if __name__ == '__main__':  # AT. Double check behaviour inside package
 
-    # Determine log file name
+    # Determine log file name and set log level
     if not args.log_path:
         log_file = f'{os.path.splitext(args.output_path)[0]}.log'
     else:
         log_file = args.log_path
+    log_level = args.log_level
+
+    # Make log variables as environment variables
+    os.environ['LOG_FILE'] = log_file
+    os.environ['LOG_LEVEL'] = log_level
 
     # Create log directory if it doesn't exist
     log_dir = os.path.dirname(log_file)
@@ -138,7 +143,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     os.makedirs(log_dir, exist_ok=True)
 
     # Set-up logging configuration
-    setup_log(log_file, args.log_level)
+    setup_log(log_file, log_level, 'w')
 
     # Get 1-D array for markers
     pd.options.mode.copy_on_write = True  # Save memory by using COW mode
@@ -330,6 +335,9 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                               chunksize=chunksize))
     # Note: only 'is_label_list' and 'uniq_labels' are iterated over, hence the
     # use of 'partial()' to keep the other parameters constant
+
+    # Reset logging configuration
+    setup_log(log_file, log_level, 'a')
 
     # Convert results back to dictionary
     annot_dict = dict(zip(uniq_labels, annot_results_lst))

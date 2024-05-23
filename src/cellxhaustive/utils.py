@@ -38,7 +38,7 @@ class CustomFormatter(logging.Formatter):
 
 
 # Function to configurate logging; used in cellxhaustive.py
-def setup_log(logfile, loglevel):
+def setup_log(logfile, loglevel, mode):
     """
     Function to set-up logging format, log file and log level.
 
@@ -65,7 +65,7 @@ def setup_log(logfile, loglevel):
     # File handler
     fh_formatter = logging.Formatter(fmt='[%(asctime)s]  [PID:%(process)9d]  %(filename)28s  %(levelname)-8s  %(message)s',
                                      datefmt='%Y.%m.%d - %H:%M:%S')
-    handler_fh = logging.FileHandler(logfile, mode='w')
+    handler_fh = logging.FileHandler(logfile, mode=mode)
     handler_fh.setFormatter(fh_formatter)
     # Stream handler
     handler_sh = logging.StreamHandler(sys.stdout)

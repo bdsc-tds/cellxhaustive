@@ -7,6 +7,7 @@ using expression of its most relevant markers.
 # Import utility modules
 import logging
 import numpy as np
+import os
 import random
 from collections import defaultdict
 
@@ -15,9 +16,11 @@ from collections import defaultdict
 from assign_cell_types import assign_cell_types  # AT. Double-check path
 from check_all_combinations import check_all_combinations  # AT. Double-check path
 from knn_classifier import knn_classifier  # AT. Double-check path
+from utils import setup_log  # AT. Double-check path
 # from cellxhaustive.assign_cell_types import assign_cell_types
 # from cellxhaustive.check_all_combinations import check_all_combinations
 # from cellxhaustive.knn_classifier import knn_classifier
+# from cellxhaustive.utils import setup_log
 
 
 # Function used in cellxhaustive.py
@@ -137,6 +140,9 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
           each undefined cell of 'mat_representative[is_label]'. 1 array per
           optimal marker combination. Available only if 'knn_refine=True'.
     """
+
+    # Set-up logging configuration
+    setup_log(os.environ['LOG_FILE'], os.environ['LOG_LEVEL'], 'a')
 
     # Evaluate combinations of markers: go over every combination and find all
     # possible best combinations, phenotypes of all 'mat_subset_rep_markers'
