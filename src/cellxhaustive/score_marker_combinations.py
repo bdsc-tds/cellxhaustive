@@ -28,7 +28,7 @@ def append_wrapper(lst, elt):
 def score_marker_combinations(mat_comb, batches_label, samples_label,
                               markers_comb, two_peak_threshold,
                               three_peak_markers, three_peak_low, three_peak_high,
-                              x_samplesxbatch_space, y_cellxsample_space, nb_cpu_keep):
+                              x_samplesxbatch_space, y_cellxsample_space):
     """
     Function that determines number of unique cell phenotypes (combination of
     positive and negative markers) and number of cells without phenotype in an
@@ -86,9 +86,6 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
       100 cells/sample in at least 50%, 60%... 100% of samples (see description
       of previous parameter) within a batch to be considered.
 
-    nb_cpu_keep: int (default=1)
-      Integer to set up CPU numbers in downstream nested functions.
-
     Returns:
     --------
     nb_phntp: array(float)
@@ -123,8 +120,7 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
         two_peak_threshold=two_peak_threshold,
         three_peak_markers=three_peak_markers,
         three_peak_low=three_peak_low,
-        three_peak_high=three_peak_high,
-        nb_cpu_keep=nb_cpu_keep)
+        three_peak_high=three_peak_high)
 
     # Initialise arrays to store results
     nb_phntp = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))

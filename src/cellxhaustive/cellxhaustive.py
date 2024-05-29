@@ -229,11 +229,11 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     logging.info('Determining parallelisation settings')
     if args.cores == 1:  # Can't multiprocess with only 1 core
         logging.info('\tOnly 1 CPU provided, no parallelisation possible')
-        nb_cpu_id = nb_cpu_eval = nb_cpu_keep = 1
-        logging.info('\tSetting nb_cpu_id, nb_cpu_eval, and nb_cpu_keep to 1')
+        nb_cpu_id = nb_cpu_eval = 1
+        logging.info('\tSetting nb_cpu_id, nb_cpu_eval to 1')
     else:  # Maximise CPU usage
         logging.info(f'\t{args.cores} CPUs provided')
-        nb_cpu_id, nb_cpu_eval, nb_cpu_keep = get_cpu(args.cores, len(uniq_labels))
+        nb_cpu_id, nb_cpu_eval = get_cpu(args.cores, len(uniq_labels))
 
     if args.dryrun:
         logging.info('Dryrun finished. Exiting...')
@@ -324,7 +324,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                                       min_cellxsample=min_cellxsample,
                                                       knn_refine=knn_refine,
                                                       knn_min_probability=knn_min_probability,
-                                                      cpu_eval_keep=(nb_cpu_eval, nb_cpu_keep)),
+                                                      nb_cpu_eval=nb_cpu_eval),
                                               is_label_list,
                                               uniq_labels,
                                               mat_subset_rep_list,

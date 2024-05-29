@@ -11,7 +11,7 @@ import numpy as np
 
 # Function used in score_marker_combinations.py
 def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,
-                            three_peak_markers, three_peak_low, three_peak_high, nb_cpu_keep):
+                            three_peak_markers, three_peak_low, three_peak_high):
     """
     Function that multiprocesses marker status computing.
 
@@ -46,9 +46,6 @@ def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,
       low_positive or positive. Expression above this threshold means marker
       will be considered positive. Expression between 'three_peak_low' and
       'three_peak_high' means marker will be considered low_positive.
-
-    nb_cpu_keep: int (default=1)
-      Integer to set up CPU numbers in downstream nested functions.
 
     Returns:
     --------

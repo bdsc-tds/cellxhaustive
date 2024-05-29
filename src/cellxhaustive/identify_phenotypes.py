@@ -30,7 +30,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                         three_peak_low, three_peak_high,
                         max_markers, min_annotations, max_solutions,
                         min_samplesxbatch, min_cellxsample,
-                        knn_refine, knn_min_probability, cpu_eval_keep):
+                        knn_refine, knn_min_probability, nb_cpu_eval):
     """
     Function that identifies most probable cell type and phenotype for a group
     of cells using expression of its most relevant markers.
@@ -118,8 +118,8 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
       Confidence threshold for KNN-classifier to reassign a new cell type
       to previously undefined cells.
 
-    cpu_eval_keep: tuple(int) (default=(1, 1))
-      Tuple of integers to set up CPU numbers in downstream nested functions.
+    nb_cpu_eval: int (default=1)
+      Number of CPUs to use in downstream nested functions.
 
     Returns:
     --------
@@ -162,7 +162,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
         min_annotations=min_annotations,
         min_samplesxbatch=min_samplesxbatch,
         min_cellxsample=min_cellxsample,
-        cpu_eval_keep=cpu_eval_keep)
+        nb_cpu_eval=nb_cpu_eval)
 
     # Initialise result dictionary with empty lists
     # Note: even if lists end up with only 1 element, it makes processing results
@@ -232,7 +232,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                     new_labels=new_labels,
                     is_undef=is_undef,
                     knn_min_probability=knn_min_probability,
-                    knn_cpu=cpu_eval_keep)
+                    knn_cpu=nb_cpu_eval)
 
                 # Reverse dictionary to convert cell types back into phenotypes
                 rev_names_conv = {val: key for key, val in names_conv.items()}
@@ -315,7 +315,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                         new_labels=new_labels,
                         is_undef=is_undef,
                         knn_min_probability=knn_min_probability,
-                        knn_cpu=cpu_eval_keep)
+                        knn_cpu=nb_cpu_eval)
 
                     # Reverse dictionary to convert cell types into phenotypes
                     rev_names_conv = {val: key for key, val in names_conv.items()}

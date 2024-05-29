@@ -35,7 +35,7 @@ def return_outputs(dict1, dict2, dict3, idx1, idx2):
 def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
                   markers_representative, two_peak_threshold, three_peak_markers,
                   three_peak_low, three_peak_high, min_annotations,
-                  x_samplesxbatch_space, y_cellxsample_space, nb_cpu_keep):
+                  x_samplesxbatch_space, y_cellxsample_space):
     """
     Function that scores a marker combination and checks whether it contains
     relevant solutions depending on number of phenotypes detected, proportion of
@@ -105,9 +105,6 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
       100 cells/sample in at least 50%, 60%... 100% of samples (see description
       of previous parameter) within a batch to be considered.
 
-    nb_cpu_keep: int (default=1)
-      Integer to set up CPU numbers in downstream nested functions.
-
     Returns:
     --------
     comb_result_dict: dict {str: obj}
@@ -138,8 +135,7 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
         three_peak_low=three_peak_low,
         three_peak_high=three_peak_high,
         x_samplesxbatch_space=x_samplesxbatch_space,
-        y_cellxsample_space=y_cellxsample_space,
-        nb_cpu_keep=nb_cpu_keep)
+        y_cellxsample_space=y_cellxsample_space)
 
     # Constrain matrix given minimum number of phenotype conditions
     mask = (nb_phntp < min_annotations)
@@ -195,7 +191,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                            markers_representative, two_peak_threshold,
                            three_peak_markers, three_peak_low, three_peak_high,
                            max_markers, min_annotations,
-                           min_samplesxbatch, min_cellxsample, cpu_eval_keep):
+                           min_samplesxbatch, min_cellxsample, nb_cpu_eval):
     """
     Function that determines best marker combinations representing a cell type by
     maximizing number of phenotypes detected, proportion of samples within a batch
@@ -262,8 +258,8 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
       least 50% of samples (see description of previous parameter) within a batch
       to be considered.
 
-    cpu_eval_keep: tuple(int) (default=(1, 1))
-      Tuple of integers to set up CPU numbers in downstream nested functions.
+    nb_cpu_eval: int (default=1)
+      Number of CPUs to use in downstream nested functions.
 
     Returns:
     --------
@@ -333,9 +329,9 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
         # Note: iterator is converted to list because it is used several times
 
         # For a given number of markers, check all possible combinations using multiprocessing
-        chunksize = get_chunksize(list(poss_comb), cpu_eval_keep[0])
+        chunksize = get_chunksize(list(poss_comb), nb_cpu_eval)
         indices = range(enum_start, enum_start + len(poss_comb))
-        with ProcessPoolExecutor(max_workers=cpu_eval_keep[0], mp_context=get_context('spawn')) as executor:
+        with ProcessPoolExecutor(max_workers=nb_cpu_eval, mp_context=get_context('spawn')) as executor:
             score_results_lst = list(executor.map(partial(evaluate_comb,
                                                           mat_representative=mat_representative,
                                                           batches_label=batches_label,
@@ -347,8 +343,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                                                           three_peak_high=three_peak_high,
                                                           min_annotations=min_annotations,
                                                           x_samplesxbatch_space=x_samplesxbatch_space,
-                                                          y_cellxsample_space=y_cellxsample_space,
-                                                          nb_cpu_keep=cpu_eval_keep[1]),
+                                                          y_cellxsample_space=y_cellxsample_space),
                                                   indices, poss_comb,
                                                   timeout=None,
                                                   chunksize=chunksize))

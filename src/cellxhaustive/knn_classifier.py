@@ -17,6 +17,9 @@ from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+
+
+# Import local functions
 from utils import setup_log  # AT. Double-check path
 # from cellxhaustive.utils import setup_log
 
@@ -49,7 +52,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
       previously undefined cells.
 
     knn_cpu: int (default=1)
-      Integer to set up number of CPUs in multiprocessing jobs.
+      Number of CPUs to use for KNN-classifier evaluation.
 
     Returns:
     --------
@@ -66,10 +69,9 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     setup_log(os.environ['LOG_FILE'], os.environ['LOG_LEVEL'], 'a')
 
     # Set environment variables to prevent sklearn from using all cores
-    tot_cpu = knn_cpu[0] * knn_cpu[1]
-    os.environ['OPENBLAS_NUM_THREADS'] = f'{tot_cpu}'
-    os.environ['OMP_NUM_THREADS'] = f'{tot_cpu}'
-    os.environ['MKL_NUM_THREADS'] = f'{tot_cpu}'
+    os.environ['OPENBLAS_NUM_THREADS'] = f'{knn_cpu}'
+    os.environ['OMP_NUM_THREADS'] = f'{knn_cpu}'
+    os.environ['MKL_NUM_THREADS'] = f'{knn_cpu}'
 
     # Copy 'new_labels' array to avoid changing the original array
     reannotated_labels = copy.deepcopy(new_labels)
@@ -95,7 +97,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     scaler = StandardScaler()
 
     # Initialise KNN-classifier
-    clf = KNeighborsClassifier(p=2, metric='minkowski', n_jobs=knn_cpu[1])
+    clf = KNeighborsClassifier(p=2, metric='minkowski', n_jobs=knn_cpu)
     # Note: default arguments "p=2, metric='minkowski'" are equivalent to
     # calculating Euclidean distances
 
@@ -109,7 +111,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
 
     # Build parameters grid object
     knn_grid = GridSearchCV(pipeline, param_grid=param_grid, scoring='accuracy',
-                            cv=5, n_jobs=knn_cpu[0], refit=True, verbose=0)
+                            cv=5, n_jobs=knn_cpu, refit=True, verbose=0)
 
     # Find best parameters
     logging.info('\t\t\t\t\t\tTuning hyperparameters')
