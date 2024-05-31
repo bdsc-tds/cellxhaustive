@@ -261,7 +261,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
             # Check bimodality of markers and select best ones
             logging.debug('\t\t\tEvaluating marker bimodality')
-            marker_center_values = np.abs(np.mean(mat_subset, axis=0) - 3)
+            marker_center_values = np.abs(np.mean(mat_subset, axis=0) - args.two_peak_threshold)
             marker_threshold_value = np.sort(marker_center_values)[max_markers - 1]  # Select max_markers-th center value (in ascending order)
             # Note: '- 1' is used to compensate 0-based indexing
             is_center_greater = (marker_center_values <= marker_threshold_value)
