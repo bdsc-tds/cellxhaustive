@@ -10,6 +10,7 @@ phenotypes and minimizing number of cells without phenotypes.
 import itertools as ite
 import logging
 import numpy as np
+import pandas as pd
 import os
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
@@ -181,7 +182,8 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
                             'best_phntp_lst': best_phntp_lst}
 
     else:  # No good solution, so return None to facilitate post-processing
-        comb_result_dict = {idx: None}
+        comb_result_dict = {'idx': None}
+        # comb_result_dict = {'idx': idx, 'comb': comb}  # AT. Delete after test
 
     return comb_result_dict
 
@@ -191,7 +193,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                            markers_representative, two_peak_threshold,
                            three_peak_markers, three_peak_low, three_peak_high,
                            max_markers, min_annotations,
-                           min_samplesxbatch, min_cellxsample, nb_cpu_eval):
+                           min_samplesxbatch, min_cellxsample, nb_cpu_eval, cell_name):
     """
     Function that determines best marker combinations representing a cell type by
     maximizing number of phenotypes detected, proportion of samples within a batch
@@ -305,6 +307,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     comb_dict = {}
     cell_phntp_dict = {}
     phntp_list_dict = {}
+    max_phntp_recording = {}
 
     # Empty arrays to store results and find best marker combinations
     best_comb_idx = np.empty(0)
@@ -312,6 +315,10 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     best_nb_undefined = np.empty(0)
     best_x_values = np.empty(0)
     best_y_values = np.empty(0)
+
+    # Create dataframe filled with 0 to store marker results
+    phntp_counting_df = pd.DataFrame(data=0, index=markers_representative, columns=markers_representative)
+    phntp_counting_df_by1 = pd.DataFrame(data=0, index=markers_representative, columns=markers_representative)
 
     # Go through all combinations until no better solution can be found: stop
     # while loop if maximum number of markers is reached or if possible solution
@@ -347,15 +354,24 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                                                   indices, poss_comb,
                                                   timeout=None,
                                                   chunksize=chunksize))
-        # Notes: 'indices' and 'poss_comb' are iterated over, hence the use of
-        # 'partial()' to keep the other parameters constant
+        # Note: 'partial()' is used to iterate over 'indices' and 'poss_comb'
+        # and keep the other parameters constant
 
         # Remove combinations without solution and turn list into dict using idx as keys
         score_results_dict = {}
         for dct in score_results_lst:
+            # Add max number of phntp to countin df // AT. Delete after test
+            # comb_array_tmp = np.array(dct['comb'])
+            # phntp_counting_df_by1.loc[comb_array_tmp, comb_array_tmp] += 1
             if len(dct) > 1:
+            # if len(dct) > 2:
                 idx = dct.pop('idx')
                 score_results_dict[idx] = dct
+                # Add max number of phntp to count in df // AT. Delete after test
+                comb_array_tmp = np.array(dct['comb'])
+                max_phntp_tmp = dct['max_nb_phntp']
+                phntp_counting_df_by1.loc[comb_array_tmp, comb_array_tmp] += 1
+                phntp_counting_df.loc[comb_array_tmp, comb_array_tmp] += max_phntp_tmp
 
         # Increase marker counter; it doesn't matter whether a solution is found
         marker_counter += 1
@@ -370,6 +386,9 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
         else:  # At least one combination is relevant
             # Get maximum number of phenotypes with 'marker_counter' markers
             max_nb_phntp_marker = max(dct['max_nb_phntp'] for dct in score_results_dict.values())
+
+            # Record max number of phenotypes by marker_counter
+            max_phntp_recording[marker_counter] = max_nb_phntp_marker
 
             # Only process better results: if 'm' and 'm + 1' markers give same
             # number of phenotypes, keep only solutions with 'm' markers
@@ -401,6 +420,24 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
 
                 # Free memory by deleting heavy objects
                 del score_max_phntp, score_min_undef, score_max_x, score_final
+
+    # Save phenotype counting array as dataframe // AT. Delete after test
+    df_path_by1 = f'/work/PRTNR/CHUV/DIR/rgottar1/citeseq/antonin/cellxhaustive_test_no_keep_phntp/phntp_counting/phenotype_counting_by1_norm_test_{min_samplesxbatch}_{cell_name}.tsv'
+    phntp_counting_df_by1.to_csv(df_path_by1, sep='\t', header=True, index=True)
+    df_path = f'/work/PRTNR/CHUV/DIR/rgottar1/citeseq/antonin/cellxhaustive_test_no_keep_phntp/phntp_counting/phenotype_counting_norm_test_{min_samplesxbatch}_{cell_name}.tsv'
+    phntp_counting_df.to_csv(df_path, sep='\t', header=True, index=True)
+    df_normalised_path = f'/work/PRTNR/CHUV/DIR/rgottar1/citeseq/antonin/cellxhaustive_test_no_keep_phntp/phntp_counting_normalised/phenotype_counting_normalised_{min_samplesxbatch}_{cell_name}.tsv'
+    phntp_counting_df_normalised = phntp_counting_df / phntp_counting_df_by1
+    phntp_counting_df_normalised.to_csv(df_normalised_path, sep='\t', header=True, index=True)
+
+    # Free memory by deleting heavy objects
+    del phntp_counting_df, phntp_counting_df_by1, phntp_counting_df_normalised
+
+    # Save max number of phenotypes by marker_counter
+    phntp_path = f'/work/PRTNR/CHUV/DIR/rgottar1/citeseq/antonin/cellxhaustive_test_no_keep_phntp/phntp_by_marker/phenotype_counting_by_marker_{min_samplesxbatch}_{cell_name}.tsv'
+    with open(phntp_path, 'w') as output:
+        for k, v in max_phntp_recording.items():
+            output.writelines(f'{k}\t{v}\n')
 
     # If no marker combination was found, stop now
     if len(best_nb_phntp) == 0:

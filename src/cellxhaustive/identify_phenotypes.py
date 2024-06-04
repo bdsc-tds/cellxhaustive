@@ -162,7 +162,8 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
         min_annotations=min_annotations,
         min_samplesxbatch=min_samplesxbatch,
         min_cellxsample=min_cellxsample,
-        nb_cpu_eval=nb_cpu_eval)
+        nb_cpu_eval=nb_cpu_eval,
+        cell_name=cell_name)
 
     # Initialise result dictionary with empty lists
     # Note: even if lists end up with only 1 element, it makes processing results

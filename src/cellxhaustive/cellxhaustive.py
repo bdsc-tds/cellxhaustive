@@ -333,8 +333,9 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                               markers_rep_all_list,
                                               timeout=None,
                                               chunksize=chunksize))
-    # Note: only 'is_label_list' and 'uniq_labels' are iterated over, hence the
-    # use of 'partial()' to keep the other parameters constant
+    # Note: 'partial()' is used to iterate over 'is_label_list', 'uniq_labels',
+    # 'mat_subset_rep_list', 'batches_label_list', 'samples_label_list' and
+    # 'markers_rep_all_list' and keep the other parameters constant
 
     # Reset logging configuration
     setup_log(log_file, log_level, 'a')
