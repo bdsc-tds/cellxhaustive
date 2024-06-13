@@ -49,7 +49,7 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
       Integer index to keep track of 'comb'.
 
     comb: tuple(str)
-      Tuple of strings marker combination to score.
+      Tuple of strings with marker combination to score.
 
     mat_representative: array(float)
       2-D numpy array expression matrix, with cells in D0 and markers in D1.
@@ -110,7 +110,7 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
     --------
     comb_result_dict: dict {str: obj}
       Dictionary with 1 or 8 key-value pairs. If no relevant solution was found,
-      dictionary will have following structure {idx: None}. If relevant solution
+      dictionary will have following structure {'idx': None}. If relevant solution
       was found, keys will be 'idx', 'comb', 'phntp_per_cell', 'max_nb_phntp',
       'min_undefined', 'max_x_values', 'max_y_values', and 'best_phntp_lst'
     """
@@ -139,12 +139,15 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
         y_cellxsample_space=y_cellxsample_space)
 
     # Constrain matrix given minimum number of phenotype conditions
+    logging.debug(f'\t\t\t\t\tChecking presence of possible solutions')
     mask = (nb_phntp < min_annotations)
     nb_phntp = np.where(mask, np.nan, nb_phntp)
     nb_undef_cells = np.where(mask, np.nan, nb_undef_cells)
 
-    # If there are possible good solutions, further process them
-    logging.debug(f'\t\t\t\t\tChecking presence of good solutions')
+    # Record sum of phenotypes per cell
+    nb_phntp_sum = np.nansum(nb_phntp)
+
+    # If there are possible solutions, further process them
     if np.any(np.isfinite(nb_phntp)):
         # Create metrics grid matching x and y space
         x_values, y_values = np.meshgrid(x_samplesxbatch_space,
@@ -179,11 +182,12 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
                             'min_undefined': min_undefined,
                             'max_x_values': max_x_values,
                             'max_y_values': max_y_values,
+                            'nb_phntp_sum': nb_phntp_sum,
                             'best_phntp_lst': best_phntp_lst}
 
     else:  # No good solution, so return None to facilitate post-processing
-        comb_result_dict = {'idx': None}
-        # comb_result_dict = {'idx': idx, 'comb': comb}  # AT. Delete after test
+        # comb_result_dict = {'idx': None}
+        comb_result_dict = {'idx': idx, 'comb': comb}  # AT. Delete after test
 
     return comb_result_dict
 
@@ -304,10 +308,13 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     marker_counter = 2
     max_nb_phntp_marker = 0
     max_nb_phntp_tot = -1
+    max_nb_phntp_marker_sum = 0  # AT. Delete after test
+    max_nb_phntp_tot_sum = -1  # AT. Delete after test
     comb_dict = {}
     cell_phntp_dict = {}
     phntp_list_dict = {}
-    max_phntp_recording = {}
+    max_phntp_recording = {}  # AT. Delete after test
+    max_phntp_sum_recording = {}  # AT. Delete after test
 
     # Empty arrays to store results and find best marker combinations
     best_comb_idx = np.empty(0)
@@ -318,7 +325,9 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
 
     # Create dataframe filled with 0 to store marker results
     phntp_counting_df = pd.DataFrame(data=0, index=markers_representative, columns=markers_representative)
+    phntp_counting_df_sum = pd.DataFrame(data=0, index=markers_representative, columns=markers_representative)
     phntp_counting_df_by1 = pd.DataFrame(data=0, index=markers_representative, columns=markers_representative)
+    phntp_counting_df_by1_all = pd.DataFrame(data=0, index=markers_representative, columns=markers_representative)
 
     # Go through all combinations until no better solution can be found: stop
     # while loop if maximum number of markers is reached or if possible solution
@@ -328,8 +337,16 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     while ((marker_counter <= max_combination)
            and (max_nb_phntp_tot < max_nb_phntp_marker)):
 
+    # while ((marker_counter <= max_combination)  # AT. Delete after test
+    #        and (max_nb_phntp_tot_sum < max_nb_phntp_marker_sum)):  # AT. Delete after test
+
+    # while (marker_counter <= 7):  # AT. Delete after test
+
         # Save new higher (or equal) maximum number of phenotypes
         max_nb_phntp_tot = max_nb_phntp_marker
+
+        # Save new higher (or equal) maximum sum of phenotypes  # AT. Delete after test
+        max_nb_phntp_tot_sum = max_nb_phntp_marker_sum
 
         # Get all possible combinations containing 'marker_counter' markers
         poss_comb = list(ite.combinations(markers_representative, marker_counter))
@@ -360,18 +377,20 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
         # Remove combinations without solution and turn list into dict using idx as keys
         score_results_dict = {}
         for dct in score_results_lst:
-            # Add max number of phntp to countin df // AT. Delete after test
-            # comb_array_tmp = np.array(dct['comb'])
-            # phntp_counting_df_by1.loc[comb_array_tmp, comb_array_tmp] += 1
-            if len(dct) > 1:
-            # if len(dct) > 2:
+            # Add max number of phntp to countin df # AT. Delete after test
+            comb_array_tmp = np.array(dct['comb'])
+            phntp_counting_df_by1_all.loc[comb_array_tmp, comb_array_tmp] += 1  # AT. Count every combination
+            # if len(dct) > 1:
+            if len(dct) > 2:
                 idx = dct.pop('idx')
                 score_results_dict[idx] = dct
-                # Add max number of phntp to count in df // AT. Delete after test
-                comb_array_tmp = np.array(dct['comb'])
+                # Add max number of phntp to count in df # AT. Delete after test
+                # comb_array_tmp = np.array(dct['comb'])
                 max_phntp_tmp = dct['max_nb_phntp']
-                phntp_counting_df_by1.loc[comb_array_tmp, comb_array_tmp] += 1
-                phntp_counting_df.loc[comb_array_tmp, comb_array_tmp] += max_phntp_tmp
+                nb_phntp_sum = dct['nb_phntp_sum']
+                phntp_counting_df_by1.loc[comb_array_tmp, comb_array_tmp] += 1  # AT. Count only combinations passing threshold
+                phntp_counting_df.loc[comb_array_tmp, comb_array_tmp] += max_phntp_tmp  # AT. Count max phntp only for combinations passing threshold
+                phntp_counting_df_sum.loc[comb_array_tmp, comb_array_tmp] += nb_phntp_sum  # AT. Count sum of number of phntp across param grid only for combinations passing threshold
 
         # Increase marker counter; it doesn't matter whether a solution is found
         marker_counter += 1
@@ -381,18 +400,29 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
 
         # Post-process results
         if len(score_results_dict) == 0:  # No combination is relevant, skip to next iteration
-            max_nb_phntp_marker = 0  # Re-initialise counter of maximum phenotype
+            max_nb_phntp_marker = 0  # Re-initialise counter of maximum number of phenotype
+            max_nb_phntp_marker_sum = 0  # Re-initialise counter of maximum sum of phenotypes  # AT. Delete after test
+            max_phntp_recording[marker_counter - 1] = 0  # Record max number of phenotypes by marker_counter # AT. Delete after test
+            max_phntp_sum_recording[marker_counter - 1] = 0  # Record max of phenotypes sum by marker_counter # AT. Delete after test
             continue
         else:  # At least one combination is relevant
             # Get maximum number of phenotypes with 'marker_counter' markers
             max_nb_phntp_marker = max(dct['max_nb_phntp'] for dct in score_results_dict.values())
 
-            # Record max number of phenotypes by marker_counter
-            max_phntp_recording[marker_counter] = max_nb_phntp_marker
+            # Record max number of phenotypes by marker_counter # AT. Delete after test
+            max_phntp_recording[marker_counter - 1] = max_nb_phntp_marker
+
+            # Get maximum phenotypes sum with 'marker_counter' markers # AT. Delete after test
+            max_nb_phntp_marker_sum = max(dct['nb_phntp_sum'] for dct in score_results_dict.values())
+
+            # Record max of phenotypes sum by marker_counter # AT. Delete after test
+            max_phntp_sum_recording[marker_counter - 1] = max_nb_phntp_marker_sum
 
             # Only process better results: if 'm' and 'm + 1' markers give same
             # number of phenotypes, keep only solutions with 'm' markers
             if max_nb_phntp_marker > max_nb_phntp_tot:
+            # if max_nb_phntp_marker_sum > max_nb_phntp_tot_sum:  # To test elbow condition on sum.  # AT. Delete after test
+
                 # Filter out combinations not reaching maximum number of phenotype
                 score_max_phntp = {k: v for k, v in score_results_dict.items() if v['max_nb_phntp'] == max_nb_phntp_marker}
 
@@ -421,23 +451,82 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                 # Free memory by deleting heavy objects
                 del score_max_phntp, score_min_undef, score_max_x, score_final
 
-    # Save phenotype counting array as dataframe // AT. Delete after test
-    df_path_by1 = f'/work/PRTNR/CHUV/DIR/rgottar1/citeseq/antonin/cellxhaustive_test_no_keep_phntp/phntp_counting/phenotype_counting_by1_norm_test_{min_samplesxbatch}_{cell_name}.tsv'
-    phntp_counting_df_by1.to_csv(df_path_by1, sep='\t', header=True, index=True)
-    df_path = f'/work/PRTNR/CHUV/DIR/rgottar1/citeseq/antonin/cellxhaustive_test_no_keep_phntp/phntp_counting/phenotype_counting_norm_test_{min_samplesxbatch}_{cell_name}.tsv'
+            # # Only process better results: if 'm' and 'm + 1' markers give same
+            # # number of phenotypes, keep only solutions with 'm' markers
+            # # Filter out combinations not reaching maximum number of phenotype
+            # score_max_phntp = {k: v for k, v in score_results_dict.items() if v['max_nb_phntp'] == max_nb_phntp_marker}
+
+            # # Filter out combinations not reaching minimum number of undefined cells
+            # min_nb_undef = max(dct['min_undefined'] for dct in score_max_phntp.values())
+            # score_min_undef = {k: v for k, v in score_max_phntp.items() if v['min_undefined'] == min_nb_undef}
+
+            # # Filter out combinations not reaching maximum samplesxbatch
+            # max_x_val = max(dct['max_x_values'] for dct in score_min_undef.values())
+            # score_max_x = {k: v for k, v in score_min_undef.items() if v['max_x_values'] == max_x_val}
+
+            # # Filter out combinations not reaching maximum cellxsample
+            # max_y_val = max(dct['max_y_values'] for dct in score_max_x.values())
+            # score_final = {k: v for k, v in score_max_x.items() if v['max_y_values'] == max_y_val}
+
+            # # Save best results in general dictionaries and arrays
+            # comb_dict = {k: v['comb'] for k, v in score_final.items()}
+            # cell_phntp_dict = {k: v['phntp_per_cell'] for k, v in score_final.items()}
+            # phntp_list_dict = {k: v['best_phntp_lst'] for k, v in score_final.items()}
+            # best_comb_idx = np.fromiter((score_final.keys()), dtype=int)
+            # best_nb_phntp = np.fromiter((d['max_nb_phntp'] for d in score_final.values()), dtype=float)
+            # best_nb_undefined = np.fromiter((d['min_undefined'] for d in score_final.values()), dtype=float)
+            # best_x_values = np.fromiter((d['max_x_values'] for d in score_final.values()), dtype=float)
+            # best_y_values = np.fromiter((d['max_y_values'] for d in score_final.values()), dtype=float)
+
+            # # Free memory by deleting heavy objects
+            # del score_max_phntp, score_min_undef, score_max_x, score_final
+
+    # Save counting of max phntp only for significant phenotypes # AT. Delete after test
+    df_path = f'/work/PRTNR/CHUV/DIR/rgottar1/citeseq/antonin/cellxhaustive_test_no_keep_phntp/phntp_counting/phntp_counting_elbow_phenotype_{min_samplesxbatch}_{cell_name}.tsv'
     phntp_counting_df.to_csv(df_path, sep='\t', header=True, index=True)
-    df_normalised_path = f'/work/PRTNR/CHUV/DIR/rgottar1/citeseq/antonin/cellxhaustive_test_no_keep_phntp/phntp_counting_normalised/phenotype_counting_normalised_{min_samplesxbatch}_{cell_name}.tsv'
-    phntp_counting_df_normalised = phntp_counting_df / phntp_counting_df_by1
-    phntp_counting_df_normalised.to_csv(df_normalised_path, sep='\t', header=True, index=True)
+    # Save sum of number of phenotype across param grid only for significant phenotypes # AT. Delete after test
+    df_path_sum = f'/work/PRTNR/CHUV/DIR/rgottar1/citeseq/antonin/cellxhaustive_test_no_keep_phntp/phntp_counting_sum/phntp_counting_sum_elbow_phenotype_{min_samplesxbatch}_{cell_name}.tsv'
+    phntp_counting_df_sum.to_csv(df_path_sum, sep='\t', header=True, index=True)
 
-    # Free memory by deleting heavy objects
-    del phntp_counting_df, phntp_counting_df_by1, phntp_counting_df_normalised
+    # Save counting of combinations passing threshold (count 1 by 1) # AT. Delete after test
+    df_path_by1 = f'/work/PRTNR/CHUV/DIR/rgottar1/citeseq/antonin/cellxhaustive_test_no_keep_phntp/phntp_counting_by1/phntp_counting_by1_elbow_phenotype_{min_samplesxbatch}_{cell_name}.tsv'
+    phntp_counting_df_by1.to_csv(df_path_by1, sep='\t', header=True, index=True)
+    # Save counting of every combination (count 1 by 1) # AT. Delete after test
+    df_path_by1_all = f'/work/PRTNR/CHUV/DIR/rgottar1/citeseq/antonin/cellxhaustive_test_no_keep_phntp/phntp_counting_by1_all/phntp_counting_by1_all_elbow_phenotype_{min_samplesxbatch}_{cell_name}.tsv'
+    phntp_counting_df_by1_all.to_csv(df_path_by1_all, sep='\t', header=True, index=True)
 
-    # Save max number of phenotypes by marker_counter
-    phntp_path = f'/work/PRTNR/CHUV/DIR/rgottar1/citeseq/antonin/cellxhaustive_test_no_keep_phntp/phntp_by_marker/phenotype_counting_by_marker_{min_samplesxbatch}_{cell_name}.tsv'
+    # Save counting of max phntp passing threshold normalised by number of combinations passing threshold # AT. Delete after test
+    df_normalised_path_by1 = f'/work/PRTNR/CHUV/DIR/rgottar1/citeseq/antonin/cellxhaustive_test_no_keep_phntp/phntp_counting_normalised_by1/phntp_counting_normalised_by1_elbow_phenotype_{min_samplesxbatch}_{cell_name}.tsv'
+    phntp_counting_df_normalised_by1 = phntp_counting_df / phntp_counting_df_by1
+    phntp_counting_df_normalised_by1.to_csv(df_normalised_path_by1, sep='\t', header=True, index=True)
+    # Save counting of max phntp passing threshold normalised by every combinations # AT. Delete after test
+    df_normalised_path_by1_all = f'/work/PRTNR/CHUV/DIR/rgottar1/citeseq/antonin/cellxhaustive_test_no_keep_phntp/phntp_counting_normalised_by1_all/phntp_counting_normalised_by1_all_elbow_phenotype_{min_samplesxbatch}_{cell_name}.tsv'
+    phntp_counting_df_normalised_by1_all = phntp_counting_df / phntp_counting_df_by1_all
+    phntp_counting_df_normalised_by1_all.to_csv(df_normalised_path_by1_all, sep='\t', header=True, index=True)
+
+    # Save counting of sum of number of phntp across param grid passing threshold normalised by number of combinations passing threshold # AT. Delete after test
+    df_sum_normalised_path_by1 = f'/work/PRTNR/CHUV/DIR/rgottar1/citeseq/antonin/cellxhaustive_test_no_keep_phntp/phntp_counting_sum_normalised_by1/phntp_counting_sum_normalised_by1_elbow_phenotype_{min_samplesxbatch}_{cell_name}.tsv'
+    phntp_counting_sum_df_normalised_by1 = phntp_counting_df_sum / phntp_counting_df_by1
+    phntp_counting_sum_df_normalised_by1.to_csv(df_sum_normalised_path_by1, sep='\t', header=True, index=True)
+    # Save counting of sum of number of phntp across param grid passing threshold normalised by every combinations # AT. Delete after test
+    df_sum_normalised_path_by1_all = f'/work/PRTNR/CHUV/DIR/rgottar1/citeseq/antonin/cellxhaustive_test_no_keep_phntp/phntp_counting_sum_normalised_by1_all/phntp_counting_sum_normalised_by1_all_elbow_phenotype_{min_samplesxbatch}_{cell_name}.tsv'
+    phntp_counting_sum_df_normalised_by1_all = phntp_counting_df_sum / phntp_counting_df_by1_all
+    phntp_counting_sum_df_normalised_by1_all.to_csv(df_sum_normalised_path_by1_all, sep='\t', header=True, index=True)
+
+    # Free memory by deleting heavy objects # AT. Delete after test
+    del phntp_counting_df, phntp_counting_df_sum, phntp_counting_df_by1, phntp_counting_df_by1_all, phntp_counting_df_normalised_by1, phntp_counting_df_normalised_by1_all, phntp_counting_sum_df_normalised_by1, phntp_counting_sum_df_normalised_by1_all
+
+    # Save max number of phenotypes by marker_counter # AT. Delete after test
+    phntp_path = f'/work/PRTNR/CHUV/DIR/rgottar1/citeseq/antonin/cellxhaustive_test_no_keep_phntp/max_phntp_by_marker/max_phntp_by_marker_elbow_phenotype_{min_samplesxbatch}_{cell_name}.tsv'
     with open(phntp_path, 'w') as output:
         for k, v in max_phntp_recording.items():
             output.writelines(f'{k}\t{v}\n')
+
+    # Save max phenotypes sum by marker_counter # AT. Delete after test
+    phntp_sum_path = f'/work/PRTNR/CHUV/DIR/rgottar1/citeseq/antonin/cellxhaustive_test_no_keep_phntp/max_phntp_sum_by_marker/max_phntp_sum_by_marker_elbow_phenotype_{min_samplesxbatch}_{cell_name}.tsv'
+    with open(phntp_sum_path, 'w') as output2:
+        for k, v in max_phntp_sum_recording.items():
+            output2.writelines(f'{k}\t{v}\n')
 
     # If no marker combination was found, stop now
     if len(best_nb_phntp) == 0:
