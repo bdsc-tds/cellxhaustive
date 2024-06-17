@@ -212,6 +212,9 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     # Note: this file was created using data from
     # https://github.com/RGLab/rcellontologymapping/blob/main/src/src/ImmportDefinitions.hs
 
+    # Determine marker file path
+    marker_file_path = f'{os.path.splitext(args.output_path)[0]}_markers.txt'
+
     # Get other parameter values from argument parsing
     logging.info('Parsing remaining parameters')
     two_peak_threshold = args.two_peak_threshold
@@ -248,6 +251,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     for label, is_label in zip(uniq_labels, is_label_list):
         logging.info(f'\tProcessing <{label}> cells')
         # Main gating: select relevant markers in each batch of each cell population
+        markers_rep_batches = []
         for batch in np.unique(batches):
             logging.debug(f'\t\tProcessing batch <{batch}>')
             logging.debug('\t\t\tSelecting cells matching current batch')
@@ -270,18 +274,23 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
             # Store list of relevant markers for every batch
             # Note: try/except avoids an error if dictionary doesn't exist yet
             logging.debug('\t\t\tStoring relevant markers')
-            try:
-                markers_rep_batches[batch] = list(markers_rep)
-            except NameError:
-                markers_rep_batches = {}
-                markers_rep_batches[batch] = list(markers_rep)
+            markers_rep_batches.extend(list(markers_rep))
 
-        # Marker selection and matrix slicing: select relevant markers shared across
-        # all batches and extract related data
-        logging.info('\t\tSelecting markers present in all batches')
-        markers_rep_all = set.intersection(*map(set, markers_rep_batches.values()))
-        markers_rep_all = np.array(list(markers_rep_all))  # Convert format back to array
-        logging.info(f"\t\t\tFound {len(markers_rep_all)} markers: {', '.join(markers_rep_all)}")
+        if len(np.unique(batches)) == 1:  # No need to filter markers if there is only 1 batch
+            logging.info(f'\t\tFound only one batch, no need to filter markers.')
+            markers_rep_all = markers_rep_batches
+            logging.info(f"\t\t\tFound {len(markers_rep_all)} markers: {', '.join(markers_rep_all)}")
+        else:
+            logging.info(f'\t\tFound {len(np.unique(batches))} batches. Selecting markers present in at least 2 batches.')
+            markers_rep_all = set([mk for mk in markers_rep_batches
+                                   if markers_rep_batches.count(mk) >= 2])
+            logging.info(f"\t\t\tFound {len(markers_rep_all)} markers: {', '.join(markers_rep_all)}")
+            missing_markers = set([mk for mk in markers_rep_batches
+                                   if markers_rep_batches.count(mk) < 2])
+            logging.info(f"\t\t\tFiltered {len(missing_markers)} marker{'s' if len(missing_markers) > 1 else ''}: {', '.join(missing_markers)}")
+
+        # Convert format back to array
+        markers_rep_all = np.array(list(markers_rep_all))
 
         # Extract expression, batch and sample information across all batches
         # for cell population 'label'
