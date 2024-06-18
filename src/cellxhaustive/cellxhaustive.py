@@ -247,7 +247,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     mat_subset_rep_list = []
     batches_label_list = []
     samples_label_list = []
-    markers_rep_all_list = []
+    markers_representative_list = []
     for label, is_label in zip(uniq_labels, is_label_list):
         logging.info(f'\tProcessing <{label}> cells')
         # Main gating: select relevant markers in each batch of each cell population
@@ -278,25 +278,25 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
         if len(np.unique(batches)) == 1:  # No need to filter markers if there is only 1 batch
             logging.info(f'\t\tFound only one batch, no need to filter markers.')
-            markers_rep_all = markers_rep_batches
-            logging.info(f"\t\t\tFound {len(markers_rep_all)} markers: {', '.join(markers_rep_all)}")
+            markers_representative = markers_rep_batches
+            logging.info(f"\t\t\tFound {len(markers_representative)} markers: {', '.join(markers_representative)}")
         else:
             logging.info(f'\t\tFound {len(np.unique(batches))} batches. Selecting markers present in at least 2 batches.')
-            markers_rep_all = set([mk for mk in markers_rep_batches
-                                   if markers_rep_batches.count(mk) >= 2])
-            logging.info(f"\t\t\tFound {len(markers_rep_all)} markers: {', '.join(markers_rep_all)}")
+            markers_representative = set([mk for mk in markers_rep_batches
+                                          if markers_rep_batches.count(mk) >= 2])
+            logging.info(f"\t\t\tFound {len(markers_representative)} markers: {', '.join(markers_representative)}")
             missing_markers = set([mk for mk in markers_rep_batches
                                    if markers_rep_batches.count(mk) < 2])
             logging.info(f"\t\t\tFiltered {len(missing_markers)} marker{'s' if len(missing_markers) > 1 else ''}: {', '.join(missing_markers)}")
 
         # Convert format back to array
-        markers_rep_all = np.array(list(markers_rep_all))
+        markers_representative = np.array(list(markers_representative))
 
         # Save marker information in different file
         with open(marker_file_path, 'a') as file:
             file.write(f'{label} cells:\n')
             file.write(f"\tMarkers found: {', '.join(markers_rep_batches)}\n")
-            file.write(f"\tMarkers kept (found in at least 2 batches): {', '.join(markers_rep_all)}\n")
+            file.write(f"\tMarkers kept (found in at least 2 batches): {', '.join(markers_representative)}\n")
             file.write(f"\tMarkers removed (present in only 1 batch): {', '.join(missing_markers)}\n")
 
         # Extract expression, batch and sample information across all batches
@@ -307,14 +307,14 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         samples_label = samples[is_label]
 
         # Slice matrix to keep only expression of relevant markers
-        markers_rep_all = markers[np.isin(markers, markers_rep_all)]  # Reorder markers
-        mat_subset_rep_markers = mat_subset_label[:, np.isin(markers, markers_rep_all)]
+        markers_representative = markers[np.isin(markers, markers_representative)]  # Reorder markers
+        mat_subset_rep_markers = mat_subset_label[:, np.isin(markers, markers_representative)]
 
         logging.info('\t\tStoring data in arrays')
         mat_subset_rep_list.append(mat_subset_rep_markers)  # Store slice matrix
         batches_label_list.append(batches_label)  # Store batch information
         samples_label_list.append(samples_label)  # Store sample information
-        markers_rep_all_list.append(markers_rep_all)  # Store representative markers
+        markers_representative_list.append(markers_representative)  # Store representative markers
         # Note: keeping data in list of arrays makes multiprocessing easier and
         # reduce overall memory usage
 
@@ -346,12 +346,12 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                               mat_subset_rep_list,
                                               batches_label_list,
                                               samples_label_list,
-                                              markers_rep_all_list,
+                                              markers_representative_list,
                                               timeout=None,
                                               chunksize=chunksize))
     # Note: 'partial()' is used to iterate over 'is_label_list', 'uniq_labels',
     # 'mat_subset_rep_list', 'batches_label_list', 'samples_label_list' and
-    # 'markers_rep_all_list' and keep the other parameters constant
+    # 'markers_representative_list' and keep the other parameters constant
 
     # Reset logging configuration
     setup_log(log_file, log_level, 'a')
