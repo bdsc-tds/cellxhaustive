@@ -319,39 +319,69 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         # reduce overall memory usage
 
     # Free memory by deleting heavy objects
-    del (is_batch, is_label_batch, mat_subset, mat_subset_label, batches_label,
-         samples_label, mat, batches, samples)
+    del (is_batch, is_label_batch, mat_subset, mat_subset_label, mat, batches, samples)
 
-    # Process cells by pre-existing annotations using multiprocessing
-    logging.info('Starting analyses')
-    annot_dict = {}
-    chunksize = get_chunksize(uniq_labels, nb_cpu_id)
-    with ProcessPoolExecutor(max_workers=nb_cpu_id, mp_context=get_context('spawn')) as executor:
-        annot_results_lst = list(executor.map(partial(identify_phenotypes,
-                                                      cell_types_dict=cell_types_dict,
-                                                      two_peak_threshold=two_peak_threshold,
-                                                      three_peak_markers=three_peak_markers,
-                                                      three_peak_low=three_peak_low,
-                                                      three_peak_high=three_peak_high,
-                                                      max_markers=max_markers,
-                                                      min_annotations=min_annotations,
-                                                      max_solutions=max_solutions,
-                                                      min_samplesxbatch=min_samplesxbatch,
-                                                      min_cellxsample=min_cellxsample,
-                                                      knn_refine=knn_refine,
-                                                      knn_min_probability=knn_min_probability,
-                                                      nb_cpu_eval=nb_cpu_eval),
-                                              is_label_list,
-                                              uniq_labels,
-                                              mat_subset_rep_list,
-                                              batches_label_list,
-                                              samples_label_list,
-                                              markers_rep_all_list,
-                                              timeout=None,
-                                              chunksize=chunksize))
-    # Note: 'partial()' is used to iterate over 'is_label_list', 'uniq_labels',
-    # 'mat_subset_rep_list', 'batches_label_list', 'samples_label_list' and
-    # 'markers_rep_all_list' and keep the other parameters constant
+    # Process cells by pre-existing annotations
+    if nb_cpu_id == 1:  # Use for loop to avoid creating new processes
+        logging.info('Starting population analyses without parallelisation.')
+        annot_results_lst = []
+        for is_label, cell_name, mat_representative, batches_label, \
+                samples_label, markers_representative in zip(is_label_list,
+                                                             uniq_labels,
+                                                             mat_subset_rep_list,
+                                                             batches_label_list,
+                                                             samples_label_list,
+                                                             markers_representative_list):
+            results_dict = identify_phenotypes(is_label=is_label,
+                                               cell_name=cell_name,
+                                               mat_representative=mat_representative,
+                                               batches_label=batches_label,
+                                               samples_label=samples_label,
+                                               markers_representative=markers_representative,
+                                               cell_types_dict=cell_types_dict,
+                                               two_peak_threshold=two_peak_threshold,
+                                               three_peak_markers=three_peak_markers,
+                                               three_peak_low=three_peak_low,
+                                               three_peak_high=three_peak_high,
+                                               max_markers=max_markers,
+                                               min_annotations=min_annotations,
+                                               max_solutions=max_solutions,
+                                               min_samplesxbatch=min_samplesxbatch,
+                                               min_cellxsample=min_cellxsample,
+                                               knn_refine=knn_refine,
+                                               knn_min_probability=knn_min_probability,
+                                               nb_cpu_eval=nb_cpu_eval)
+            annot_results_lst.append(annot_results_lst)
+    else:  # Use pool of process for parallelise
+        logging.info('Starting population analyses with parallelisation.')
+        # annot_dict = {}  # AT. Remove after tests?
+        chunksize = get_chunksize(uniq_labels, nb_cpu_id)
+        with ProcessPoolExecutor(max_workers=nb_cpu_id, mp_context=get_context('spawn')) as executor:
+            annot_results_lst = list(executor.map(partial(identify_phenotypes,
+                                                          cell_types_dict=cell_types_dict,
+                                                          two_peak_threshold=two_peak_threshold,
+                                                          three_peak_markers=three_peak_markers,
+                                                          three_peak_low=three_peak_low,
+                                                          three_peak_high=three_peak_high,
+                                                          max_markers=max_markers,
+                                                          min_annotations=min_annotations,
+                                                          max_solutions=max_solutions,
+                                                          min_samplesxbatch=min_samplesxbatch,
+                                                          min_cellxsample=min_cellxsample,
+                                                          knn_refine=knn_refine,
+                                                          knn_min_probability=knn_min_probability,
+                                                          nb_cpu_eval=nb_cpu_eval),
+                                                  is_label_list,
+                                                  uniq_labels,
+                                                  mat_subset_rep_list,
+                                                  batches_label_list,
+                                                  samples_label_list,
+                                                  markers_representative_list,
+                                                  timeout=None,
+                                                  chunksize=chunksize))
+        # Note: 'partial()' is used to iterate over 'is_label_list', 'uniq_labels',
+        # 'mat_subset_rep_list', 'batches_label_list', 'samples_label_list' and
+        # 'markers_representative_list' and keep the other parameters constant
 
     # Reset logging configuration
     setup_log(log_file, log_level, 'a')
