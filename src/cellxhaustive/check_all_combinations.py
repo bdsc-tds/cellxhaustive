@@ -328,27 +328,47 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
         poss_comb = list(ite.combinations(markers_representative, marker_counter))
         # Note: iterator is converted to list because it is used several times
 
-        # For a given number of markers, check all possible combinations using multiprocessing
-        chunksize = get_chunksize(list(poss_comb), nb_cpu_eval)
+        # Create new range of indices
         indices = range(enum_start, enum_start + len(poss_comb))
-        with ProcessPoolExecutor(max_workers=nb_cpu_eval, mp_context=get_context('spawn')) as executor:
-            score_results_lst = list(executor.map(partial(evaluate_comb,
-                                                          mat_representative=mat_representative,
-                                                          batches_label=batches_label,
-                                                          samples_label=samples_label,
-                                                          markers_representative=markers_representative,
-                                                          two_peak_threshold=two_peak_threshold,
-                                                          three_peak_markers=three_peak_markers,
-                                                          three_peak_low=three_peak_low,
-                                                          three_peak_high=three_peak_high,
-                                                          min_annotations=min_annotations,
-                                                          x_samplesxbatch_space=x_samplesxbatch_space,
-                                                          y_cellxsample_space=y_cellxsample_space),
-                                                  indices, poss_comb,
-                                                  timeout=None,
-                                                  chunksize=chunksize))
-        # Note: 'partial()' is used to iterate over 'indices' and 'poss_comb'
-        # and keep the other parameters constant
+
+        # For a given number of markers, check all possible combinations
+        if nb_cpu_eval == 1:  # Use for loop to avoid creating new processes
+            score_results_lst = []
+            for idx, comb in zip(indices, poss_comb):
+                comb_result_dict = evaluate_comb(idx=idx,
+                                                 comb=comb,
+                                                 mat_representative=mat_representative,
+                                                 batches_label=batches_label,
+                                                 samples_label=samples_label,
+                                                 markers_representative=markers_representative,
+                                                 two_peak_threshold=two_peak_threshold,
+                                                 three_peak_markers=three_peak_markers,
+                                                 three_peak_low=three_peak_low,
+                                                 three_peak_high=three_peak_high,
+                                                 min_annotations=min_annotations,
+                                                 x_samplesxbatch_space=x_samplesxbatch_space,
+                                                 y_cellxsample_space=y_cellxsample_space)
+                score_results_lst.append(comb_result_dict)
+        else:  # Use pool of process to parallelise
+            chunksize = get_chunksize(list(poss_comb), nb_cpu_eval)
+            with ProcessPoolExecutor(max_workers=nb_cpu_eval, mp_context=get_context('spawn')) as executor:
+                score_results_lst = list(executor.map(partial(evaluate_comb,
+                                                              mat_representative=mat_representative,
+                                                              batches_label=batches_label,
+                                                              samples_label=samples_label,
+                                                              markers_representative=markers_representative,
+                                                              two_peak_threshold=two_peak_threshold,
+                                                              three_peak_markers=three_peak_markers,
+                                                              three_peak_low=three_peak_low,
+                                                              three_peak_high=three_peak_high,
+                                                              min_annotations=min_annotations,
+                                                              x_samplesxbatch_space=x_samplesxbatch_space,
+                                                              y_cellxsample_space=y_cellxsample_space),
+                                                      indices, poss_comb,
+                                                      timeout=None,
+                                                      chunksize=chunksize))
+            # Note: 'partial()' is used to iterate over 'indices' and 'poss_comb'
+            # and keep the other parameters constant
 
         # Remove combinations without solution and turn list into dict using idx as keys
         score_results_dict = {}
