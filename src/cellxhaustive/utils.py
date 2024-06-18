@@ -144,7 +144,7 @@ def get_cpu(nb_cpu, nb_cell_type):
         cpu_tot = prod(cpu_solutions[0])
         logging.warning(f'\tThere will be {min_diff} idle CPUs. Consider decreasing')
         logging.warning(f"\t'-t' parameter to {cpu_tot} to save resources or increase")
-        logging.warning(f"\tby 1 to speed up analyses")
+        logging.warning(f'\ttotal number of CPUs to speed up analyses')
 
     return nb_cpu_id, nb_cpu_eval
 
