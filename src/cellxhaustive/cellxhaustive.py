@@ -292,6 +292,13 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         # Convert format back to array
         markers_rep_all = np.array(list(markers_rep_all))
 
+        # Save marker information in different file
+        with open(marker_file_path, 'a') as file:
+            file.write(f'{label} cells:\n')
+            file.write(f"\tMarkers found: {', '.join(markers_rep_batches)}\n")
+            file.write(f"\tMarkers kept (found in at least 2 batches): {', '.join(markers_rep_all)}\n")
+            file.write(f"\tMarkers removed (present in only 1 batch): {', '.join(missing_markers)}\n")
+
         # Extract expression, batch and sample information across all batches
         # for cell population 'label'
         logging.info('\t\tExtracting matching expression, batch and sample information')
