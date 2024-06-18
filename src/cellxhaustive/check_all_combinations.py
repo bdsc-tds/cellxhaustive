@@ -48,7 +48,7 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
       Integer index to keep track of 'comb'.
 
     comb: tuple(str)
-      Tuple of strings marker combination to score.
+      Tuple of strings with marker combination to score.
 
     mat_representative: array(float)
       2-D numpy array expression matrix, with cells in D0 and markers in D1.
@@ -109,7 +109,7 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
     --------
     comb_result_dict: dict {str: obj}
       Dictionary with 1 or 8 key-value pairs. If no relevant solution was found,
-      dictionary will have following structure {idx: None}. If relevant solution
+      dictionary will have following structure {'idx': None}. If relevant solution
       was found, keys will be 'idx', 'comb', 'phntp_per_cell', 'max_nb_phntp',
       'min_undefined', 'max_x_values', 'max_y_values', and 'best_phntp_lst'
     """
@@ -138,12 +138,12 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
         y_cellxsample_space=y_cellxsample_space)
 
     # Constrain matrix given minimum number of phenotype conditions
+    logging.debug(f'\t\t\t\t\tChecking presence of possible solutions')
     mask = (nb_phntp < min_annotations)
     nb_phntp = np.where(mask, np.nan, nb_phntp)
     nb_undef_cells = np.where(mask, np.nan, nb_undef_cells)
 
     # If there are possible good solutions, further process them
-    logging.debug(f'\t\t\t\t\tChecking presence of good solutions')
     if np.any(np.isfinite(nb_phntp)):
         # Create metrics grid matching x and y space
         x_values, y_values = np.meshgrid(x_samplesxbatch_space,
@@ -181,7 +181,7 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
                             'best_phntp_lst': best_phntp_lst}
 
     else:  # No good solution, so return None to facilitate post-processing
-        comb_result_dict = {idx: None}
+        comb_result_dict = {'idx': None}
 
     return comb_result_dict
 
@@ -347,8 +347,8 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                                                   indices, poss_comb,
                                                   timeout=None,
                                                   chunksize=chunksize))
-        # Notes: 'indices' and 'poss_comb' are iterated over, hence the use of
-        # 'partial()' to keep the other parameters constant
+        # Note: 'partial()' is used to iterate over 'indices' and 'poss_comb'
+        # and keep the other parameters constant
 
         # Remove combinations without solution and turn list into dict using idx as keys
         score_results_dict = {}
@@ -365,7 +365,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
 
         # Post-process results
         if len(score_results_dict) == 0:  # No combination is relevant, skip to next iteration
-            max_nb_phntp_marker = 0  # Re-initialise counter of maximum phenotype
+            max_nb_phntp_marker = 0  # Re-initialise counter of maximum number of phenotype
             continue
         else:  # At least one combination is relevant
             # Get maximum number of phenotypes with 'marker_counter' markers

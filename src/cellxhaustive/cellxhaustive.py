@@ -228,11 +228,11 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     # Get CPU settings
     logging.info('Determining parallelisation settings')
     if args.cores == 1:  # Can't multiprocess with only 1 core
-        logging.info('\tOnly 1 CPU provided, no parallelisation possible')
+        logging.info('\tOnly 1 CPU provided in total.')
         nb_cpu_id = nb_cpu_eval = 1
-        logging.info('\tSetting nb_cpu_id, nb_cpu_eval to 1')
+        logging.info('\tSetting nb_cpu_id and nb_cpu_eval to 1')
     else:  # Maximise CPU usage
-        logging.info(f'\t{args.cores} CPUs provided')
+        logging.info(f'\t{args.cores} CPUs provided in total.')
         nb_cpu_id, nb_cpu_eval = get_cpu(args.cores, len(uniq_labels))
 
     if args.dryrun:
@@ -333,8 +333,9 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                               markers_rep_all_list,
                                               timeout=None,
                                               chunksize=chunksize))
-    # Note: only 'is_label_list' and 'uniq_labels' are iterated over, hence the
-    # use of 'partial()' to keep the other parameters constant
+    # Note: 'partial()' is used to iterate over 'is_label_list', 'uniq_labels',
+    # 'mat_subset_rep_list', 'batches_label_list', 'samples_label_list' and
+    # 'markers_rep_all_list' and keep the other parameters constant
 
     # Reset logging configuration
     setup_log(log_file, log_level, 'a')
