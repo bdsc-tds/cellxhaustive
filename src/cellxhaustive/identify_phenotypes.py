@@ -273,7 +273,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
         else:
             solutions = range(nb_solution)
 
-        logging.info('\t\t\tProcessing the different combinations')
+        logging.info('\t\t\tProcessing all combinations')
         for i in solutions:
             logging.info(f'\t\t\t\tProcessing combination {i}: {best_marker_comb[i]}')
             # Slice matrix to keep only expression of best combination

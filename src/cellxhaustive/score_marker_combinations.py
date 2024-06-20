@@ -152,32 +152,32 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
             phenotype_samples = samples_label[batches_label == batch][phenotypes_batch == phenotype]
 
             # If there are no cells of type 'phenotype' in 'batch', that means
-            # 'phenotype' will not be present in all batches, so stop now
+            # 'phenotype' cannot be present in all batches, so stop now
             if phenotype_samples.size == 0:
                 keep_phenotype = np.logical_and(keep_phenotype, False)
                 break
 
-            # Calculate number of different samples in current batch and cell type
+            # Calculate number of unique samples in current batch and cell type
             samples_nb = float(len(np.unique(phenotype_samples)))
 
             # Count number of cells per phenotype in each sample
             cell_count_sample = np.asarray([np.sum(phenotype_samples == smpl)
                                             for smpl in np.unique(phenotype_samples)])
 
-            # Check whether cell counts satisfy y threshold
+            # Check whether previous counts satisfy cell/sample threshold
             keep_phenotype_batch = cell_count_sample[:, np.newaxis] >= y_cellxsample_space
             # Note: np.newaxis is used to add a dimension to work on different
             # samples concurrently
 
             # Calculate proportion of samples in current batch satisfying
-            # 'y_cellxsample_space' condition
+            # cell/sample threshold
             keep_phenotype_batch = (np.sum(keep_phenotype_batch, axis=0) / samples_nb)
             # Notes:
             # - 'keep_phenotype_batch' is a boolean array, so it can be summed
             # - 'np.sum(keep_phenotype_batch, axis=0)' calculates number of samples
-            # satisfying y condition for a given y in grid
+            # satisfying cell/sample threshold for a given y in grid
 
-            # Check whether sample proportions satisfy x threshold
+            # Check whether previous proportions satisfy sample/batch threshold
             keep_phenotype_batch = keep_phenotype_batch >= x_samplesxbatch_space[:, np.newaxis]
             # Note: '[:, np.newaxis]' is used to transpose 1-D array into a 2-D
             # array to allow comparison
