@@ -231,8 +231,6 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
             # Determine 'significant' phenotypes
             for phenotype in np.unique(cell_phntp_comb):
 
-                # Initialise temporary array to store 'phenotype' results  # AT. Double-check
-                # keep_phenotype = np.full(nb_phntp.shape, True)  # AT. Double-check
                 # Initialise boolean to keep 'phenotype'
                 keep_phenotype = True
 

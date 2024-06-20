@@ -574,5 +574,4 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     best_marker_comb = list(comb_dict.get(k)
                             for k in best_comb_idx[final_idx])
 
-    # return nb_solution, best_marker_comb, cell_phntp_comb, best_phntp_comb  # AT. Double-check
     return nb_solution, best_marker_comb

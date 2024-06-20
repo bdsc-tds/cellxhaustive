@@ -288,6 +288,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
             missing_markers = set([mk for mk in markers_rep_batches
                                    if markers_rep_batches.count(mk) < 2])
             logging.info(f"\t\t\tFiltered {len(missing_markers)} marker{'s' if len(missing_markers) > 1 else ''}: {', '.join(missing_markers)}")
+            logging.info(f"\t\t\tFiltered out {len(missing_markers)} marker{'s' if len(missing_markers) > 1 else ''}: {', '.join(missing_markers)}")
 
         # Convert format back to array
         markers_representative = np.array(list(markers_representative))
@@ -354,7 +355,6 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
             annot_results_lst.append(results_dict)
     else:  # Use pool of process for parallelise
         logging.info('Starting population analyses with parallelisation.')
-        # annot_dict = {}  # AT. Remove after tests?
         chunksize = get_chunksize(uniq_labels, nb_cpu_id)
         with ProcessPoolExecutor(max_workers=nb_cpu_id, mp_context=get_context('spawn')) as executor:
             annot_results_lst = list(executor.map(partial(identify_phenotypes,
