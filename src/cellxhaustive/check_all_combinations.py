@@ -564,6 +564,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
 
     # Find combination(s) with maximum number of phenotypes
     max_phntp_idx = np.where(best_nb_phntp == np.max(best_nb_phntp))[0]
+    final_idx = max_phntp_idx
 
     # Most likely only one solution, but it will be updated if there are more
     nb_solution = 1
@@ -575,6 +576,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
         best_nb_undefined = best_nb_undefined[max_phntp_idx]
         # Find combination(s) with minimum number of undefined cells
         min_undefined_idx = np.where(best_nb_undefined == np.min(best_nb_undefined))[0]
+        final_idx = min_undefined_idx  # Store new final indices
 
         # Further refine results according to number of undefined cells
         if len(min_undefined_idx) > 1:  # Several combinations with minimum number of undefined cells
@@ -583,6 +585,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
             best_x_values = best_x_values[max_phntp_idx][min_undefined_idx]
             # Find combination(s) with maximum x value
             max_xvalues_idx = np.where(best_x_values == np.max(best_x_values))[0]
+            final_idx = max_xvalues_idx  # Store new final indices
 
             # Further refine results according to x value
             if len(max_xvalues_idx) > 1:  # Several combinations with maximum x value
@@ -591,44 +594,18 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                 best_y_values = best_y_values[max_phntp_idx][min_undefined_idx][max_xvalues_idx]
                 # Find combination(s) with maximum y value
                 max_yvalues_idx = np.where(best_y_values == np.max(best_y_values))[0]
-                nb_solution = len(max_yvalues_idx)
+                final_idx = max_yvalues_idx  # Store new final indices
+                nb_solution = len(max_yvalues_idx)  # If number of solution is still not 1
 
-                if nb_solution == 1:
-                    best_marker_comb, cell_phntp_comb, best_phntp_comb = return_outputs(comb_dict,
-                                                                                        cell_phntp_dict,
-                                                                                        phntp_list_dict,
-                                                                                        best_comb_idx,
-                                                                                        max_yvalues_idx)
+    # Keep remaining solution(s) that satisfied all previous conditions
+    best_marker_comb = list(comb_dict.get(k)
+                            for k in best_comb_idx[final_idx])
+    cell_phntp_comb = list(cell_phntp_dict.get(k)
+                           for k in best_comb_idx[final_idx])
+    best_phntp_comb = list(np.concatenate(phntp_list_dict.get(k))
+                           for k in best_comb_idx[final_idx])
+    # Note: 'np.concatenate' is used to convert an array of list
+    # into an array
 
-                else:  # If there are several combinations, keep all of them
-                    best_marker_comb = list(comb_dict.get(k)
-                                            for k in best_comb_idx[max_yvalues_idx])
-                    cell_phntp_comb = list(cell_phntp_dict.get(k)
-                                           for k in best_comb_idx[max_yvalues_idx])
-                    best_phntp_comb = list(np.concatenate(phntp_list_dict.get(k))
-                                           for k in best_comb_idx[max_yvalues_idx])
-                    # Note: 'np.concatenate' is used to convert an array of list
-                    # into an array
-
-            else:  # Only one combination with maximum x value
-                best_marker_comb, cell_phntp_comb, best_phntp_comb = return_outputs(comb_dict,
-                                                                                    cell_phntp_dict,
-                                                                                    phntp_list_dict,
-                                                                                    best_comb_idx,
-                                                                                    max_xvalues_idx)
-
-        else:  # Only one combination with minimum number of undefined cells
-            best_marker_comb, cell_phntp_comb, best_phntp_comb = return_outputs(comb_dict,
-                                                                                cell_phntp_dict,
-                                                                                phntp_list_dict,
-                                                                                best_comb_idx,
-                                                                                min_undefined_idx)
-
-    else:  # Only one combination with maximum number of phenotypes
-        best_marker_comb, cell_phntp_comb, best_phntp_comb = return_outputs(comb_dict,
-                                                                            cell_phntp_dict,
-                                                                            phntp_list_dict,
-                                                                            best_comb_idx,
-                                                                            max_phntp_idx)
-
-    return nb_solution, best_marker_comb, cell_phntp_comb, best_phntp_comb
+    # return nb_solution, best_marker_comb, cell_phntp_comb, best_phntp_comb  # AT. Double-check
+    return nb_solution, best_marker_comb
