@@ -18,12 +18,6 @@ from utils import setup_log  # AT. Double-check path
 # from cellxhaustive.utils import setup_log
 
 
-# Wrapper function of 'list.append()' for vectorised use in numpy
-# Function used in score_marker_combinations()
-def append_wrapper(lst, elt):
-    return lst.append(elt)
-
-
 # Function used in check_all_combinations.py
 def score_marker_combinations(mat_comb, batches_label, samples_label,
                               markers_comb, two_peak_threshold,
@@ -94,19 +88,10 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
       across grid composed of metrics 'x_samplesxbatch_space' in D0 and
       'y_cellxsample_space' in D1.
 
-    phntp_to_keep: array(list(str))
-      2-D numpy array with lists of significant phenotypes across grid composed
-      of metrics 'x_samplesxbatch_space' in D0 and 'y_cellxsample_space' in D1.
-      In each element, len(phntp_to_keep[i, j]) = nb_phntp[i, j].
-
     nb_undef_cells: array(float)
       2-D numpy array with number of undefined cells (cells without a phenotype)
       in 'mat_comb' across grid composed of metrics 'x_samplesxbatch_space' in
       D0 and 'y_cellxsample_space' in D1.
-
-    phntp_per_cell: array(str)
-      1-D numpy array with best phenotype determined for each cell using markers
-      from 'markers_comb'.
     """
 
     # Set-up logging configuration
@@ -125,15 +110,6 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
     # Initialise arrays to store results
     nb_phntp = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
     nb_undef_cells = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
-    phntp_to_keep = np.empty(len(x_samplesxbatch_space) * len(y_cellxsample_space),
-                             dtype=object)
-    phntp_to_keep[...] = [[] for _ in range(len(phntp_to_keep))]
-    phntp_to_keep = np.reshape(phntp_to_keep, (len(x_samplesxbatch_space),
-                                               len(y_cellxsample_space)))
-    # Note: using 'dtype=list' fills array with None, hence this trick
-
-    # Vectorized version of append wrapper
-    array_appending = np.vectorize(append_wrapper, otypes=[str])
 
     # Process marker phenotypes returned by 'determine_marker_status()' and
     # check whether they are worth keeping
@@ -193,10 +169,8 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
         # Add number of undefined cells to counter
         nb_undef_cells += np.logical_not(keep_phenotype) * np.sum(phntp_per_cell == phenotype)
 
-        # Add 'phenotype' to elements passing thresholds if there are any
-        if np.any(keep_phenotype):
-            _ = array_appending(phntp_to_keep[keep_phenotype], phenotype)
-        # '_' is used to avoid 'array_appending' printing something to stdout
     logging.debug(f'\t\t\t\t\t\tFinished check')
 
-    return nb_phntp, phntp_to_keep, nb_undef_cells, phntp_per_cell
+    return nb_phntp, nb_undef_cells
+    # Note: 'phntp_per_cell' is not returned to avoid memory cost of storing and
+    # dragging it across several functions and will be recalculated when needed.
