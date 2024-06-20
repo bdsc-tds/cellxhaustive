@@ -351,7 +351,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                                knn_refine=knn_refine,
                                                knn_min_probability=knn_min_probability,
                                                nb_cpu_eval=nb_cpu_eval)
-            annot_results_lst.append(annot_results_lst)
+            annot_results_lst.append(results_dict)
     else:  # Use pool of process for parallelise
         logging.info('Starting population analyses with parallelisation.')
         chunksize = get_chunksize(uniq_labels, nb_cpu_id)
