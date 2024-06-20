@@ -283,7 +283,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         else:
             logging.info(f'\t\tFound {len(np.unique(batches))} batches. Selecting markers present in at least 2 batches.')
             markers_representative = set([mk for mk in markers_rep_batches
-                                   if markers_rep_batches.count(mk) >= 2])
+                                          if markers_rep_batches.count(mk) >= 2])
             logging.info(f"\t\t\tFound {len(markers_representative)} markers: {', '.join(markers_representative)}")
             missing_markers = set([mk for mk in markers_rep_batches
                                    if markers_rep_batches.count(mk) < 2])

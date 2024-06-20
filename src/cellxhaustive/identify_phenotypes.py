@@ -15,10 +15,12 @@ from collections import defaultdict
 # Import local functions
 from assign_cell_types import assign_cell_types  # AT. Double-check path
 from check_all_combinations import check_all_combinations  # AT. Double-check path
+from determine_marker_status import determine_marker_status  # AT. Double-check path
 from knn_classifier import knn_classifier  # AT. Double-check path
 from utils import setup_log  # AT. Double-check path
 # from cellxhaustive.assign_cell_types import assign_cell_types
 # from cellxhaustive.check_all_combinations import check_all_combinations
+# from cellxhaustive.determine_marker_status import determine_marker_status
 # from cellxhaustive.knn_classifier import knn_classifier
 # from cellxhaustive.utils import setup_log
 
@@ -149,7 +151,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
     # cells and among those, phenotypes passing various thresholds (see function
     # definition for more information on those)
     logging.info('\t\tChecking all possible marker combinations')
-    nb_solution, best_marker_comb, cell_phntp_comb, best_phntp_comb = check_all_combinations(
+    nb_solution, best_marker_comb = check_all_combinations(
         mat_representative=mat_representative,
         batches_label=batches_label,
         samples_label=samples_label,
@@ -212,6 +214,70 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
             markers_rep_comb = markers_representative[np.isin(markers_representative, best_marker_comb[i])]
             mat_subset_rep_markers_comb = mat_representative[:, np.isin(markers_representative, best_marker_comb[i])]
 
+            # Determine cell phenotypes using markers from 'markers_rep_comb'
+            cell_phntp_comb = determine_marker_status(
+                mat_comb=mat_subset_rep_markers_comb,
+                markers_comb=markers_rep_comb,
+                two_peak_threshold=two_peak_threshold,
+                three_peak_markers=three_peak_markers,
+                three_peak_low=three_peak_low,
+                three_peak_high=three_peak_high)
+
+            # Initialise empty string array to record 'significant' phenotypes,
+            # i.e. phenotypes passing min_annotations and min_samplesxbatch thresholds
+            best_phntp_comb = np.empty(0, dtype=cell_phntp_comb.dtype)
+            # Note: get dtype from previous array to avoid using 'object'
+
+            # Determine 'significant' phenotypes
+            for phenotype in np.unique(cell_phntp_comb):
+
+                # Initialise temporary array to store 'phenotype' results  # AT. Double-check
+                # keep_phenotype = np.full(nb_phntp.shape, True)  # AT. Double-check
+                # Initialise boolean to keep 'phenotype'
+                keep_phenotype = True
+
+                # Process batches separately
+                for batch in np.unique(batches_label):
+                    # Split cell type data according to batch
+                    phenotypes_batch = cell_phntp_comb[batches_label == batch]
+
+                    # Split sample data, first according to batch and then cell type
+                    phenotype_samples = samples_label[batches_label == batch][phenotypes_batch == phenotype]
+
+                    # If there are no cells of type 'phenotype' in 'batch', that means
+                    # 'phenotype' cannot be present in all batches, so stop now
+                    if phenotype_samples.size == 0:
+                        keep_phenotype = False
+                        break
+
+                    # Calculate number of unique samples in current batch and cell type
+                    samples_nb = float(len(np.unique(phenotype_samples)))
+
+                    # Count number of cells per phenotype in each sample
+                    cell_count_sample = np.asarray([np.sum(phenotype_samples == smpl)
+                                                    for smpl in np.unique(phenotype_samples)])
+
+                    # Check whether previous counts satisfy cell/sample threshold
+                    keep_phenotype_batch = (cell_count_sample >= min_cellxsample)
+
+                    # Calculate proportion of samples in current batch satisfying
+                    # cell/sample threshold
+                    keep_phenotype_batch = (np.sum(keep_phenotype_batch, axis=0) / samples_nb)
+                    # Notes:
+                    # - 'keep_phenotype_batch' is a boolean array, so it can be summed
+
+                    # Check whether previous proportion satisfies sample/batch threshold
+                    keep_phenotype_batch = (keep_phenotype_batch >= min_samplesxbatch)
+
+                    # Intersect batch results with general results
+                    keep_phenotype = (keep_phenotype and keep_phenotype_batch)
+                    # Note: for consistency, phenotypes have to be present in all batches,
+                    # hence usage of 'and'
+
+                # If 'phenotype' is 'significant', keep it
+                if keep_phenotype:
+                    best_phntp_comb = np.append(best_phntp_comb, phenotype)
+
             # Assign cell type using only markers from 'best_marker_comb[i]'
             logging.info('\t\t\t\t\tAssigning cell types to each cell')
             new_labels, names_conv = assign_cell_types(
@@ -221,18 +287,18 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                 markers_representative=markers_rep_comb,
                 cell_types_dict=cell_types_dict,
                 cell_name=cell_name,
-                cell_phntp=cell_phntp_comb[i],
-                best_phntp=best_phntp_comb[i])
+                cell_phntp=cell_phntp_comb,
+                best_phntp=best_phntp_comb)
 
             # Update non-significant phenotypes to make final results easier to
             # understand and process
-            cell_phntp_comb[i][np.in1d(cell_phntp_comb[i],
-                                       best_phntp_comb[i],
-                                       invert=True)] = f'Other {cell_name} phenotype'
+            cell_phntp_comb[np.in1d(cell_phntp_comb,
+                                    best_phntp_comb,
+                                    invert=True)] = f'Other {cell_name} phenotype'
 
             # Append results to dictionary
             results_dict[i]['new_labels'] = new_labels
-            results_dict[i]['cell_phntp_comb'] = cell_phntp_comb[i]
+            results_dict[i]['cell_phntp_comb'] = cell_phntp_comb
 
             if knn_refine:
                 # Reannotate only if conditions to run KNN-classifier are met
@@ -257,7 +323,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                                                                          'tmp')
                     # Note: 'tmp' is only used to easily identify unidentified cells
                     still_undef = (reannotated_phntp == 'tmp')
-                    reannotated_phntp[still_undef] = cell_phntp_comb[i][still_undef]
+                    reannotated_phntp[still_undef] = cell_phntp_comb[still_undef]
 
                     # Append results to dictionary
                     results_dict[i]['reannotated_labels'] = reannotated_labels
@@ -275,7 +341,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                     # Use default arrays as placeholders for reannotation results
                     reannotation_proba = np.full(new_labels.shape[0], np.nan)
                     results_dict[i]['reannotated_labels'] = new_labels
-                    results_dict[i]['reannotated_phntp'] = cell_phntp_comb[i]
+                    results_dict[i]['reannotated_phntp'] = cell_phntp_comb
                     results_dict[i]['reannotation_proba'] = reannotation_proba
 
                     # Record number of undefined cells after reannotation

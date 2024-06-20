@@ -24,14 +24,6 @@ from utils import get_chunksize, setup_log  # AT. Double-check path
 # from cellxhaustive.utils import get_chunksize, setup_log
 
 
-# Convenience function to return specific dictionary values
-def return_outputs(dict1, dict2, dict3, idx1, idx2):
-    out1 = dict1[idx1[idx2[0]]]
-    out2 = dict2[idx1[idx2[0]]]
-    out3 = np.concatenate(dict3[idx1[idx2[0]]])
-    return out1, out2, out3
-
-
 # Function used in check_all_combinations()
 def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
                   markers_representative, two_peak_threshold, three_peak_markers,
@@ -111,8 +103,8 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
     comb_result_dict: dict {str: obj}
       Dictionary with 1 or 8 key-value pairs. If no relevant solution was found,
       dictionary will have following structure {'idx': None}. If relevant solution
-      was found, keys will be 'idx', 'comb', 'phntp_per_cell', 'max_nb_phntp',
-      'min_undefined', 'max_x_values', 'max_y_values', and 'best_phntp_lst'
+      was found, keys will be 'idx', 'comb', 'max_nb_phntp', 'min_undefined',
+      'max_x_values', and 'max_y_values'
     """
 
     # Set-up logging configuration
@@ -126,7 +118,7 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
     # Find number of phenotypes and undefined cells for a given marker combination
     # 'comb' across 'samplesxbatch' and 'cellxsample' grid
     logging.debug(f'\t\t\t\t\tScoring combination')
-    nb_phntp, phntp_to_keep, nb_undef_cells, phntp_per_cell = score_marker_combinations(
+    nb_phntp, nb_undef_cells = score_marker_combinations(
         mat_comb=mat_comb,
         batches_label=batches_label,
         samples_label=samples_label,
@@ -172,18 +164,15 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
 
         # ... and maximum cells per sample
         max_y_values = np.nanmax(y_values)
-        best_phntp_lst = phntp_to_keep[y_values == max_y_values]
 
         # Gather all results in dict
         comb_result_dict = {'idx': idx,
                             'comb': comb,
-                            'phntp_per_cell': phntp_per_cell,
                             'max_nb_phntp': max_nb_phntp,
                             'min_undefined': min_undefined,
                             'max_x_values': max_x_values,
                             'max_y_values': max_y_values,
-                            'nb_phntp_sum': nb_phntp_sum,
-                            'best_phntp_lst': best_phntp_lst}
+                            'nb_phntp_sum': nb_phntp_sum}
 
     else:  # No good solution, so return None to facilitate post-processing
         # comb_result_dict = {'idx': None}
@@ -277,16 +266,6 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
       Tuple of strings or list of tuples of strings with optimal combinations
       found during comparison process. Each tuple contains one combination.
       Number of tuples in 'best_marker_comb' is equal to 'nb_solution'.
-
-    cell_phntp_comb: array(str) or list(array(str))
-      1-D numpy array of strings or list of 1-D numpy arrays of strings with phenotype
-      found for each cell using markers from associated 'best_marker_comb' tuple.
-      Number of arrays in 'cell_phntp_comb' is equal to 'nb_solution'.
-
-    best_phntp_comb: array(str) or list(array(str))
-      1-D numpy array of strings or list of 1-D numpy arrays of strings with
-      representative phenotypes among all possible phenotypes from 'best_marker_comb'.
-      Number of arrays in 'best_phntp_comb' is equal to 'nb_solution'.
     """
 
     # Set-up logging configuration
@@ -311,8 +290,6 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     max_nb_phntp_marker_sum = 0  # AT. Delete after test
     max_nb_phntp_tot_sum = -1  # AT. Delete after test
     comb_dict = {}
-    cell_phntp_dict = {}
-    phntp_list_dict = {}
     max_phntp_recording = {}  # AT. Delete after test
     max_phntp_sum_recording = {}  # AT. Delete after test
 
@@ -460,8 +437,6 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                 score_final = {indx: v for indx, v in score_max_x.items() if v['max_y_values'] == max_y_val}
 
                 # Save best results in general dictionaries and arrays
-                cell_phntp_dict = {k: v['phntp_per_cell'] for k, v in score_final.items()}
-                phntp_list_dict = {k: v['best_phntp_lst'] for k, v in score_final.items()}
                 comb_dict = {indx: v['comb'] for indx, v in score_final.items()}
                 best_comb_idx = np.fromiter(score_final.keys(), dtype=int)
                 best_nb_phntp = np.fromiter((d['max_nb_phntp'] for d in score_final.values()), dtype=float)
@@ -553,9 +528,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     if len(best_nb_phntp) == 0:
         nb_solution = 0
         best_marker_comb = ()
-        cell_phntp_comb = np.empty(0)
-        best_phntp_comb = np.empty(0)
-        return nb_solution, best_marker_comb, cell_phntp_comb, best_phntp_comb
+        return nb_solution, best_marker_comb
 
     # If several possible marker combinations were found, further refine results
     # according to metrics previously defined: number of phenotypes, number of
@@ -600,12 +573,6 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     # Keep remaining solution(s) that satisfied all previous conditions
     best_marker_comb = list(comb_dict.get(k)
                             for k in best_comb_idx[final_idx])
-    cell_phntp_comb = list(cell_phntp_dict.get(k)
-                           for k in best_comb_idx[final_idx])
-    best_phntp_comb = list(np.concatenate(phntp_list_dict.get(k))
-                           for k in best_comb_idx[final_idx])
-    # Note: 'np.concatenate' is used to convert an array of list
-    # into an array
 
     # return nb_solution, best_marker_comb, cell_phntp_comb, best_phntp_comb  # AT. Double-check
     return nb_solution, best_marker_comb
