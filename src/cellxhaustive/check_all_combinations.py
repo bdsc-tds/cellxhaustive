@@ -394,7 +394,8 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
             # Note: 'partial()' is used to iterate over 'indices' and 'poss_comb'
             # and keep the other parameters constant
 
-        # Remove combinations without solution and turn list into dict using idx as keys
+        # Remove combinations without solution and turn list into dict using
+        # combination indices as keys
         score_results_dict = {}
         for dct in score_results_lst:
             # Add max number of phntp to countin df # AT. Delete after test
@@ -444,25 +445,25 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
             # if max_nb_phntp_marker_sum > max_nb_phntp_tot_sum:  # To test elbow condition on sum.  # AT. Delete after test
 
                 # Filter out combinations not reaching maximum number of phenotype
-                score_max_phntp = {k: v for k, v in score_results_dict.items() if v['max_nb_phntp'] == max_nb_phntp_marker}
+                score_max_phntp = {indx: v for indx, v in score_results_dict.items() if v['max_nb_phntp'] == max_nb_phntp_marker}
 
                 # Filter out combinations not reaching minimum number of undefined cells
                 min_nb_undef = max(dct['min_undefined'] for dct in score_max_phntp.values())
-                score_min_undef = {k: v for k, v in score_max_phntp.items() if v['min_undefined'] == min_nb_undef}
+                score_min_undef = {indx: v for indx, v in score_max_phntp.items() if v['min_undefined'] == min_nb_undef}
 
                 # Filter out combinations not reaching maximum samplesxbatch
                 max_x_val = max(dct['max_x_values'] for dct in score_min_undef.values())
-                score_max_x = {k: v for k, v in score_min_undef.items() if v['max_x_values'] == max_x_val}
+                score_max_x = {indx: v for indx, v in score_min_undef.items() if v['max_x_values'] == max_x_val}
 
                 # Filter out combinations not reaching maximum cellxsample
                 max_y_val = max(dct['max_y_values'] for dct in score_max_x.values())
-                score_final = {k: v for k, v in score_max_x.items() if v['max_y_values'] == max_y_val}
+                score_final = {indx: v for indx, v in score_max_x.items() if v['max_y_values'] == max_y_val}
 
                 # Save best results in general dictionaries and arrays
-                comb_dict = {k: v['comb'] for k, v in score_final.items()}
                 cell_phntp_dict = {k: v['phntp_per_cell'] for k, v in score_final.items()}
                 phntp_list_dict = {k: v['best_phntp_lst'] for k, v in score_final.items()}
-                best_comb_idx = np.fromiter((score_final.keys()), dtype=int)
+                comb_dict = {indx: v['comb'] for indx, v in score_final.items()}
+                best_comb_idx = np.fromiter(score_final.keys(), dtype=int)
                 best_nb_phntp = np.fromiter((d['max_nb_phntp'] for d in score_final.values()), dtype=float)
                 best_nb_undefined = np.fromiter((d['min_undefined'] for d in score_final.values()), dtype=float)
                 best_x_values = np.fromiter((d['max_x_values'] for d in score_final.values()), dtype=float)
