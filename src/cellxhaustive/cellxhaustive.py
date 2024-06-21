@@ -248,76 +248,77 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     batches_label_list = []
     samples_label_list = []
     markers_representative_list = []
-    for label, is_label in zip(uniq_labels, is_label_list):
-        logging.info(f'\tProcessing <{label}> cells')
-        # Main gating: select relevant markers in each batch of each cell population
-        markers_rep_batches = []
-        for batch in np.unique(batches):
-            logging.debug(f'\t\tProcessing batch <{batch}>')
-            logging.debug('\t\t\tSelecting cells matching current batch')
-            is_batch = (batches == batch)
-            # Create boolean array to select cells matching current 'label' and 'batch'
-            is_label_batch = np.logical_and(is_batch, is_label)
 
-            # Subset expression matrix to cells of current 'batch' and 'label' only
-            logging.debug('\t\t\tSelecting corresponding expression data')
-            mat_subset = mat[is_label_batch, :]
+    # Specific context manager to save information on marker filtering
+    with open(marker_file_path, 'w') as file:
+        for label, is_label in zip(uniq_labels, is_label_list):  # Loop over cell types
+            # Select relevant markers in each batch of each cell population (main gating)
+            logging.info(f'\tProcessing <{label}> cells')
+            markers_rep_batches = []
+            for batch in np.unique(batches):
+                logging.debug(f'\t\tProcessing batch <{batch}>')
+                logging.debug('\t\t\tSelecting cells matching current batch')
+                is_batch = (batches == batch)
+                # Create boolean array to select cells matching current 'label' and 'batch'
+                is_label_batch = np.logical_and(is_batch, is_label)
 
-            # Check bimodality of markers and select best ones
-            logging.debug('\t\t\tEvaluating marker bimodality')
-            marker_center_values = np.abs(np.mean(mat_subset, axis=0) - args.two_peak_threshold)
-            marker_threshold_value = np.sort(marker_center_values)[max_markers - 1]  # Select max_markers-th center value (in ascending order)
-            # Note: '- 1' is used to compensate 0-based indexing
-            is_center_greater = (marker_center_values <= marker_threshold_value)
-            markers_rep = markers[is_center_greater]  # Select markers with center higher than max_markers-th center
+                # Subset expression matrix to cells of current 'batch' and 'label' only
+                logging.debug('\t\t\tSelecting corresponding expression data')
+                mat_subset = mat[is_label_batch, :]
 
-            # Store list of relevant markers for every batch
-            # Note: try/except avoids an error if dictionary doesn't exist yet
-            logging.debug('\t\t\tStoring relevant markers')
-            markers_rep_batches.extend(list(markers_rep))
+                # Check bimodality of markers and select best ones
+                logging.debug('\t\t\tEvaluating marker bimodality')
+                marker_center_values = np.abs(np.mean(mat_subset, axis=0) - args.two_peak_threshold)
+                marker_threshold_value = np.sort(marker_center_values)[max_markers - 1]  # Select max_markers-th center value (in ascending order)
+                # Note: '- 1' is used to compensate 0-based indexing
+                is_center_greater = (marker_center_values <= marker_threshold_value)
+                markers_rep = markers[is_center_greater]  # Select markers with center higher than max_markers-th center
 
-        if len(np.unique(batches)) == 1:  # No need to filter markers if there is only 1 batch
-            logging.info(f'\t\tFound only one batch, no need to filter markers.')
-            markers_representative = markers_rep_batches
-            logging.info(f"\t\t\tFound {len(markers_representative)} markers: {', '.join(markers_representative)}")
-        else:
-            logging.info(f'\t\tFound {len(np.unique(batches))} batches. Selecting markers present in at least 2 batches.')
-            markers_representative = set([mk for mk in markers_rep_batches
-                                          if markers_rep_batches.count(mk) >= 2])
-            logging.info(f"\t\t\tFound {len(markers_representative)} markers: {', '.join(markers_representative)}")
-            missing_markers = set([mk for mk in markers_rep_batches
-                                   if markers_rep_batches.count(mk) < 2])
-            logging.info(f"\t\t\tFiltered {len(missing_markers)} marker{'s' if len(missing_markers) > 1 else ''}: {', '.join(missing_markers)}")
-            logging.info(f"\t\t\tFiltered out {len(missing_markers)} marker{'s' if len(missing_markers) > 1 else ''}: {', '.join(missing_markers)}")
+                # Store list of relevant markers for every batch
+                # Note: try/except avoids an error if dictionary doesn't exist yet
+                logging.debug('\t\t\tStoring relevant markers')
+                markers_rep_batches.extend(list(markers_rep))
 
-        # Convert format back to array
-        markers_representative = np.array(list(markers_representative))
+            if len(np.unique(batches)) == 1:  # No need to filter markers if there is only 1 batch
+                logging.info(f'\t\tFound only one batch, no need to filter markers.')
+                markers_representative = markers_rep_batches
+                logging.info(f"\t\t\tFound {len(markers_representative)} markers: {', '.join(markers_representative)}")
+            else:
+                logging.info(f'\t\tFound {len(np.unique(batches))} batches. Selecting markers present in at least 2 batches.')
+                markers_representative = set([mk for mk in markers_rep_batches
+                                              if markers_rep_batches.count(mk) >= 2])
+                logging.info(f"\t\t\tFound {len(markers_representative)} markers: {', '.join(markers_representative)}")
+                missing_markers = set([mk for mk in markers_rep_batches
+                                       if markers_rep_batches.count(mk) < 2])
+                logging.info(f"\t\t\tFiltered out {len(missing_markers)} marker{'s' if len(missing_markers) > 1 else ''}: {', '.join(missing_markers)}")
 
-        # Save marker information in different file
-        with open(marker_file_path, 'a') as file:
+            # Convert format back to array
+            markers_representative = np.array(list(markers_representative))
+
+            # Save marker information in different file
             file.write(f'{label} cells:\n')
             file.write(f"\tMarkers found: {', '.join(markers_rep_batches)}\n")
             file.write(f"\tMarkers kept (found in at least 2 batches): {', '.join(markers_representative)}\n")
             file.write(f"\tMarkers removed (present in only 1 batch): {', '.join(missing_markers)}\n")
 
-        # Extract expression, batch and sample information across all batches
-        # for cell population 'label'
-        logging.info('\t\tExtracting matching expression, batch and sample information')
-        mat_subset_label = mat[is_label, :]
-        batches_label = batches[is_label]
-        samples_label = samples[is_label]
+            # Extract expression, batch and sample information across all batches
+            # for cell population 'label'
+            logging.info('\t\tExtracting matching expression, batch and sample information')
+            mat_subset_label = mat[is_label, :]
+            batches_label = batches[is_label]
+            samples_label = samples[is_label]
 
-        # Slice matrix to keep only expression of relevant markers
-        markers_representative = markers[np.isin(markers, markers_representative)]  # Reorder markers
-        mat_subset_rep_markers = mat_subset_label[:, np.isin(markers, markers_representative)]
+            # Slice matrix to keep only expression of relevant markers
+            markers_representative = markers[np.isin(markers, markers_representative)]  # Reorder markers
+            mat_subset_rep_markers = mat_subset_label[:, np.isin(markers, markers_representative)]
 
-        logging.info('\t\tStoring data in arrays')
-        mat_subset_rep_list.append(mat_subset_rep_markers)  # Store slice matrix
-        batches_label_list.append(batches_label)  # Store batch information
-        samples_label_list.append(samples_label)  # Store sample information
-        markers_representative_list.append(markers_representative)  # Store representative markers
-        # Note: keeping data in list of arrays makes multiprocessing easier and
-        # reduce overall memory usage
+            logging.info('\t\tStoring data in arrays')
+            mat_subset_rep_list.append(mat_subset_rep_markers)  # Store slice matrix
+            batches_label_list.append(batches_label)  # Store batch information
+            samples_label_list.append(samples_label)  # Store sample information
+            markers_representative_list.append(markers_representative)  # Store representative markers
+            # Note: keeping data in list of arrays makes multiprocessing easier and
+            # reduce overall memory usage
 
     # Free memory by deleting heavy objects
     del (is_batch, is_label_batch, mat_subset, mat_subset_label, mat, batches, samples)
