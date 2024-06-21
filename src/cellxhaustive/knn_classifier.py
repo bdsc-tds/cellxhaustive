@@ -75,6 +75,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
 
     # Copy 'new_labels' array to avoid changing the original array
     reannotated_labels = copy.deepcopy(new_labels)
+    reannotated_labels = reannotated_labels.astype(dtype='object')  # To avoid strings getting cut
 
     # Split data in annotated (train/test) cells and undefined cells (i.e. cells
     # that will be re-annotated by classifier)
@@ -130,7 +131,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
 
     logging.info('\t\t\t\t\t\tSelecting annotations passing knn_min_probability threshold')
     # Initialise empty array to store updated annotations
-    reannotated = np.full(undef_cells_mat.shape[0], undef_phntp, dtype='U150')
+    reannotated = np.full(undef_cells_mat.shape[0], undef_phntp, dtype='object')  # To avoid strings getting cut
 
     # Extract cell types ordered by sklearn
     ordered_cell_types = best_model.classes_
@@ -153,6 +154,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     # Assign new annotations to original array
     logging.info('\t\t\t\t\t\tAssigning new annotations passing threshold')
     reannotated_labels[is_undef] = reannotated
+    reannotated_labels = reannotated_labels.astype(dtype='str')
 
     # Reset environment variables
     del os.environ['OPENBLAS_NUM_THREADS']

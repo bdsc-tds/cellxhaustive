@@ -168,7 +168,8 @@ def assign_cell_types(mat_representative,
 
     # Convert phenotypes to new names
     logging.info('\t\t\t\t\t\tRenaming cell types')
-    new_labels = np.vectorize(names_conv.get)(cell_phntp, f'Unannotated {cell_name}')
+    new_labels = np.vectorize(names_conv.get, otypes=[str])(cell_phntp,
+                                                            f'Unannotated {cell_name}')
     # Note: with dict.get method, non-representative phenotypes (missing from
     # 'names_conv') are automatically converted to 'Unannotated {cell_name}'
 
