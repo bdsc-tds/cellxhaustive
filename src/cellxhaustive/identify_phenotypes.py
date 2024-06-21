@@ -289,9 +289,11 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
 
             # Update non-significant phenotypes to make final results easier to
             # understand and process
+            cell_phntp_comb = cell_phntp_comb.astype(dtype=object)  # To avoid strings getting cut
             cell_phntp_comb[np.in1d(cell_phntp_comb,
                                     best_phntp_comb,
                                     invert=True)] = f'Other {cell_name} phenotype'
+            cell_phntp_comb = cell_phntp_comb.astype(dtype=str)
 
             # Append results to dictionary
             results_dict[i]['new_labels'] = new_labels
@@ -316,8 +318,8 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                     rev_names_conv = {val: key for key, val in names_conv.items()}
 
                     # Update phenotypes of reannotated cells
-                    reannotated_phntp = np.vectorize(rev_names_conv.get)(reannotated_labels,
-                                                                         'tmp')
+                    reannotated_phntp = np.vectorize(rev_names_conv.get, otypes=[object])(reannotated_labels,
+                                                                                          'tmp')
                     # Note: 'tmp' is only used to easily identify unidentified cells
                     still_undef = (reannotated_phntp == 'tmp')
                     reannotated_phntp[still_undef] = cell_phntp_comb[still_undef]
