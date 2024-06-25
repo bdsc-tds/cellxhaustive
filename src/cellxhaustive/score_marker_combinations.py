@@ -121,19 +121,19 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
 
         # Process batches separately
         for batch in np.unique(batches_label):
-            # Split cell type data according to batch
+            # Split phenotype data according to batch
             phenotypes_batch = phntp_per_cell[batches_label == batch]
 
-            # Split sample data, first according to batch and then cell type
+            # Split sample data, first according to batch and then phenotype
             phenotype_samples = samples_label[batches_label == batch][phenotypes_batch == phenotype]
 
-            # If there are no cells of type 'phenotype' in 'batch', that means
-            # 'phenotype' cannot be present in all batches, so stop now
+            # If there are no 'phenotype' cells in 'batch', that means it cannot
+            # be present in all batches, so stop now
             if phenotype_samples.size == 0:
                 keep_phenotype = np.logical_and(keep_phenotype, False)
                 break
 
-            # Calculate number of unique samples in current batch and cell type
+            # Calculate number of unique samples in current batch and phenotype
             samples_nb = float(len(np.unique(phenotype_samples)))
 
             # Count number of cells per phenotype in each sample
@@ -163,7 +163,7 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
             # Note: for consistency, phenotypes have to be present in all batches,
             # hence usage of 'np.logical_and()'
 
-        # Add 'phenotype' presence/absence to cell type counter
+        # Add 'phenotype' presence/absence to phenotype counter
         nb_phntp += keep_phenotype * 1
 
         # Add number of undefined cells to counter

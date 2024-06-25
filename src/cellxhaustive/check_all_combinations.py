@@ -345,7 +345,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                                                       timeout=None,
                                                       chunksize=chunksize))
             # Note: 'partial()' is used to iterate over 'indices' and 'poss_comb'
-            # and keep the other parameters constant
+            # and keep other parameters constant
 
         # Remove combinations without solution and turn list into dict using
         # combination indices as keys

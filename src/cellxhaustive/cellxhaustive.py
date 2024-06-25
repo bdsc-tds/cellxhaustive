@@ -46,17 +46,23 @@ from utils import get_chunksize, get_cpu, setup_log  # AT. Double-check path
 
 # Parse arguments
 parser = argparse.ArgumentParser(description='Package to annotate cell types using \
-                                CITE-seq ADT data.')
+                                 CITE-seq ADT data.')
 parser.add_argument('-i', '--input', dest='input_path', type=str,
                     help='Path to input table with expression data and \
                     samples/batch/cell_type information',
                     required=True)
 parser.add_argument('-m', '--markers', dest='marker_path', type=str,
-                    help='Path to file with list of markers of interest',
+                    help='Path to file with list of markers to consider during \
+                    analyses',
                     required=True)
 parser.add_argument('-o', '--output', dest='output_path', type=str,
                     help='Path to output table with annotations',
                     required=True)
+parser.add_argument('-a', '--max-markers', dest='max_markers', type=int,
+                    help="Maximum number of markers to select among total list \
+                    of markers. Must be an integer less than or equal to number \
+                    of markers in total list provided with '-m' parameter [15]",
+                    required=False, default=15)
 parser.add_argument('-c', '--cell-type-definition', dest='cell_type_path', type=str,
                     help='Path to file with cell types characterisation \
                     [../data/config/major_cell_types.json]',
@@ -65,57 +71,56 @@ parser.add_argument('-l', '--log', dest='log_path', type=str,
                     help='Path to log file [output_path.log]',
                     required=False, default='')
 parser.add_argument('-n', '--log-level', dest='log_level', type=str,
-                    help='Verbosity level of log file [info]',
+                    help="Verbosity level of log file. Must be 'debug', 'info' \
+                    or 'warning' [info]",
                     required=False, default='info', choices=['debug', 'info', 'warning'])
 parser.add_argument('-j', '--two-peak-threshold', dest='two_peak_threshold', type=float,
                     help='Threshold to determine whether a two-peaks marker is\
-                    negative or positive [3]',
+                    negative or positive. Must be a float number [3]',
                     required=False, default=3)
 parser.add_argument('-e', '--three-peaks', dest='three_peak_markers', type=str,
                     help='Path to file with markers that have three peaks []',
                     required=False, default='')
 parser.add_argument('-f', '--three-peak-low', dest='three_peak_low', type=float,
                     help='Threshold to determine whether three-peaks marker is\
-                    negative or low_positive [2]',
+                    negative or low_positive. Must be a float number [2]',
                     required=False, default=2)
 parser.add_argument('-g', '--three-peak-high', dest='three_peak_high', type=float,
                     help='Threshold to determine whether three-peaks marker is\
-                    positive or low_positive [4]',
+                    positive or low_positive. Must be a float number [4]',
                     required=False, default=4)
-parser.add_argument('-a', '--max-markers', dest='max_markers', type=int,
-                    help="Maximum number of relevant markers to select among \
-                    total list of markers. Must be less than or equal to \
-                    'len(markers)' [15]",
-                    required=False, default=15)
 parser.add_argument('-b', '--min-annotations', dest='min_annotations', type=int,
-                    help="Minimum number of phenotypes for a combination of markers \
-                    to be taken into account as a potential cell population. Must \
-                    be in '[2; len(markers)]', but it is advised to choose a value \
-                    in '[3; len(markers) - 1]' [3]",
+                    help="Minimum number of phenotypes for a combination of \
+                    markers to be taken into account as a potential cell \
+                    population. Must be an integer in '[1; 2^len(markers)]', but \
+                    it is advised to choose in '[3; 2^len(markers) - 1]' [3]",
                     required=False, default=3)
 parser.add_argument('-s', '--max-solutions', dest='max_solutions', type=int,
-                    help='Maximum number of optimal solutions to keep [10]',
+                    help='Maximum number of optimal solutions to keep. Must be \
+                    a strictly positive integer [10]',
                     required=False, default=10)
 parser.add_argument('-q', '--min-samplesxbatch', dest='min_samplesxbatch', type=float,
                     help="Minimum proportion of samples within each batch with at \
                     least 'min_cellxsample' cells for a new annotation to be \
-                    considered [0.5]",
+                    considered. Must be a float in [0.01; 1] [0.5]",
                     required=False, default=0.5)
 parser.add_argument('-r', '--min-cellxsample', dest='min_cellxsample', type=int,
                     help="Minimum number of cells within each sample in \
                     'min_samplesxbatch' %% of samples within each batch for a new \
-                    annotation to be considered [10]",
+                    annotation to be considered. Must be an integer in [1; 100] [10]",
                     required=False, default=10)
 parser.add_argument('-k', '--no-knn', dest='knn_refine',
                     help='If present, do not refine annotations with a KNN classifier',
                     required=False, default=True, action="store_false")
 parser.add_argument('-p', '--knn-min-probability', dest='knn_min_probability', type=float,
-                    help='Confidence threshold for KNN classifier to reassign a new \
-                    cell type to previously undefined cells [0.5]',
+                    help='Confidence threshold for KNN classifier to reassign a \
+                    new cell type to previously undefined cells. Must be a float \
+                    in [0.01; 1] [0.5]',
                     required=False, default=0.5)
 parser.add_argument('-t', '--threads', dest='cores', type=int,
                     help='Number of cores to use. Specifying more than one core \
-                    will run parallel jobs which will increase speed [1]',
+                    will run parallel jobs which will increase speed. Must be \
+                    a strictly positive integer [1]',
                     required=False, default=1)
 parser.add_argument('-d', '--dry-run', dest='dryrun',
                     help='Use dry-run mode to check input files and configuration [False]',
@@ -126,12 +131,12 @@ args = parser.parse_args()
 # Main script execution
 if __name__ == '__main__':  # AT. Double check behaviour inside package
 
-    # Determine log file name and set log level
+    # Set log level and determine log file name
+    log_level = args.log_level
     if not args.log_path:
         log_file = f'{os.path.splitext(args.output_path)[0]}.log'
     else:
         log_file = args.log_path
-    log_level = args.log_level
 
     # Make log variables as environment variables
     os.environ['LOG_FILE'] = log_file
@@ -382,7 +387,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                                   chunksize=chunksize))
         # Note: 'partial()' is used to iterate over 'is_label_list', 'uniq_labels',
         # 'mat_subset_rep_list', 'batches_label_list', 'samples_label_list' and
-        # 'markers_representative_list' and keep the other parameters constant
+        # 'markers_representative_list' and keep other parameters constant
 
     # Reset logging configuration
     setup_log(log_file, log_level, 'a')

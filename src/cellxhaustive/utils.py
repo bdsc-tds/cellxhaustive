@@ -109,7 +109,7 @@ def get_cpu(nb_cpu, nb_cell_type):
         cpu_eval = range(1, 17)
 
     else:
-        cpu_id = range(1, nb_cell_type + 1)
+        cpu_id = range(1, nb_cell_type + 1)  # '+1' to compensate 0-based indexing
         cpu_eval = range(1, 9)
 
     # Create all possible CPU combinations
@@ -138,13 +138,13 @@ def get_cpu(nb_cpu, nb_cell_type):
     logging.info(f'\tSetting nb_cpu_id to {nb_cpu_id} and nb_cpu_eval to {nb_cpu_eval}')
 
     if min_diff == 0:
-        logging.info('\tThere will be no idle CPU.')
+        logging.info('\tThere will be no idle CPU')
 
     else:
         cpu_tot = prod(cpu_solutions[0])
         logging.warning(f'\tThere will be {min_diff} idle CPUs. Consider decreasing')
         logging.warning(f"\t'-t' parameter to {cpu_tot} to save resources or")
-        logging.warning(f'\tincreasing total number of CPUs to speed up analyses.')
+        logging.warning(f'\tincreasing total number of CPUs to speed up analyses')
 
     return nb_cpu_id, nb_cpu_eval
 
