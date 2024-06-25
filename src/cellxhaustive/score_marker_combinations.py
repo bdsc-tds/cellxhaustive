@@ -111,6 +111,11 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
     nb_phntp = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
     nb_undef_cells = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
 
+    # Array of all phenotypes  # AT. Delete after test
+    nb_phntp_all = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))  # AT. Delete after test.
+    # nb_phntp_all = np.full((len(x_samplesxbatch_space), len(y_cellxsample_space)),  # AT. Delete after test
+    #                    len(np.unique(phntp_per_cell)))  # AT. Delete after test
+
     # Process marker phenotypes returned by 'determine_marker_status()' and
     # check whether they are worth keeping
     logging.debug(f'\t\t\t\t\t\tChecking which phenotypes are passing thresholds')
@@ -118,6 +123,9 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
 
         # Initialise temporary array to store 'phenotype' results
         keep_phenotype = np.full(nb_phntp.shape, True)
+
+        # Boolean to keep only 'phenotype' present in all batches without significancy  # AT. Delete after test
+        keep_phntp = True  # AT. Delete after test.
 
         # Process batches separately
         for batch in np.unique(batches_label):
@@ -131,6 +139,7 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
             # 'phenotype' cannot be present in all batches, so stop now
             if phenotype_samples.size == 0:
                 keep_phenotype = np.logical_and(keep_phenotype, False)
+                keep_phntp = False  # AT. Delete after test.
                 break
 
             # Calculate number of unique samples in current batch and cell type
@@ -169,8 +178,12 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
         # Add number of undefined cells to counter
         nb_undef_cells += np.logical_not(keep_phenotype) * np.sum(phntp_per_cell == phenotype)
 
+        # Add 'phenotype' without significancy presence/absence to phenotype counter  # AT. Delete after test.
+        if keep_phntp:  # AT. Delete after test.
+            nb_phntp_all += 1  # AT. Delete after test.
+
     logging.debug(f'\t\t\t\t\t\tFinished check')
 
-    return nb_phntp, nb_undef_cells
+    return nb_phntp, nb_undef_cells, nb_phntp_all
     # Note: 'phntp_per_cell' is not returned to avoid memory cost of storing and
     # dragging it across several functions and will be recalculated when needed.
