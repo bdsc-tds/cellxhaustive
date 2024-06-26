@@ -195,32 +195,41 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         sys.exit(1)
 
     # Get 1-D array for batch; add common batch value if information is missing
-    logging.info(f'Retrieving batch information in <{args.input_path}>')
-    if 'batch' in input_table.columns:
-        batches = input_table.loc[:, 'batch'].to_numpy(dtype=str)
-    else:
-        logging.warning(f'\tNo batch information in <{args.input_path}>')
+    input_col_low = input_table.columns.str.lower()  # Make column names case-insensitive
+    try:
+        logging.info(f'Retrieving batch information in <{input_path}>')
+        batches_idx = input_col_low.get_loc('batch')
+    except KeyError:
+        logging.warning(f'\tNo batch information in <{input_path}>')
         logging.warning('\tSetting batch value to <batch0> for all cells')
         batches = np.full(input_table.shape[0], 'batch0')
+    else:
+        batches = input_table.iloc[:, batches_idx].to_numpy(dtype=str)
+        logging.info(f'\tFound batches: {np.unique(batches)}')
 
     # Get 1-D array for sample; add common sample value if information is missing
-    logging.info(f'Retrieving sample information in <{args.input_path}>')
-    if 'sample' in input_table.columns:
-        samples = input_table.loc[:, 'sample'].to_numpy(dtype=str)
-    else:
-        logging.warning(f'\tNo sample information in <{args.input_path}>')
+    try:
+        logging.info(f'Retrieving sample information in <{input_path}>')
+        samples_idx = input_col_low.get_loc('sample')
+    except KeyError:
+        logging.warning(f'\tNo sample information in <{input_path}>')
         logging.warning('\tSetting sample value to <sample0> for all cells')
         samples = np.full(input_table.shape[0], 'sample0')
+    else:
+        samples = input_table.iloc[:, samples_idx].to_numpy(dtype=str)
+        logging.info(f'\tFound samples: {np.unique(samples)}')
 
     # Get 1-D array for pre-annotated cell type
-    logging.info(f'Retrieving cell type information in <{args.input_path}>')
-    if 'cell_type' in input_table.columns:
-        cell_labels = input_table.loc[:, 'cell_type'].to_numpy(dtype=str)
-        logging.info(f'Found {np.unique(cell_labels)} pre-annotated cell types')
-    else:
-        logging.warning(f'\tNo cell type information in <{args.input_path}>')
+    try:
+        logging.info(f'Retrieving cell type information in <{input_path}>')
+        cell_type_idx = input_col_low.get_loc('cell_type')
+    except KeyError:
+        logging.warning(f'\tNo cell type information in <{input_path}>')
         logging.warning('\tSetting cell type value to <cell_type0> for all cells')
         cell_labels = np.full(input_table.shape[0], 'cell_type0')
+    else:
+        cell_labels = input_table.iloc[:, cell_type_idx].to_numpy(dtype=str)
+        logging.info(f'\tFound cell types: {np.unique(cell_labels)}')
 
     # Get array of unique labels
     uniq_labels = np.unique(cell_labels)
