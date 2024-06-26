@@ -133,10 +133,12 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Set log level and determine log file name
     log_level = args.log_level
-    if not args.log_path:
-        log_file = f'{os.path.splitext(args.output_path)[0]}.log'
+    output_path = args.output_path
+    log_path = args.log_path
+    if not log_path:
+        log_file = f'{os.path.splitext(output_path)[0]}.log'
     else:
-        log_file = args.log_path
+        log_file = log_path
 
     # Make log variables as environment variables
     os.environ['LOG_FILE'] = log_file
@@ -151,18 +153,46 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     setup_log(log_file, log_level, 'w')
 
     # Get 1-D array for markers
-    pd.options.mode.copy_on_write = True  # Save memory by using COW mode
-    logging.info(f'Importing markers list from <{args.marker_path}>')
-    markers = pd.read_csv(args.marker_path, sep='\t', header=None).to_numpy(dtype=str).flatten()
-    logging.info(f'\tFound {len(markers)} markers')
+    pd.options.mode.copy_on_write = True  # Save memory by using CoW mode
+
+    # Import marker list
+    marker_path = args.marker_path
+    try:
+        logging.info(f'Importing marker list from <{marker_path}>')
+        markers = pd.read_csv(marker_path, sep='\t', header=None).to_numpy(dtype=str).flatten()
+    except FileNotFoundError:
+        logging.error(f'\tCould not find <{marker_path}>. Please double-check file path')
+        sys.exit(1)
+    except Exception as e:
+        logging.error(e)
+        sys.exit(1)
+    else:
+        logging.info(f'\tFound {len(markers)} markers')
 
     # Parse general input files into several arrays
-    logging.info(f'Importing cell data from <{args.input_path}>')
-    input_table = pd.read_csv(args.input_path, sep='\t', header=0, index_col=0)
-    logging.info(f'\tFound {len(input_table.index)} cells')
+    input_path = args.input_path
+    try:
+        logging.info(f'Importing cell data from <{input_path}>')
+        input_table = pd.read_csv(input_path, sep='\t', header=0, index_col=0)
+    except FileNotFoundError:
+        logging.error(f'\tCould not find <{input_path}>. Please double-check file path')
+        sys.exit(1)
+    except Exception as e:
+        logging.error(e)
+        sys.exit(1)
+    else:
+        logging.info(f'\tFound {len(input_table.index)} cells')
 
     # Get 2-D array for expression using 'markers'
-    mat = input_table.loc[:, markers].to_numpy(dtype=float)
+    try:
+        logging.info(f'Selecting ADT counts in <{input_path}>')
+        mat = input_table.loc[:, markers].to_numpy(dtype=float)
+    except KeyError as e:
+        logging.error(f'\tCould not find marker <{e}> in <{input_path}>. Please double-check marker list')
+        sys.exit(1)
+    except Exception as e:
+        logging.error(e)
+        sys.exit(1)
 
     # Get 1-D array for batch; add common batch value if information is missing
     logging.info(f'Retrieving batch information in <{args.input_path}>')
@@ -198,27 +228,37 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     # Get list of arrays describing cells matching each cell type of 'uniq_labels'
     is_label_list = [(cell_labels == label) for label in uniq_labels]
 
-    # Get three peaks markers if a file is specified, otherwise use default list
-    logging.info('Checking for existence of markers with 3 peaks')
+    # Get three peaks markers if file exists, otherwise use empty array
     three_path = args.three_peak_markers
-    if (not isinstance(three_path, list) and pathlib.Path(three_path).is_file()):
+    try:
+        logging.info('Checking for file with 3 peaks markers')
         with open(three_path) as file:
-            three_peak_markers = np.array(file.read().splitlines(), dtype=np.dtype('U15'))
-        logging.info(f'\tFound {len(three_peak_markers)} markers in <{three_path}>')
+            three_peak_markers = np.array(file.read().splitlines(), dtype='str')
+    except FileNotFoundError:
+        three_peak_markers = np.empty(0, dtype='str')
+        logging.warning('\tNo file provided, using default empty array')
     else:
-        three_peak_markers = np.empty(0, dtype=np.dtype('U15'))
-        logging.warning('\tNo file provided, using default empty list')
+        logging.info(f'\tFound {len(three_peak_markers)} markers in <{three_path}>')
 
     # Import cell types definitions
-    logging.info(f'Importing cell type marker definition from <{args.cell_type_path}>')
-    with open(args.cell_type_path) as in_cell_types:
-        cell_types_dict = json.load(in_cell_types)
-    logging.info(f'\tFound {len(cell_types_dict)} cell types')
-    # Note: this file was created using data from
-    # https://github.com/RGLab/rcellontologymapping/blob/main/src/src/ImmportDefinitions.hs
+    cell_type_path = args.cell_type_path
+    try:
+        logging.info('Checking for file with cell type definitions')
+        with open(cell_type_path) as cell_types_input:
+            cell_types_dict = yaml.safe_load(cell_types_input)
+        # Note: this file was created using data from
+        # https://github.com/RGLab/rcellontologymapping/blob/main/src/src/ImmportDefinitions.hs
+    except FileNotFoundError:
+        logging.error(f'\tCould not find <{cell_type_path}>. Please double-check file path')
+        sys.exit(1)
+    except Exception as e:
+        logging.error(e)
+        sys.exit(1)
+    else:
+        logging.info(f'\tFound {len(cell_types_dict)} cell types')
 
-    # Determine marker file path
-    marker_file_path = f'{os.path.splitext(args.output_path)[0]}_markers.txt'
+    # Determine path for marker filtering results
+    marker_file_path = f'{os.path.splitext(output_path)[0]}_markers.txt'
 
     # Get other parameter values from argument parsing
     logging.info('Parsing remaining parameters')
@@ -228,10 +268,31 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     max_markers = args.max_markers
     min_annotations = args.min_annotations
     max_solutions = args.max_solutions
-    min_cellxsample = args.min_cellxsample
     min_samplesxbatch = args.min_samplesxbatch
+    min_cellxsample = args.min_cellxsample
     knn_refine = args.knn_refine
     knn_min_probability = args.knn_min_probability
+
+    logging.info('Checking parameter values')
+    if not (1 <= max_markers <= len(markers)):
+        logging.error(f"\t'-a/--max-markers' must be an integer between 1 and {len(markers)}")
+        sys.exit(1)
+    if not (1 <= min_annotations <= 2 ** len(markers)):
+        logging.error(f"\t'-b/--min-annotations' must be an integer between 1 and {2 ** len(markers)}")
+        sys.exit(1)
+    if not (1 <= max_solutions):
+        logging.error(f"\t'-s/--max-solutions' must be a strictly positive integer")
+        sys.exit(1)
+    if not (0.01 <= min_samplesxbatch <= 1):
+        logging.error("\t'-q/--min-samplesxbatch' must be a float between 0.01 and 1")
+        sys.exit(1)
+    if not (1 <= min_cellxsample <= 100):
+        logging.error("\t'-r/--min-cellxsample' must be an integer between 1 and 100")
+        sys.exit(1)
+    if not (0.01 <= knn_min_probability <= 1):
+        logging.error("\t'-p/--knn-min-probability' must be a float between 0.01 and 1")
+        sys.exit(1)
+    logging.info('\tAll parameter values within range')
 
     # Get CPU settings
     logging.info('Determining parallelisation settings')
@@ -273,23 +334,22 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
                 # Check bimodality of markers and select best ones
                 logging.debug('\t\t\tEvaluating marker bimodality')
-                marker_center_values = np.abs(np.mean(mat_subset, axis=0) - args.two_peak_threshold)
+                marker_center_values = np.abs(np.mean(mat_subset, axis=0) - two_peak_threshold)
                 marker_threshold_value = np.sort(marker_center_values)[max_markers - 1]  # Select max_markers-th center value (in ascending order)
                 # Note: '- 1' is used to compensate 0-based indexing
                 is_center_greater = (marker_center_values <= marker_threshold_value)
                 markers_rep = markers[is_center_greater]  # Select markers with center higher than max_markers-th center
 
                 # Store list of relevant markers for every batch
-                # Note: try/except avoids an error if dictionary doesn't exist yet
                 logging.debug('\t\t\tStoring relevant markers')
                 markers_rep_batches.extend(list(markers_rep))
 
             if len(np.unique(batches)) == 1:  # No need to filter markers if there is only 1 batch
-                logging.info(f'\t\tFound only one batch, no need to filter markers.')
+                logging.info(f'\t\tFound only one batch, no need to filter markers')
                 markers_representative = markers_rep_batches
                 logging.info(f"\t\t\tFound {len(markers_representative)} markers: {', '.join(markers_representative)}")
             else:
-                logging.info(f'\t\tFound {len(np.unique(batches))} batches. Selecting markers present in at least 2 batches.')
+                logging.info(f'\t\tFound {len(np.unique(batches))} batches. Selecting markers present in at least 2 batches')
                 markers_representative = set([mk for mk in markers_rep_batches
                                               if markers_rep_batches.count(mk) >= 2])
                 logging.info(f"\t\t\tFound {len(markers_representative)} markers: {', '.join(markers_representative)}")
@@ -330,7 +390,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Process cells by pre-existing annotations
     if nb_cpu_id == 1:  # Use for loop to avoid creating new processes
-        logging.info('Starting population analyses without parallelisation.')
+        logging.info('Starting population analyses without parallelisation')
         annot_results_lst = []
         for is_label, cell_name, mat_representative, batches_label, \
                 samples_label, markers_representative in zip(is_label_list,
@@ -471,10 +531,10 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     output_table = pd.concat([input_table, annot_df], axis=1)
 
     # Create output directory if it doesn't exist
-    output_dir = os.path.dirname(args.output_path)
+    output_dir = os.path.dirname(output_path)
     logging.debug(f'Creating output directory <{output_dir}>')
     os.makedirs(output_dir, exist_ok=True)
 
     # Save general table with annotations and phenotypes
-    logging.info(f'Saving final table to <{args.output_path}>')
-    output_table.to_csv(args.output_path, sep='\t', header=True, index=True)
+    logging.info(f'Saving final table to <{output_path}>')
+    output_table.to_csv(output_path, sep='\t', header=True, index=True)
