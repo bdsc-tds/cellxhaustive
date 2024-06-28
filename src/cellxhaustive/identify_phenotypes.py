@@ -27,9 +27,9 @@ from utils import setup_log  # AT. Double-check path
 
 # Function used in cellxhaustive.py
 def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
-                        samples_label, markers_representative, cell_types_dict,
-                        two_peak_threshold, three_peak_markers,
-                        three_peak_low, three_peak_high,
+                        samples_label, markers_representative, markers_interest,
+                        detection_method, cell_types_dict, two_peak_threshold,
+                        three_peak_markers, three_peak_low, three_peak_high,
                         max_markers, min_annotations, max_solutions,
                         min_samplesxbatch, min_cellxsample,
                         knn_refine, knn_min_probability, nb_cpu_eval):
@@ -37,8 +37,8 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
     Function that identifies most probable cell type and phenotype for a group
     of cells using expression of its most relevant markers.
 
-    Parameters
-    ----------
+    Parameters:
+    -----------
     is_label: array(bool)
       1-D numpy array with booleans to indicate cells matching current cell type.
 
@@ -57,6 +57,14 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
 
     markers_representative: array(str)
       1-D numpy array with markers matching each column of 'mat_representative'.
+
+    markers_interest: array(str)
+      1-D numpy array with markers that must appear in optimal marker combinations.
+
+    detection_method: 'auto' or int
+      Method used to stop search for optimal marker combinations. If 'auto', use
+      default algorithm relying on maximum number of phenotypes. If int, create a
+      combination with exactly this number of markers.
 
     cell_types_dict: {str: list()}
       Dictionary with cell types as keys and list of cell type defining markers
@@ -156,6 +164,8 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
         batches_label=batches_label,
         samples_label=samples_label,
         markers_representative=markers_representative,
+        markers_interest=markers_interest,
+        detection_method=detection_method,
         two_peak_threshold=two_peak_threshold,
         three_peak_markers=three_peak_markers,
         three_peak_low=three_peak_low,
@@ -290,7 +300,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
             # Update non-significant phenotypes to make final results easier to
             # understand and process
             cell_phntp_comb = cell_phntp_comb.astype(dtype=object)  # To avoid strings getting cut
-            cell_phntp_comb[np.in1d(cell_phntp_comb,
+            cell_phntp_comb[np.isin(cell_phntp_comb,
                                     best_phntp_comb,
                                     invert=True)] = f'Other {cell_name} phenotype'
             cell_phntp_comb = cell_phntp_comb.astype(dtype=str)

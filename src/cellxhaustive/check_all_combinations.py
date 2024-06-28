@@ -24,6 +24,43 @@ from utils import get_chunksize, setup_log  # AT. Double-check path
 
 
 # Function used in check_all_combinations()
+def get_poss_comb(marker_counter, markers_representative, markers_interest):
+    """
+    Function that takes into account presence of markers of interest to generate
+    marker combinations to score.
+
+    Parameters:
+    -----------
+    marker_counter: int
+      Number of markers in combinations to create.
+
+    markers_representative: array(str)
+      1-D numpy array with markers matching each column of 'mat_representative'.
+
+    markers_interest: array(str)
+      1-D numpy array with markers that must appear in optimal marker combinations.
+
+    Returns:
+    --------
+    poss_comb: list(tuple(str))
+      List of tuples of strings with marker combinations to score.
+    """
+
+    if markers_interest.size > 0:  # With markers of interest
+        # Determine number of representative markers to add
+        missing_counter = marker_counter - len(markers_interest)
+        # Generate combinations of representative markers
+        complementation_comb = ite.combinations(markers_representative, missing_counter)
+        # Append combinations of representative markers to markers of interest
+        poss_comb = [tuple(markers_interest) + cb for cb in complementation_comb]
+    else:  # Without markers of interest
+        # Generate combinations of 'marker_counter' representative markers
+        poss_comb = list(ite.combinations(markers_representative, marker_counter))
+
+    return poss_comb
+
+
+# Function used in check_all_combinations()
 def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
                   markers_representative, two_peak_threshold, three_peak_markers,
                   three_peak_low, three_peak_high, min_annotations,
@@ -111,8 +148,9 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
 
     logging.debug(f'\t\t\t\tTesting {comb}')
     # Slice data based on current marker combination 'comb'
-    markers_comb = markers_representative[np.isin(markers_representative, np.asarray(comb))]
-    mat_comb = mat_representative[:, np.isin(markers_representative, markers_comb)]
+    markers_mask = np.isin(markers_representative, np.asarray(comb))
+    markers_comb = markers_representative[markers_mask]
+    mat_comb = mat_representative[:, markers_mask]
 
     # Find number of phenotypes and undefined cells for a given marker combination
     # 'comb' across 'samplesxbatch' and 'cellxsample' grid
@@ -177,7 +215,8 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
 
 # Function used in identify_phenotypes.py
 def check_all_combinations(mat_representative, batches_label, samples_label,
-                           markers_representative, two_peak_threshold,
+                           markers_representative, markers_interest,
+                           detection_method, two_peak_threshold,
                            three_peak_markers, three_peak_low, three_peak_high,
                            max_markers, min_annotations,
                            min_samplesxbatch, min_cellxsample, nb_cpu_eval):
@@ -203,6 +242,14 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
 
     markers_representative: array(str)
       1-D numpy array with markers matching each column of 'mat_representative'.
+
+    markers_interest: array(str)
+      1-D numpy array with markers that must appear in optimal marker combinations.
+
+    detection_method: 'auto' or int
+      Method used to stop search for optimal marker combinations. If 'auto', use
+      default algorithm relying on maximum number of phenotypes. If int, create a
+      combination with exactly this number of markers.
 
     two_peak_threshold: float (default=3)
       Threshold to consider when determining whether a two-peaks marker is
@@ -271,14 +318,22 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     # Note: 'np.round()' is used to avoid floating point problem
     y_cellxsample_space = np.arange(min_cellxsample, 101)  # y-axis
 
-    # Find theoretical maximum number of markers in combination
-    max_combination = min(max_markers, len(markers_representative))
+    logging.info('\t\t\tSetting start parameters from detection method and markers of interest')
+    if detection_method == 'auto':  # Default algorithm for combinations length
+        # Theoretical maximum number of markers in combination
+        max_combination = min(max_markers, len(markers_representative))
+        if markers_interest.size > 0:  # With markers of interest
+            marker_counter = len(markers_interest)
+            max_combination += len(markers_interest)  # Account for markers of interest
+        else:  # Without markers of interest
+            marker_counter = 2
+    else:  # Combinations with exactly 'detection_method' markers
+        marker_counter = max_combination = detection_method
 
     # Initialise counters and objects to store results. Note that by default, it
     # is assumed that minimum number of relevant markers is 2 (only 1 marker can
     # not define a phenotype)
     enum_start = 0
-    marker_counter = 2
     max_nb_phntp_marker = 0
     max_nb_phntp_tot = -1
     comb_dict = {}
@@ -302,7 +357,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
         max_nb_phntp_tot = max_nb_phntp_marker
 
         # Get all possible combinations containing 'marker_counter' markers
-        poss_comb = list(ite.combinations(markers_representative, marker_counter))
+        poss_comb = get_poss_comb(marker_counter, markers_representative, markers_interest)
         # Note: iterator is converted to list because it is used several times
 
         # Create new range of indices

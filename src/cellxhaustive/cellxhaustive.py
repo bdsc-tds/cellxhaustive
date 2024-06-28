@@ -62,6 +62,17 @@ parser.add_argument('-a', '--max-markers', dest='max_markers', type=int,
                     of markers. Must be an integer less than or equal to number \
                     of markers in total list provided with '-m' parameter [15]",
                     required=False, default=15)
+parser.add_argument('-mi', '--markers-interest', dest='markers_interest', type=str,
+                    help='Comma-separated list of markers of interest that will \
+                    appear in final combination. Global setting that applies to \
+                    all cell populations []',
+                    required=False, default='')
+parser.add_argument('-dm', '--detection-method', dest='detection_method', type=str,
+                    help="Method to identify length of best marker combination. \
+                    Must be 'auto' to use default algorithm or an integer to set \
+                    combination length. Integer must be less than '-a' parameter. \
+                    Global setting that applies to all cell populations [auto]",
+                    required=False, default='auto')
 parser.add_argument('-c', '--cell-type-definition', dest='cell_type_path', type=str,
                     help='Path to file with cell types characterisation \
                     [../data/config/major_cell_types.yaml]',
@@ -263,8 +274,40 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         logging.error(e)
         sys.exit(1)
     else:
-        logging.info(f'\tFound {len(cell_types_dict)} cell types')
+        logging.info(f'\tFound {len(cell_types_dict)} cell types in <{cell_type_path}>')
 
+    # Get markers of interest, otherwise use empty array
+    markers_interest = args.markers_interest
+    logging.info('Checking for markers of interest')
+    if markers_interest:
+        markers_interest = np.array(markers_interest.split(','), dtype='str')
+        logging.info(f'\tFound {len(markers_interest)} markers')
+    else:
+        logging.warning('\tNo markers provided, using default empty array')
+        markers_interest = np.empty(0, dtype='str')
+
+    # Locate markers of interest in 'markers'
+    if markers_interest.size > 0:
+        logging.debug('\t\tIdentifying markers of interest in general marker list')
+        mask_interest_inv = np.isin(markers, markers_interest, invert=True)
+
+    # Get method to decide final combination length
+    logging.info('Determining detection method')
+    detection_method = args.detection_method
+    if detection_method == 'auto':  # Check if default setting is chosen
+        logging.info('\tUsing default algorithm')
+    elif detection_method.isdecimal():  # Check if an integer is provided
+        detection_method = int(detection_method)
+        if (detection_method > len(markers)):
+            logging.error(f"\t'-dm/--detection-method' must be lower than number of markers in {marker_path}")
+            sys.exit(1)
+        if (detection_method < len(markers_interest)):
+            logging.error(f"\t'-dm/--detection-method' must be higher than number of markers in {markers_interest}")
+            sys.exit(1)
+        logging.info(f'\tWill look for combinations with <{detection_method}> markers')
+    else:
+        logging.error("\tUnknown detection method. Please provide 'auto' or a positive integer")
+        sys.exit(1)
 
     # Get other parameter values from argument parsing
     logging.info('Parsing remaining parameters')
@@ -278,6 +321,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     min_cellxsample = args.min_cellxsample
     knn_refine = args.knn_refine
     knn_min_probability = args.knn_min_probability
+    logging.info('\tDone')
 
     logging.info('Checking parameter values')
     if not (1 <= max_markers <= len(markers)):
@@ -340,7 +384,10 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
                 # Subset expression matrix to cells of current 'batch' and 'label' only
                 logging.debug('\t\t\tSelecting corresponding expression data')
-                mat_subset = mat[is_label_batch, :]
+                try:
+                    mat_subset = mat[is_label_batch, :][:, mask_interest_inv]  # With markers of interest
+                except NameError:
+                    mat_subset = mat[is_label_batch, :]  # Without markers of interest
 
                 # Check bimodality of markers and select best ones
                 logging.debug('\t\t\tEvaluating marker bimodality')
@@ -348,7 +395,10 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                 marker_threshold_value = np.sort(marker_center_values)[max_markers - 1]  # Select max_markers-th center value (in ascending order)
                 # Note: '- 1' is used to compensate 0-based indexing
                 is_center_greater = (marker_center_values <= marker_threshold_value)
-                markers_rep = markers[is_center_greater]  # Select markers with center higher than max_markers-th center
+                try:  # Select markers with center higher than max_markers-th center
+                    markers_rep = markers[mask_interest_inv][is_center_greater]  # With markers of interest
+                except NameError:
+                    markers_rep = markers[is_center_greater]  # Without markers of interest
 
                 # Store list of relevant markers for every batch
                 logging.debug('\t\t\tStoring relevant markers')
@@ -383,9 +433,13 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
             batches_label = batches[is_label]
             samples_label = samples[is_label]
 
+            # Merge back markers_representative with markers_interest
+            markers_interest_rep = np.append(markers_interest, markers_representative)
+
             # Slice matrix to keep only expression of relevant markers
-            markers_representative = markers[np.isin(markers, markers_representative)]  # Reorder markers
-            mat_subset_rep_markers = mat_subset_label[:, np.isin(markers, markers_representative)]
+            markers_rep_int_mask = np.isin(markers, markers_interest_rep)
+            markers_representative = markers[markers_rep_int_mask]  # Reorder markers
+            mat_subset_rep_markers = mat_subset_label[:, markers_rep_int_mask]
 
             logging.info('\t\tStoring data in arrays')
             mat_subset_rep_list.append(mat_subset_rep_markers)  # Store slice matrix
@@ -415,6 +469,8 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                                batches_label=batches_label,
                                                samples_label=samples_label,
                                                markers_representative=markers_representative,
+                                               markers_interest=markers_interest,
+                                               detection_method=detection_method,
                                                cell_types_dict=cell_types_dict,
                                                two_peak_threshold=two_peak_threshold,
                                                three_peak_markers=three_peak_markers,
@@ -434,6 +490,8 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         chunksize = get_chunksize(uniq_labels, nb_cpu_id)
         with ProcessPoolExecutor(max_workers=nb_cpu_id, mp_context=get_context('spawn')) as executor:
             annot_results_lst = list(executor.map(partial(identify_phenotypes,
+                                                          markers_interest=markers_interest,
+                                                          detection_method=detection_method,
                                                           cell_types_dict=cell_types_dict,
                                                           two_peak_threshold=two_peak_threshold,
                                                           three_peak_markers=three_peak_markers,
