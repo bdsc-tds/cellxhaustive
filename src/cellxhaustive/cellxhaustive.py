@@ -25,13 +25,12 @@ Minimum requirements to run the analyses and associated parameters:
 
 # Import utility modules
 import argparse
-import json
 import logging
 import numpy as np
 import os
 import pandas as pd
-import pathlib
 import sys
+import yaml
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from multiprocessing import get_context
@@ -65,8 +64,8 @@ parser.add_argument('-a', '--max-markers', dest='max_markers', type=int,
                     required=False, default=15)
 parser.add_argument('-c', '--cell-type-definition', dest='cell_type_path', type=str,
                     help='Path to file with cell types characterisation \
-                    [../data/config/major_cell_types.json]',
-                    required=False, default='../data/config/major_cell_types.json')
+                    [../data/config/major_cell_types.yaml]',
+                    required=False, default='../data/config/major_cell_types.yaml')
 parser.add_argument('-l', '--log', dest='log_path', type=str,
                     help='Path to log file [output_path.log]',
                     required=False, default='')
@@ -79,7 +78,7 @@ parser.add_argument('-j', '--two-peak-threshold', dest='two_peak_threshold', typ
                     negative or positive. Must be a float number [3]',
                     required=False, default=3)
 parser.add_argument('-e', '--three-peaks', dest='three_peak_markers', type=str,
-                    help='Path to file with markers that have three peaks []',
+                    help='Path to file with markers with three peaks []',
                     required=False, default='')
 parser.add_argument('-f', '--three-peak-low', dest='three_peak_low', type=float,
                     help='Threshold to determine whether three-peaks marker is\
@@ -194,7 +193,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         logging.error(e)
         sys.exit(1)
 
-    # Get 1-D array for batch; add common batch value if information is missing
+    # Get 1-D array for batches; add common batch value if information is missing
     input_col_low = input_table.columns.str.lower()  # Make column names case-insensitive
     try:
         logging.info(f'Retrieving batch information in <{input_path}>')
@@ -205,9 +204,9 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         batches = np.full(input_table.shape[0], 'batch0')
     else:
         batches = input_table.iloc[:, batches_idx].to_numpy(dtype=str)
-        logging.info(f'\tFound batches: {np.unique(batches)}')
+        logging.info(f'\tFound {len(np.unique(batches))} batches')
 
-    # Get 1-D array for sample; add common sample value if information is missing
+    # Get 1-D array for samples; add common sample value if information is missing
     try:
         logging.info(f'Retrieving sample information in <{input_path}>')
         samples_idx = input_col_low.get_loc('sample')
@@ -217,9 +216,9 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         samples = np.full(input_table.shape[0], 'sample0')
     else:
         samples = input_table.iloc[:, samples_idx].to_numpy(dtype=str)
-        logging.info(f'\tFound samples: {np.unique(samples)}')
+        logging.info(f'\tFound {len(np.unique(samples))} samples')
 
-    # Get 1-D array for pre-annotated cell type
+    # Get 1-D array for pre-annotated cell types
     try:
         logging.info(f'Retrieving cell type information in <{input_path}>')
         cell_type_idx = input_col_low.get_loc('cell_type')
@@ -229,7 +228,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         cell_labels = np.full(input_table.shape[0], 'cell_type0')
     else:
         cell_labels = input_table.iloc[:, cell_type_idx].to_numpy(dtype=str)
-        logging.info(f'\tFound cell types: {np.unique(cell_labels)}')
+        logging.info(f'\tFound {len(np.unique(cell_labels))} cell types: {np.unique(cell_labels)}')
 
     # Get array of unique labels
     uniq_labels = np.unique(cell_labels)
@@ -244,8 +243,8 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         with open(three_path) as file:
             three_peak_markers = np.array(file.read().splitlines(), dtype='str')
     except FileNotFoundError:
-        three_peak_markers = np.empty(0, dtype='str')
         logging.warning('\tNo file provided, using default empty array')
+        three_peak_markers = np.empty(0, dtype='str')
     else:
         logging.info(f'\tFound {len(three_peak_markers)} markers in <{three_path}>')
 
@@ -266,8 +265,6 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     else:
         logging.info(f'\tFound {len(cell_types_dict)} cell types')
 
-    # Determine path for marker filtering results
-    marker_file_path = f'{os.path.splitext(output_path)[0]}_markers.txt'
 
     # Get other parameter values from argument parsing
     logging.info('Parsing remaining parameters')
@@ -305,19 +302,23 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Get CPU settings
     logging.info('Determining parallelisation settings')
-    if args.cores == 1:  # Can't multiprocess with only 1 core
-        logging.info('\tOnly 1 CPU provided in total.')
+    cores = args.cores
+    if cores == 1:  # Can't multiprocess with only 1 core
+        logging.info('\tOnly 1 CPU provided in total')
         nb_cpu_id = nb_cpu_eval = 1
         logging.info('\tSetting nb_cpu_id and nb_cpu_eval to 1')
     else:  # Maximise CPU usage
-        logging.info(f'\t{args.cores} CPUs provided in total.')
-        nb_cpu_id, nb_cpu_eval = get_cpu(args.cores, len(uniq_labels))
+        logging.info(f'\t{cores} CPUs provided in total')
+        nb_cpu_id, nb_cpu_eval = get_cpu(cores, len(uniq_labels))
 
     if args.dryrun:
         logging.info('Dryrun finished. Exiting...')
         sys.exit(0)
 
     logging.info('Gating markers and extracting associated data in each cell type')
+    # Determine path for marker filtering results
+    marker_file_path = f'{os.path.splitext(output_path)[0]}_markers.txt'
+
     # Initialise list of arrays to store results
     mat_subset_rep_list = []
     batches_label_list = []
@@ -429,7 +430,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                                nb_cpu_eval=nb_cpu_eval)
             annot_results_lst.append(results_dict)
     else:  # Use pool of process for parallelise
-        logging.info('Starting population analyses with parallelisation.')
+        logging.info('Starting population analyses with parallelisation')
         chunksize = get_chunksize(uniq_labels, nb_cpu_id)
         with ProcessPoolExecutor(max_workers=nb_cpu_id, mp_context=get_context('spawn')) as executor:
             annot_results_lst = list(executor.map(partial(identify_phenotypes,

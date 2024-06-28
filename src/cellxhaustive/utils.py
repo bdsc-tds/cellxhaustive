@@ -84,12 +84,12 @@ def setup_log(logfile, loglevel, mode):
 # Function to distribute CPUs across functions; used in cellxhaustive.py
 def get_cpu(nb_cpu, nb_cell_type):
     """
-    Function to split provided cores across the different tasks.
+    Function to split provided CPUs across the different tasks.
 
     Parameters:
     -----------
     nb_cpu: int
-      Total number of cores provided to workflow.
+      Total number of CPUs provided to workflow.
 
     nb_cell_type: int
       Number of unique cell types in input_dataset.
@@ -97,10 +97,10 @@ def get_cpu(nb_cpu, nb_cell_type):
     Returns:
     --------
     nb_cpu_id: int
-      Number of cores dedicated to 'identify_phenotypes' (from cellxhaustive.py).
+      Number of CPUs dedicated to 'identify_phenotypes' (from cellxhaustive.py).
 
     nb_cpu_eval: int
-      Number of cores dedicated to 'evaluate_comb' (from check_all_combinations.py).
+      Number of CPUs dedicated to 'evaluate_comb' (from check_all_combinations.py).
     """
 
     # Create possible CPU amounts
@@ -164,7 +164,7 @@ def get_chunksize(iterable, nb_cpu):
       Iterable to split for parallel-computing.
 
     nb_cpu: int
-      Number of cores provided to process 'iterable'.
+      Number of CPUs provided to process 'iterable'.
 
     Returns:
     --------
