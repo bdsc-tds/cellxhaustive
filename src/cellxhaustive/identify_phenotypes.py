@@ -30,8 +30,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                         samples_label, markers_representative, markers_interest,
                         detection_method, cell_types_dict, two_peak_threshold,
                         three_peak_markers, three_peak_low, three_peak_high,
-                        max_markers, min_annotations,
-                        min_samplesxbatch, min_cellxsample,
+                        max_markers, min_samplesxbatch, min_cellxsample,
                         knn_refine, knn_min_probability, nb_cpu_eval):
     """
     Function that identifies most probable cell type and phenotype for a group
@@ -94,11 +93,6 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
     max_markers: int (default=15)
       Maximum number of relevant markers to select among total list of markers
       from total markers array. Must be less than or equal to 'len(markers_representative)'.
-
-    min_annotations: int (default=3)
-      Minimum number of phenotypes for a combination of markers to be taken into
-      account as a potential cell population. Must be in '[2; len(markers_representative)]',
-      but it is advised to choose a value in '[3; len(markers_representative) - 1]'.
 
     min_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least 'min_cellxsample'
@@ -165,7 +159,6 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
         three_peak_low=three_peak_low,
         three_peak_high=three_peak_high,
         max_markers=max_markers,
-        min_annotations=min_annotations,
         min_samplesxbatch=min_samplesxbatch,
         min_cellxsample=min_cellxsample,
         nb_cpu_eval=nb_cpu_eval)
@@ -226,7 +219,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                 three_peak_high=three_peak_high)
 
             # Initialise empty string array to record 'significant' phenotypes,
-            # i.e. phenotypes passing min_annotations and min_samplesxbatch thresholds
+            # i.e. passing toth min_cellxsample and min_samplesxbatch thresholds
             best_phntp_comb = np.empty(0, dtype=cell_phntp_comb.dtype)
             # Note: get dtype from previous array to avoid using 'object'
 

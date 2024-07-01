@@ -63,7 +63,7 @@ def get_poss_comb(marker_counter, markers_representative, markers_interest):
 # Function used in check_all_combinations()
 def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
                   markers_representative, two_peak_threshold, three_peak_markers,
-                  three_peak_low, three_peak_high, min_annotations,
+                  three_peak_low, three_peak_high,
                   x_samplesxbatch_space, y_cellxsample_space):
     """
     Function that scores a marker combination and checks whether it contains
@@ -115,11 +115,6 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
       be considered positive. Expression between 'three_peak_low' and
       'three_peak_high' means marker will be considered low_positive.
 
-    min_annotations: int (default=3)
-      Minimum number of phenotypes for a combination of markers to be taken into
-      account as a potential cell population. Must be in '[2; len(markers)]',
-      but it is advised to choose a value in '[3; len(markers) - 1]'.
-
     x_samplesxbatch_space: array(float) (default=[0.5, 0.6, 0.7, ..., 1])
       Minimum proportion of samples within each batch with at least
       'y_cellxsample_space' cells for a new annotation to be considered. In other
@@ -169,7 +164,7 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
 
     # Constrain matrix given minimum number of phenotype conditions
     logging.debug(f'\t\t\t\t\tChecking presence of possible solutions')
-    mask = (nb_phntp < min_annotations)
+    mask = (nb_phntp < 3)
     nb_phntp = np.where(mask, np.nan, nb_phntp)
     nb_undef_cells = np.where(mask, np.nan, nb_undef_cells)
 
@@ -218,8 +213,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                            markers_representative, markers_interest,
                            detection_method, two_peak_threshold,
                            three_peak_markers, three_peak_low, three_peak_high,
-                           max_markers, min_annotations,
-                           min_samplesxbatch, min_cellxsample, nb_cpu_eval):
+                           max_markers, min_samplesxbatch, min_cellxsample, nb_cpu_eval):
     """
     Function that determines best marker combinations representing a cell type by
     maximizing number of phenotypes detected, proportion of samples within a batch
@@ -275,11 +269,6 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     max_markers: int (default=15)
       Maximum number of relevant markers to select among total list of markers
       from total markers array. Must be less than or equal to 'len(markers)'.
-
-    min_annotations: int (default=3)
-      Minimum number of phenotypes for a combination of markers to be taken into
-      account as a potential cell population. Must be in '[2; len(markers)]',
-      but it is advised to choose a value in '[3; len(markers) - 1]'.
 
     min_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least 'min_cellxsample'
@@ -377,7 +366,6 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                                                  three_peak_markers=three_peak_markers,
                                                  three_peak_low=three_peak_low,
                                                  three_peak_high=three_peak_high,
-                                                 min_annotations=min_annotations,
                                                  x_samplesxbatch_space=x_samplesxbatch_space,
                                                  y_cellxsample_space=y_cellxsample_space)
                 score_results_lst.append(comb_result_dict)
@@ -393,7 +381,6 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                                                               three_peak_markers=three_peak_markers,
                                                               three_peak_low=three_peak_low,
                                                               three_peak_high=three_peak_high,
-                                                              min_annotations=min_annotations,
                                                               x_samplesxbatch_space=x_samplesxbatch_space,
                                                               y_cellxsample_space=y_cellxsample_space),
                                                       indices, poss_comb,

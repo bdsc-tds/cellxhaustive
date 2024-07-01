@@ -99,12 +99,6 @@ parser.add_argument('-g', '--three-peak-high', dest='three_peak_high', type=floa
                     help='Threshold to determine whether three-peaks marker is\
                     positive or low_positive. Must be a float number [4]',
                     required=False, default=4)
-parser.add_argument('-b', '--min-annotations', dest='min_annotations', type=int,
-                    help="Minimum number of phenotypes for a combination of \
-                    markers to be taken into account as a potential cell \
-                    population. Must be an integer in '[1; 2^len(markers)]', but \
-                    it is advised to choose in '[3; 2^len(markers) - 1]' [3]",
-                    required=False, default=3)
 parser.add_argument('-q', '--min-samplesxbatch', dest='min_samplesxbatch', type=float,
                     help="Minimum proportion of samples within each batch with at \
                     least 'min_cellxsample' cells for a new annotation to be \
@@ -315,7 +309,6 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     three_peak_low = args.three_peak_low
     three_peak_high = args.three_peak_high
     max_markers = args.max_markers
-    min_annotations = args.min_annotations
     min_samplesxbatch = args.min_samplesxbatch
     min_cellxsample = args.min_cellxsample
     knn_refine = args.knn_refine
@@ -325,9 +318,6 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     logging.info('Checking parameter values')
     if not (1 <= max_markers <= len(markers)):
         logging.error(f"\t'-a/--max-markers' must be an integer between 1 and {len(markers)}")
-        sys.exit(1)
-    if not (1 <= min_annotations <= 2 ** len(markers)):
-        logging.error(f"\t'-b/--min-annotations' must be an integer between 1 and {2 ** len(markers)}")
         sys.exit(1)
     if not (0.01 <= min_samplesxbatch <= 1):
         logging.error("\t'-q/--min-samplesxbatch' must be a float between 0.01 and 1")
@@ -473,7 +463,6 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                                three_peak_low=three_peak_low,
                                                three_peak_high=three_peak_high,
                                                max_markers=max_markers,
-                                               min_annotations=min_annotations,
                                                min_samplesxbatch=min_samplesxbatch,
                                                min_cellxsample=min_cellxsample,
                                                knn_refine=knn_refine,
@@ -493,7 +482,6 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                                           three_peak_low=three_peak_low,
                                                           three_peak_high=three_peak_high,
                                                           max_markers=max_markers,
-                                                          min_annotations=min_annotations,
                                                           min_samplesxbatch=min_samplesxbatch,
                                                           min_cellxsample=min_cellxsample,
                                                           knn_refine=knn_refine,
