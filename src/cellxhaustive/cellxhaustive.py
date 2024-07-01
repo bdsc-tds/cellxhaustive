@@ -282,14 +282,18 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     if markers_interest:
         markers_interest = np.array(markers_interest.split(','), dtype='str')
         logging.info(f'\tFound {len(markers_interest)} markers')
+        logging.info('\tIdentifying markers of interest in general marker list')
+        if sum(np.isin(markers_interest, markers)) == len(markers_interest):
+            mask_interest_inv = np.isin(markers, markers_interest, invert=True)
+            logging.info('\t\tAll markers of interest located')
+        else:
+            missing_interest = markers_interest[np.isin(markers_interest, markers, invert=True)]
+            logging.error(f'\t\tSome markers of interest are missing in general marker list')
+            logging.error(f'\t\tMissing markers: {', '.join(missing_interest)}')
+            sys.exit(1)
     else:
         logging.warning('\tNo markers provided, using default empty array')
         markers_interest = np.empty(0, dtype='str')
-
-    # Locate markers of interest in 'markers'
-    if markers_interest.size > 0:
-        logging.debug('\t\tIdentifying markers of interest in general marker list')
-        mask_interest_inv = np.isin(markers, markers_interest, invert=True)
 
     # Get method to decide final combination length
     logging.info('Determining detection method')
