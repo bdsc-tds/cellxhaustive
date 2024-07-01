@@ -109,9 +109,6 @@ parser.add_argument('-r', '--min-cellxsample', dest='min_cellxsample', type=int,
                     'min_samplesxbatch' %% of samples within each batch for a new \
                     annotation to be considered. Must be an integer in [1; 100] [10]",
                     required=False, default=10)
-parser.add_argument('-k', '--no-knn', dest='knn_refine',
-                    help='If present, do not refine annotations with a KNN classifier',
-                    required=False, default=True, action="store_false")
 parser.add_argument('-p', '--knn-min-probability', dest='knn_min_probability', type=float,
                     help='Confidence threshold for KNN classifier to reassign a \
                     new cell type to previously undefined cells. Must be a float \
@@ -311,7 +308,6 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     max_markers = args.max_markers
     min_samplesxbatch = args.min_samplesxbatch
     min_cellxsample = args.min_cellxsample
-    knn_refine = args.knn_refine
     knn_min_probability = args.knn_min_probability
     logging.info('\tDone')
 
@@ -325,9 +321,10 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     if not (1 <= min_cellxsample <= 100):
         logging.error("\t'-r/--min-cellxsample' must be an integer between 1 and 100")
         sys.exit(1)
-    if not (0.01 <= knn_min_probability <= 1):
-        logging.error("\t'-p/--knn-min-probability' must be a float between 0.01 and 1")
+    if not (0 <= knn_min_probability <= 1):
+        logging.error("\t'-p/--knn-min-probability' must be a float between 0 and 1")
         sys.exit(1)
+    knn_refine = (False if knn_min_probability == 0 else True)
     logging.info('\tAll parameter values within range')
 
     # Get CPU settings
