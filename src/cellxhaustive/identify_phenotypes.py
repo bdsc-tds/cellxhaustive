@@ -30,7 +30,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                         samples_label, markers_representative, markers_interest,
                         detection_method, cell_types_dict, two_peak_threshold,
                         three_peak_markers, three_peak_low, three_peak_high,
-                        max_markers, min_annotations, max_solutions,
+                        max_markers, min_annotations,
                         min_samplesxbatch, min_cellxsample,
                         knn_refine, knn_min_probability, nb_cpu_eval):
     """
@@ -99,12 +99,6 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
       Minimum number of phenotypes for a combination of markers to be taken into
       account as a potential cell population. Must be in '[2; len(markers_representative)]',
       but it is advised to choose a value in '[3; len(markers_representative) - 1]'.
-
-    max_solutions: int (default=10)
-      Maximum number of optimal solutions to keep. If script finds more than
-      'max_solutions' optimal marker combinations, 'max_solutions' combinations
-      will be randomly chosen to be further processed and appear in final
-      output. This parameter aims to limit computational burden.
 
     min_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least 'min_cellxsample'
@@ -209,10 +203,9 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
         undef_counter = []
 
         # Check number of solutions. If too high, randomly pick without repetitions
-        if nb_solution > max_solutions:
-            logging.warning(f'\t\t\t\tToo many combinations, choosing {max_solutions} randomly')
-            logging.warning("\t\t\t\tIncrease '-s' parameter to process all of them")
-            solutions = random.sample(range(nb_solution), max_solutions)
+        if nb_solution > 10:
+            logging.warning(f'\t\t\t\tToo many combinations, choosing 10 randomly')
+            solutions = random.sample(range(nb_solution), 10)
         else:
             solutions = range(nb_solution)
 
