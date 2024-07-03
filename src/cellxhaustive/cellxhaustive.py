@@ -84,21 +84,15 @@ parser.add_argument('-n', '--log-level', dest='log_level', type=str,
                     help="Verbosity level of log file. Must be 'debug', 'info' \
                     or 'warning' [info]",
                     required=False, default='info', choices=['debug', 'info', 'warning'])
-parser.add_argument('-j', '--two-peak-threshold', dest='two_peak_threshold', type=float,
-                    help='Threshold to determine whether a two-peaks marker is\
-                    negative or positive. Must be a float number [3]',
-                    required=False, default=3)
 parser.add_argument('-e', '--three-peaks', dest='three_peak_markers', type=str,
                     help='Path to file with markers with three peaks []',
                     required=False, default='')
-parser.add_argument('-f', '--three-peak-low', dest='three_peak_low', type=float,
-                    help='Threshold to determine whether three-peaks marker is\
-                    negative or low_positive. Must be a float number [2]',
-                    required=False, default=2)
-parser.add_argument('-g', '--three-peak-high', dest='three_peak_high', type=float,
-                    help='Threshold to determine whether three-peaks marker is\
-                    positive or low_positive. Must be a float number [4]',
-                    required=False, default=4)
+parser.add_argument('-j', '--thresholds', dest='thresholds', type=str,
+                    help='Comma-separated list of 3 floats defining thresholds \
+                    to determine whether marker are negative or positive. 1st \
+                    number is for two peaks markers, last 2 numbers are for \
+                    three peaks markers [3,2,4]',
+                    required=False, default='3,2,4')
 parser.add_argument('-q', '--min-samplesxbatch', dest='min_samplesxbatch', type=float,
                     help="Minimum proportion of samples within each batch with at \
                     least 'min_cellxsample' cells for a new annotation to be \
@@ -112,7 +106,7 @@ parser.add_argument('-r', '--min-cellxsample', dest='min_cellxsample', type=int,
 parser.add_argument('-p', '--knn-min-probability', dest='knn_min_probability', type=float,
                     help='Confidence threshold for KNN classifier to reassign a \
                     new cell type to previously undefined cells. Must be a float \
-                    in [0.01; 1] [0.5]',
+                    in [0; 1] [0.5]',
                     required=False, default=0.5)
 parser.add_argument('-t', '--threads', dest='cores', type=int,
                     help='Number of cores to use. Specifying more than one core \
@@ -161,7 +155,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         logging.error(f'\tCould not find <{marker_path}>. Please double-check file path')
         sys.exit(1)
     except Exception as e:
-        logging.error(e)
+        logging.error(f'\t{e}')
         sys.exit(1)
     else:
         logging.info(f'\tFound {len(markers)} markers')
@@ -175,7 +169,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         logging.error(f'\tCould not find <{input_path}>. Please double-check file path')
         sys.exit(1)
     except Exception as e:
-        logging.error(e)
+        logging.error(f'\t{e}')
         sys.exit(1)
     else:
         logging.info(f'\tFound {len(input_table.index)} cells')
@@ -188,7 +182,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         logging.error(f'\tCould not find marker <{e}> in <{input_path}>. Please double-check marker list')
         sys.exit(1)
     except Exception as e:
-        logging.error(e)
+        logging.error(f'\t{e}')
         sys.exit(1)
 
     # Get 1-D array for batches; add common batch value if information is missing
@@ -247,6 +241,28 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     else:
         logging.info(f'\tFound {len(three_peak_markers)} markers in <{three_path}>')
 
+    # Get markers thresholds
+    thresholds = args.thresholds
+    logging.info('Parsing markers thresholds')
+    try:
+        if three_peak_markers.size == 0:  # Only two peaks markers
+            two_peak_threshold = [float(x) for x in thresholds.split(',')][0]
+            three_peak_low = None  # Not needed so set to None
+            three_peak_high = None  # Not needed so set to None
+        else:  # Some three peaks markers
+            two_peak_threshold, three_peak_low, three_peak_high = [float(x) for x in thresholds.split(',')]
+    except ValueError as e:
+        logging.error(f'\t{e}')
+        logging.error('Please make sure you provide 1 or 3 numbers separated by comma')
+        sys.exit(1)
+    except Exception as e:
+        logging.error(f'\t{e}')
+        sys.exit(1)
+    else:
+        logging.info(f'\ttwo_peak_threshold set to {two_peak_threshold}')
+        logging.info(f'\tthree_peak_low set to {three_peak_low}')
+        logging.info(f'\tthree_peak_high set to {three_peak_high}')
+
     # Import cell types definitions
     cell_type_path = args.cell_type_path
     try:
@@ -259,7 +275,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         logging.error(f'\tCould not find <{cell_type_path}>. Please double-check file path')
         sys.exit(1)
     except Exception as e:
-        logging.error(e)
+        logging.error(f'\t{e}')
         sys.exit(1)
     else:
         logging.info(f'\tFound {len(cell_types_dict)} cell types in <{cell_type_path}>')
@@ -303,9 +319,6 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Get other parameter values from argument parsing
     logging.info('Parsing remaining parameters')
-    two_peak_threshold = args.two_peak_threshold
-    three_peak_low = args.three_peak_low
-    three_peak_high = args.three_peak_high
     max_markers = args.max_markers
     min_samplesxbatch = args.min_samplesxbatch
     min_cellxsample = args.min_cellxsample
