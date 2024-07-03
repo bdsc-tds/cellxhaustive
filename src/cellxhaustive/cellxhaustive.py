@@ -31,16 +31,16 @@ import os
 import pandas as pd
 import sys
 import yaml
-from concurrent.futures import ProcessPoolExecutor
 from functools import partial
-from multiprocessing import get_context
+from math import floor
+from pathos.pools import ProcessPool, ThreadPool
 
 
 # Import local functions
 from identify_phenotypes import identify_phenotypes  # AT. Double-check path
-from utils import get_chunksize, get_cpu, setup_log  # AT. Double-check path
+from utils import setup_log  # AT. Double-check path
 # from cellxhaustive.identify_phenotypes import identify_phenotypes
-# from cellxhaustive.utils import get_chunksize, get_cpu, setup_log
+# from cellxhaustive.utils import setup_log
 
 
 # Parse arguments
@@ -230,6 +230,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Get array of unique labels
     uniq_labels = np.unique(cell_labels)
+    multipop = False if len(uniq_labels) == 1 else True
 
     # Get list of arrays describing cells matching each cell type of 'uniq_labels'
     is_label_list = [(cell_labels == label) for label in uniq_labels]
@@ -276,7 +277,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         else:
             missing_interest = markers_interest[np.isin(markers_interest, markers, invert=True)]
             logging.error(f'\t\tSome markers of interest are missing in general marker list')
-            logging.error(f'\t\tMissing markers: {', '.join(missing_interest)}')
+            logging.error(f"\t\tMissing markers: {', '.join(missing_interest)}")
             sys.exit(1)
     else:
         logging.warning('\tNo markers provided, using default empty array')
@@ -330,13 +331,28 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     # Get CPU settings
     logging.info('Determining parallelisation settings')
     cores = args.cores
-    if cores == 1:  # Can't multiprocess with only 1 core
+    if cores == 1:  # Can't parallelise with only 1 core
         logging.info('\tOnly 1 CPU provided in total')
         nb_cpu_id = nb_cpu_eval = 1
-        logging.info('\tSetting nb_cpu_id and nb_cpu_eval to 1')
-    else:  # Maximise CPU usage
+    else:  # Parallelise as much as possible
         logging.info(f'\t{cores} CPUs provided in total')
-        nb_cpu_id, nb_cpu_eval = get_cpu(cores, len(uniq_labels))
+        # Adapt number of CPUs in ThreadPool to number of cell populations
+        if len(uniq_labels) == 1:  # Can only parallelise combinations testing
+            nb_cpu_id = 1  # Use only 1 CPU in ThreadPool
+            nb_cpu_eval = cores - nb_cpu_id  # Assign remaining CPUs to ProcessPool
+        else:  # Can parallelise combinations testing and cell population processing
+            nb_cpu_eval = floor(0.9 * cores)  # Assign 90% of CPUs to ProcessPool
+            nb_cpu_id = cores - nb_cpu_eval  # Assign remaining CPUs to ThreadPool
+            # If more threads than cell populations, reassign excess CPUs from
+            # ThreadPool to ProcessPool
+            diff = nb_cpu_id - len(uniq_labels)
+            if diff > 0:
+                nb_cpu_id -= diff
+                nb_cpu_eval += diff
+    logging.info(f'\tSetting nb_cpu_id to {nb_cpu_id} and nb_cpu_eval to {nb_cpu_eval}')
+
+    # Initialise ProcessPool if needed, otherwise set it to None
+    processpool = (None if nb_cpu_eval == 1 else ProcessPool(ncpus=nb_cpu_eval))
 
     if args.dryrun:
         logging.info('Dryrun finished. Exiting...')
@@ -464,37 +480,43 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                                min_cellxsample=min_cellxsample,
                                                knn_refine=knn_refine,
                                                knn_min_probability=knn_min_probability,
-                                               nb_cpu_eval=nb_cpu_eval)
+                                               multipop=multipop,
+                                               processpool=processpool)
             annot_results_lst.append(results_dict)
-    else:  # Use pool of process for parallelise
+    else:  # Use ThreadPool to parallelise cell type processing
         logging.info('Starting population analyses with parallelisation')
-        chunksize = get_chunksize(uniq_labels, nb_cpu_id)
-        with ProcessPoolExecutor(max_workers=nb_cpu_id, mp_context=get_context('spawn')) as executor:
-            annot_results_lst = list(executor.map(partial(identify_phenotypes,
-                                                          markers_interest=markers_interest,
-                                                          detection_method=detection_method,
-                                                          cell_types_dict=cell_types_dict,
-                                                          two_peak_threshold=two_peak_threshold,
-                                                          three_peak_markers=three_peak_markers,
-                                                          three_peak_low=three_peak_low,
-                                                          three_peak_high=three_peak_high,
-                                                          max_markers=max_markers,
-                                                          min_samplesxbatch=min_samplesxbatch,
-                                                          min_cellxsample=min_cellxsample,
-                                                          knn_refine=knn_refine,
-                                                          knn_min_probability=knn_min_probability,
-                                                          nb_cpu_eval=nb_cpu_eval),
-                                                  is_label_list,
-                                                  uniq_labels,
-                                                  mat_subset_rep_list,
-                                                  batches_label_list,
-                                                  samples_label_list,
-                                                  markers_representative_list,
-                                                  timeout=None,
-                                                  chunksize=chunksize))
+        with ThreadPool(nthreads=nb_cpu_id) as threadpool:
+            annot_results_lst = list(threadpool.map(partial(identify_phenotypes,
+                                                            markers_interest=markers_interest,  # AT. Ultimately, this should be out of the function and become an iterable, with 1 array/cell-type
+                                                            detection_method=detection_method,  # AT. Ultimately, this should be out of the function and become an iterable, with 1 keyword or integer/cell-type
+                                                            cell_types_dict=cell_types_dict,
+                                                            two_peak_threshold=two_peak_threshold,
+                                                            three_peak_markers=three_peak_markers,
+                                                            three_peak_low=three_peak_low,
+                                                            three_peak_high=three_peak_high,
+                                                            max_markers=max_markers,
+                                                            min_samplesxbatch=min_samplesxbatch,
+                                                            min_cellxsample=min_cellxsample,
+                                                            knn_refine=knn_refine,
+                                                            knn_min_probability=knn_min_probability,
+                                                            multipop=multipop,
+                                                            processpool=processpool),  # AT. Rework this
+                                                    is_label_list,
+                                                    uniq_labels,
+                                                    mat_subset_rep_list,
+                                                    batches_label_list,
+                                                    samples_label_list,
+                                                    markers_representative_list))
         # Note: 'partial()' is used to iterate over 'is_label_list', 'uniq_labels',
         # 'mat_subset_rep_list', 'batches_label_list', 'samples_label_list' and
         # 'markers_representative_list' and keep other parameters constant
+
+    # Make sure ProcessPool is closed. It should already be, but this makes sure
+    # there are no zombie processes
+    if processpool:
+        processpool.close()
+        processpool.join()
+    del processpool
 
     # Reset logging configuration
     setup_log(log_file, log_level, 'a')

@@ -11,16 +11,14 @@ import itertools as ite
 import logging
 import numpy as np
 import os
-from concurrent.futures import ProcessPoolExecutor
 from functools import partial
-from multiprocessing import get_context
 
 
 # Import local functions
 from score_marker_combinations import score_marker_combinations  # AT. Double-check path
-from utils import get_chunksize, setup_log  # AT. Double-check path
+from utils import setup_log  # AT. Double-check path
 # from cellxhaustive.score_marker_combinations import score_marker_combinations
-# from cellxhaustive.utils import get_chunksize, setup_log
+# from cellxhaustive.utils import setup_log
 
 
 # Function used in check_all_combinations()
@@ -213,7 +211,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                            markers_representative, markers_interest,
                            detection_method, two_peak_threshold,
                            three_peak_markers, three_peak_low, three_peak_high,
-                           max_markers, min_samplesxbatch, min_cellxsample, nb_cpu_eval):
+                           max_markers, min_samplesxbatch, min_cellxsample, processpool):
     """
     Function that determines best marker combinations representing a cell type by
     maximizing number of phenotypes detected, proportion of samples within a batch
@@ -283,8 +281,8 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
       least 50% of samples (see description of previous parameter) within a batch
       to be considered.
 
-    nb_cpu_eval: int (default=1)
-      Number of CPUs to use in downstream nested functions.
+    processpool: None or pathos.pools.ProcessPool object
+      If not None, ProcessPool object to use in downstream nested functions.
 
     Returns:
     --------
@@ -318,6 +316,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
             marker_counter = 2
     else:  # Combinations with exactly 'detection_method' markers
         marker_counter = max_combination = detection_method
+    logging.info(f'\t\t\t\tSet marker_counter to {marker_counter} and max_combination to {max_combination}')
 
     # Initialise counters and objects to store results. Note that by default, it
     # is assumed that minimum number of relevant markers is 2 (only 1 marker can
@@ -353,7 +352,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
         indices = range(enum_start, enum_start + len(poss_comb))
 
         # For a given number of markers, check all possible combinations
-        if nb_cpu_eval == 1:  # Use for loop to avoid creating new processes
+        if not processpool:  # Use for loop to avoid creating new processes
             score_results_lst = []
             for idx, comb in zip(indices, poss_comb):
                 comb_result_dict = evaluate_comb(idx=idx,
@@ -369,23 +368,19 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                                                  x_samplesxbatch_space=x_samplesxbatch_space,
                                                  y_cellxsample_space=y_cellxsample_space)
                 score_results_lst.append(comb_result_dict)
-        else:  # Use pool of process to parallelise
-            chunksize = get_chunksize(list(poss_comb), nb_cpu_eval)
-            with ProcessPoolExecutor(max_workers=nb_cpu_eval, mp_context=get_context('spawn')) as executor:
-                score_results_lst = list(executor.map(partial(evaluate_comb,
-                                                              mat_representative=mat_representative,
-                                                              batches_label=batches_label,
-                                                              samples_label=samples_label,
-                                                              markers_representative=markers_representative,
-                                                              two_peak_threshold=two_peak_threshold,
-                                                              three_peak_markers=three_peak_markers,
-                                                              three_peak_low=three_peak_low,
-                                                              three_peak_high=three_peak_high,
-                                                              x_samplesxbatch_space=x_samplesxbatch_space,
-                                                              y_cellxsample_space=y_cellxsample_space),
-                                                      indices, poss_comb,
-                                                      timeout=None,
-                                                      chunksize=chunksize))
+        else:  # Use ProcessPool to parallelise combination testing
+            score_results_lst = list(processpool.map(partial(evaluate_comb,
+                                                             mat_representative=mat_representative,
+                                                             batches_label=batches_label,
+                                                             samples_label=samples_label,
+                                                             markers_representative=markers_representative,
+                                                             two_peak_threshold=two_peak_threshold,
+                                                             three_peak_markers=three_peak_markers,
+                                                             three_peak_low=three_peak_low,
+                                                             three_peak_high=three_peak_high,
+                                                             x_samplesxbatch_space=x_samplesxbatch_space,
+                                                             y_cellxsample_space=y_cellxsample_space),
+                                                     indices, poss_comb))
             # Note: 'partial()' is used to iterate over 'indices' and 'poss_comb'
             # and keep other parameters constant
 

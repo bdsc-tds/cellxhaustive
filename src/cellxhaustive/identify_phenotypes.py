@@ -31,7 +31,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                         detection_method, cell_types_dict, two_peak_threshold,
                         three_peak_markers, three_peak_low, three_peak_high,
                         max_markers, min_samplesxbatch, min_cellxsample,
-                        knn_refine, knn_min_probability, nb_cpu_eval):
+                        knn_refine, knn_min_probability, multipop, processpool):
     """
     Function that identifies most probable cell type and phenotype for a group
     of cells using expression of its most relevant markers.
@@ -116,8 +116,11 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
       Confidence threshold for KNN-classifier to reassign a new cell type
       to previously undefined cells.
 
-    nb_cpu_eval: int (default=1)
-      Number of CPUs to use in downstream nested functions.
+    multipop: bool
+      Boolean indicating whether multiple cell populations are processed.
+
+    processpool: None or pathos.pools.ProcessPool object
+      If not None, ProcessPool object to use in downstream nested functions.
 
     Returns:
     --------
@@ -161,7 +164,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
         max_markers=max_markers,
         min_samplesxbatch=min_samplesxbatch,
         min_cellxsample=min_cellxsample,
-        nb_cpu_eval=nb_cpu_eval)
+        processpool=processpool)
 
     # Initialise result dictionary with empty lists
     # Note: even if lists end up with only 1 element, it makes processing results
@@ -301,14 +304,33 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
 
                 # At least 2 undefined cells and 2 cell types different from 'Unannotated'
                 if ((np.sum(is_undef) > 1) and (len(np.unique(new_labels)) > 2)):
+                    # Adapt CPUs used by KNN-classifier to running conditions
+                    logging.info('\t\t\t\t\tSetting CPUs for KNN-classifier')
+                    if not processpool:
+                        knn_cpu = 1
+                    else:
+                        if multipop:  # If multiple population, use ~half of CPUs
+                            knn_cpu = processpool.ncpus // 2
+                        else:  # If only population, use all CPUs
+                            knn_cpu = processpool.ncpus
+                    logging.info(f"\t\t\t\t\t\tUsing {knn_cpu}{'s' if knn_cpu > 1 else ''} CPUs")
                     # Reannotate cells
                     logging.info('\t\t\t\t\tRefining annotations with KNN-classifier')
-                    reannotated_labels, reannotation_proba = knn_classifier(
-                        mat_representative=mat_subset_rep_markers_comb,
-                        new_labels=new_labels,
-                        is_undef=is_undef,
-                        knn_min_probability=knn_min_probability,
-                        knn_cpu=nb_cpu_eval)
+                    if not processpool:  # Cannot use ProcessPool to parallelise
+                        reannotated_labels, reannotation_proba = knn_classifier(
+                            mat_representative=mat_subset_rep_markers_comb,
+                            new_labels=new_labels,
+                            is_undef=is_undef,
+                            knn_min_probability=knn_min_probability,
+                            knn_cpu=knn_cpu)
+                    else:  # Use 'pipe' to submit task to ProcessPool and parallelise
+                        reannotated_labels, reannotation_proba = processpool.pipe(
+                            knn_classifier,
+                            mat_representative=mat_subset_rep_markers_comb,
+                            new_labels=new_labels,
+                            is_undef=is_undef,
+                            knn_min_probability=knn_min_probability,
+                            knn_cpu=knn_cpu)
 
                     # Reverse dictionary to convert cell types into phenotypes
                     rev_names_conv = {val: key for key, val in names_conv.items()}
