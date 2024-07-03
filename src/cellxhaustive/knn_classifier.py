@@ -26,6 +26,7 @@ from utils import setup_log  # AT. Double-check path
 
 # Function used in identify_phenotypes.py
 def knn_classifier(mat_representative, new_labels, is_undef,
+                   # knn_min_probability):
                    knn_min_probability, knn_cpu):
     """
     Reclassify unidentified cells using a KNN-classifier and return predicted
@@ -52,7 +53,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
       previously undefined cells.
 
     knn_cpu: int (default=1)
-      Number of CPUs to use for KNN-classifier evaluation.
+      Number of CPUs to use for KNN-classifier processing.
 
     Returns:
     --------
@@ -67,11 +68,6 @@ def knn_classifier(mat_representative, new_labels, is_undef,
 
     # Set-up logging configuration
     setup_log(os.environ['LOG_FILE'], os.environ['LOG_LEVEL'], 'a')
-
-    # Set environment variables to prevent sklearn from using all cores
-    os.environ['OPENBLAS_NUM_THREADS'] = f'{knn_cpu}'
-    os.environ['OMP_NUM_THREADS'] = f'{knn_cpu}'
-    os.environ['MKL_NUM_THREADS'] = f'{knn_cpu}'
 
     # Copy 'new_labels' array to avoid changing the original array
     reannotated_labels = copy.deepcopy(new_labels)
@@ -98,7 +94,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     scaler = StandardScaler()
 
     # Initialise KNN-classifier
-    clf = KNeighborsClassifier(p=2, metric='minkowski', n_jobs=knn_cpu)
+    clf = KNeighborsClassifier(p=2, metric='minkowski', n_jobs=None)
     # Note: default arguments "p=2, metric='minkowski'" are equivalent to
     # calculating Euclidean distances
 
@@ -112,13 +108,13 @@ def knn_classifier(mat_representative, new_labels, is_undef,
 
     # Build parameters grid object
     knn_grid = GridSearchCV(pipeline, param_grid=param_grid, scoring='accuracy',
-                            cv=5, n_jobs=knn_cpu, refit=True, verbose=0)
+                            cv=5, n_jobs=None, refit=True, verbose=0)
 
     # Find best parameters
     logging.info('\t\t\t\t\t\tTuning hyperparameters')
     # Use different backend for parallel computing to avoid GridSearchCV hanging
     # and returning joblib loky 'resource_tracker' warnings
-    with parallel_config(backend='multiprocessing'):
+    with parallel_config(backend='multiprocessing', n_jobs=knn_cpu):
         best_model = knn_grid.fit(X_train, y_train)
     logging.info(f'\t\t\t\t\t\t\tBest parameters found: {best_model.best_params_}')
     logging.info(f'\t\t\t\t\t\t\twith a max accuracy of: {best_model.best_score_:.3f}')
@@ -155,10 +151,5 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     logging.info('\t\t\t\t\t\tAssigning new annotations passing threshold')
     reannotated_labels[is_undef] = reannotated
     reannotated_labels = reannotated_labels.astype(dtype='str')
-
-    # Reset environment variables
-    del os.environ['OPENBLAS_NUM_THREADS']
-    del os.environ['OMP_NUM_THREADS']
-    del os.environ['MKL_NUM_THREADS']
 
     return reannotated_labels, reannotation_proba

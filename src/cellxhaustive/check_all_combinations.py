@@ -12,22 +12,57 @@ import logging
 import numpy as np
 import pandas as pd
 import os
-from concurrent.futures import ProcessPoolExecutor
 from functools import partial
-from multiprocessing import get_context
 
 
 # Import local functions
 from score_marker_combinations import score_marker_combinations  # AT. Double-check path
-from utils import get_chunksize, setup_log  # AT. Double-check path
+from utils import setup_log  # AT. Double-check path
 # from cellxhaustive.score_marker_combinations import score_marker_combinations
-# from cellxhaustive.utils import get_chunksize, setup_log
+# from cellxhaustive.utils import setup_log
+
+
+# Function used in check_all_combinations()
+def get_poss_comb(marker_counter, markers_representative, markers_interest):
+    """
+    Function that takes into account presence of markers of interest to generate
+    marker combinations to score.
+
+    Parameters:
+    -----------
+    marker_counter: int
+      Number of markers in combinations to create.
+
+    markers_representative: array(str)
+      1-D numpy array with markers matching each column of 'mat_representative'.
+
+    markers_interest: array(str)
+      1-D numpy array with markers that must appear in optimal marker combinations.
+
+    Returns:
+    --------
+    poss_comb: list(tuple(str))
+      List of tuples of strings with marker combinations to score.
+    """
+
+    if markers_interest.size > 0:  # With markers of interest
+        # Determine number of representative markers to add
+        missing_counter = marker_counter - len(markers_interest)
+        # Generate combinations of representative markers
+        complementation_comb = ite.combinations(markers_representative, missing_counter)
+        # Append combinations of representative markers to markers of interest
+        poss_comb = [tuple(markers_interest) + cb for cb in complementation_comb]
+    else:  # Without markers of interest
+        # Generate combinations of 'marker_counter' representative markers
+        poss_comb = list(ite.combinations(markers_representative, marker_counter))
+
+    return poss_comb
 
 
 # Function used in check_all_combinations()
 def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
                   markers_representative, two_peak_threshold, three_peak_markers,
-                  three_peak_low, three_peak_high, min_annotations,
+                  three_peak_low, three_peak_high,
                   x_samplesxbatch_space, y_cellxsample_space):
     """
     Function that scores a marker combination and checks whether it contains
@@ -79,11 +114,6 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
       be considered positive. Expression between 'three_peak_low' and
       'three_peak_high' means marker will be considered low_positive.
 
-    min_annotations: int (default=3)
-      Minimum number of phenotypes for a combination of markers to be taken into
-      account as a potential cell population. Must be in '[2; len(markers)]',
-      but it is advised to choose a value in '[3; len(markers) - 1]'.
-
     x_samplesxbatch_space: array(float) (default=[0.5, 0.6, 0.7, ..., 1])
       Minimum proportion of samples within each batch with at least
       'y_cellxsample_space' cells for a new annotation to be considered. In other
@@ -112,8 +142,9 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
 
     logging.debug(f'\t\t\t\tTesting {comb}')
     # Slice data based on current marker combination 'comb'
-    markers_comb = markers_representative[np.isin(markers_representative, np.asarray(comb))]
-    mat_comb = mat_representative[:, np.isin(markers_representative, markers_comb)]
+    markers_mask = np.isin(markers_representative, np.asarray(comb))
+    markers_comb = markers_representative[markers_mask]
+    mat_comb = mat_representative[:, markers_mask]
 
     # Find number of phenotypes and undefined cells for a given marker combination
     # 'comb' across 'samplesxbatch' and 'cellxsample' grid
@@ -139,7 +170,7 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
 
     # Constrain matrix given minimum number of phenotype conditions
     logging.debug(f'\t\t\t\t\tChecking presence of possible solutions')
-    mask = (nb_phntp < min_annotations)
+    mask = (nb_phntp < 3)
     nb_phntp = np.where(mask, np.nan, nb_phntp)
     nb_undef_cells = np.where(mask, np.nan, nb_undef_cells)
 
@@ -195,10 +226,10 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
 
 # Function used in identify_phenotypes.py
 def check_all_combinations(mat_representative, batches_label, samples_label,
-                           markers_representative, two_peak_threshold,
+                           markers_representative, markers_interest,
+                           detection_method, two_peak_threshold,
                            three_peak_markers, three_peak_low, three_peak_high,
-                           max_markers, min_annotations,
-                           min_samplesxbatch, min_cellxsample, nb_cpu_eval, cell_name):
+                           max_markers, min_samplesxbatch, min_cellxsample, processpool, cell_name):
     """
     Function that determines best marker combinations representing a cell type by
     maximizing number of phenotypes detected, proportion of samples within a batch
@@ -221,6 +252,14 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
 
     markers_representative: array(str)
       1-D numpy array with markers matching each column of 'mat_representative'.
+
+    markers_interest: array(str)
+      1-D numpy array with markers that must appear in optimal marker combinations.
+
+    detection_method: 'auto' or int
+      Method used to stop search for optimal marker combinations. If 'auto', use
+      default algorithm relying on maximum number of phenotypes. If int, create a
+      combination with exactly this number of markers.
 
     two_peak_threshold: float (default=3)
       Threshold to consider when determining whether a two-peaks marker is
@@ -247,11 +286,6 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
       Maximum number of relevant markers to select among total list of markers
       from total markers array. Must be less than or equal to 'len(markers)'.
 
-    min_annotations: int (default=3)
-      Minimum number of phenotypes for a combination of markers to be taken into
-      account as a potential cell population. Must be in '[2; len(markers)]',
-      but it is advised to choose a value in '[3; len(markers) - 1]'.
-
     min_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least 'min_cellxsample'
       cells for a new annotation to be considered. In other words, by default, an
@@ -265,8 +299,8 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
       least 50% of samples (see description of previous parameter) within a batch
       to be considered.
 
-    nb_cpu_eval: int (default=1)
-      Number of CPUs to use in downstream nested functions.
+    processpool: None or pathos.pools.ProcessPool object
+      If not None, ProcessPool object to use in downstream nested functions.
 
     Returns:
     --------
@@ -289,14 +323,23 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     # Note: 'np.round()' is used to avoid floating point problem
     y_cellxsample_space = np.arange(min_cellxsample, 101)  # y-axis
 
-    # Find theoretical maximum number of markers in combination
-    max_combination = min(max_markers, len(markers_representative))
+    logging.info('\t\t\tSetting start parameters from detection method and markers of interest')
+    if detection_method == 'auto':  # Default algorithm for combinations length
+        # Theoretical maximum number of markers in combination
+        max_combination = min(max_markers, len(markers_representative))
+        if markers_interest.size > 0:  # With markers of interest
+            marker_counter = len(markers_interest)
+            max_combination += len(markers_interest)  # Account for markers of interest
+        else:  # Without markers of interest
+            marker_counter = 2
+    else:  # Combinations with exactly 'detection_method' markers
+        marker_counter = max_combination = detection_method
+    logging.info(f'\t\t\t\tSet marker_counter to {marker_counter} and max_combination to {max_combination}')
 
     # Initialise counters and objects to store results. Note that by default, it
     # is assumed that minimum number of relevant markers is 2 (only 1 marker can
     # not define a phenotype)
     enum_start = 0
-    marker_counter = 2
     max_nb_phntp_marker = 0
     max_nb_phntp_tot = -1
     max_nb_phntp_marker_sum = 0  # AT. Delete after test
@@ -340,14 +383,14 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
         max_nb_phntp_tot_sum = max_nb_phntp_marker_sum
 
         # Get all possible combinations containing 'marker_counter' markers
-        poss_comb = list(ite.combinations(markers_representative, marker_counter))
+        poss_comb = get_poss_comb(marker_counter, markers_representative, markers_interest)
         # Note: iterator is converted to list because it is used several times
 
         # Create new range of indices
         indices = range(enum_start, enum_start + len(poss_comb))
 
         # For a given number of markers, check all possible combinations
-        if nb_cpu_eval == 1:  # Use for loop to avoid creating new processes
+        if not processpool:  # Use for loop to avoid creating new processes
             score_results_lst = []
             for idx, comb in zip(indices, poss_comb):
                 comb_result_dict = evaluate_comb(idx=idx,
@@ -360,30 +403,24 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                                                  three_peak_markers=three_peak_markers,
                                                  three_peak_low=three_peak_low,
                                                  three_peak_high=three_peak_high,
-                                                 min_annotations=min_annotations,
                                                  x_samplesxbatch_space=x_samplesxbatch_space,
                                                  y_cellxsample_space=y_cellxsample_space)
                 score_results_lst.append(comb_result_dict)
-        else:  # Use pool of process to parallelise
-            chunksize = get_chunksize(list(poss_comb), nb_cpu_eval)
-            with ProcessPoolExecutor(max_workers=nb_cpu_eval, mp_context=get_context('spawn')) as executor:
-                score_results_lst = list(executor.map(partial(evaluate_comb,
-                                                              mat_representative=mat_representative,
-                                                              batches_label=batches_label,
-                                                              samples_label=samples_label,
-                                                              markers_representative=markers_representative,
-                                                              two_peak_threshold=two_peak_threshold,
-                                                              three_peak_markers=three_peak_markers,
-                                                              three_peak_low=three_peak_low,
-                                                              three_peak_high=three_peak_high,
-                                                              min_annotations=min_annotations,
-                                                              x_samplesxbatch_space=x_samplesxbatch_space,
-                                                              y_cellxsample_space=y_cellxsample_space),
-                                                      indices, poss_comb,
-                                                      timeout=None,
-                                                      chunksize=chunksize))
+        else:  # Use ProcessPool to parallelise combination testing
+            score_results_lst = list(processpool.map(partial(evaluate_comb,
+                                                             mat_representative=mat_representative,
+                                                             batches_label=batches_label,
+                                                             samples_label=samples_label,
+                                                             markers_representative=markers_representative,
+                                                             two_peak_threshold=two_peak_threshold,
+                                                             three_peak_markers=three_peak_markers,
+                                                             three_peak_low=three_peak_low,
+                                                             three_peak_high=three_peak_high,
+                                                             x_samplesxbatch_space=x_samplesxbatch_space,
+                                                             y_cellxsample_space=y_cellxsample_space),
+                                                     indices, poss_comb))
             # Note: 'partial()' is used to iterate over 'indices' and 'poss_comb'
-            # and keep the other parameters constant
+            # and keep other parameters constant
 
         # Remove combinations without solution and turn list into dict using
         # combination indices as keys

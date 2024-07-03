@@ -27,18 +27,17 @@ from utils import setup_log  # AT. Double-check path
 
 # Function used in cellxhaustive.py
 def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
-                        samples_label, markers_representative, cell_types_dict,
-                        two_peak_threshold, three_peak_markers,
-                        three_peak_low, three_peak_high,
-                        max_markers, min_annotations, max_solutions,
-                        min_samplesxbatch, min_cellxsample,
-                        knn_refine, knn_min_probability, nb_cpu_eval):
+                        samples_label, markers_representative, markers_interest,
+                        detection_method, cell_types_dict, two_peak_threshold,
+                        three_peak_markers, three_peak_low, three_peak_high,
+                        max_markers, min_samplesxbatch, min_cellxsample,
+                        knn_refine, knn_min_probability, multipop, processpool):
     """
     Function that identifies most probable cell type and phenotype for a group
     of cells using expression of its most relevant markers.
 
-    Parameters
-    ----------
+    Parameters:
+    -----------
     is_label: array(bool)
       1-D numpy array with booleans to indicate cells matching current cell type.
 
@@ -57,6 +56,14 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
 
     markers_representative: array(str)
       1-D numpy array with markers matching each column of 'mat_representative'.
+
+    markers_interest: array(str)
+      1-D numpy array with markers that must appear in optimal marker combinations.
+
+    detection_method: 'auto' or int
+      Method used to stop search for optimal marker combinations. If 'auto', use
+      default algorithm relying on maximum number of phenotypes. If int, create a
+      combination with exactly this number of markers.
 
     cell_types_dict: {str: list()}
       Dictionary with cell types as keys and list of cell type defining markers
@@ -87,17 +94,6 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
       Maximum number of relevant markers to select among total list of markers
       from total markers array. Must be less than or equal to 'len(markers_representative)'.
 
-    min_annotations: int (default=3)
-      Minimum number of phenotypes for a combination of markers to be taken into
-      account as a potential cell population. Must be in '[2; len(markers_representative)]',
-      but it is advised to choose a value in '[3; len(markers_representative) - 1]'.
-
-    max_solutions: int (default=10)
-      Maximum number of optimal solutions to keep. If script finds more than
-      'max_solutions' optimal marker combinations, 'max_solutions' combinations
-      will be randomly chosen to be further processed and appear in final
-      output. This parameter aims to limit computational burden.
-
     min_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least 'min_cellxsample'
       cells for a new annotation to be considered. In other words, by default,
@@ -120,8 +116,11 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
       Confidence threshold for KNN-classifier to reassign a new cell type
       to previously undefined cells.
 
-    nb_cpu_eval: int (default=1)
-      Number of CPUs to use in downstream nested functions.
+    multipop: bool
+      Boolean indicating whether multiple cell populations are processed.
+
+    processpool: None or pathos.pools.ProcessPool object
+      If not None, ProcessPool object to use in downstream nested functions.
 
     Returns:
     --------
@@ -156,15 +155,16 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
         batches_label=batches_label,
         samples_label=samples_label,
         markers_representative=markers_representative,
+        markers_interest=markers_interest,
+        detection_method=detection_method,
         two_peak_threshold=two_peak_threshold,
         three_peak_markers=three_peak_markers,
         three_peak_low=three_peak_low,
         three_peak_high=three_peak_high,
         max_markers=max_markers,
-        min_annotations=min_annotations,
         min_samplesxbatch=min_samplesxbatch,
         min_cellxsample=min_cellxsample,
-        nb_cpu_eval=nb_cpu_eval,
+        processpool=processpool,
         cell_name=cell_name)
 
     # Initialise result dictionary with empty lists
@@ -200,10 +200,9 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
         undef_counter = []
 
         # Check number of solutions. If too high, randomly pick without repetitions
-        if nb_solution > max_solutions:
-            logging.warning(f'\t\t\t\tToo many combinations, choosing {max_solutions} randomly')
-            logging.warning("\t\t\t\tIncrease '-s' parameter to process all of them")
-            solutions = random.sample(range(nb_solution), max_solutions)
+        if nb_solution > 10:
+            logging.warning(f'\t\t\t\tToo many combinations, choosing 10 randomly')
+            solutions = random.sample(range(nb_solution), 10)
         else:
             solutions = range(nb_solution)
 
@@ -224,7 +223,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                 three_peak_high=three_peak_high)
 
             # Initialise empty string array to record 'significant' phenotypes,
-            # i.e. phenotypes passing min_annotations and min_samplesxbatch thresholds
+            # i.e. passing toth min_cellxsample and min_samplesxbatch thresholds
             best_phntp_comb = np.empty(0, dtype=cell_phntp_comb.dtype)
             # Note: get dtype from previous array to avoid using 'object'
 
@@ -291,7 +290,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
             # Update non-significant phenotypes to make final results easier to
             # understand and process
             cell_phntp_comb = cell_phntp_comb.astype(dtype=object)  # To avoid strings getting cut
-            cell_phntp_comb[np.in1d(cell_phntp_comb,
+            cell_phntp_comb[np.isin(cell_phntp_comb,
                                     best_phntp_comb,
                                     invert=True)] = f'Other {cell_name} phenotype'
             cell_phntp_comb = cell_phntp_comb.astype(dtype=str)
@@ -306,14 +305,33 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
 
                 # At least 2 undefined cells and 2 cell types different from 'Unannotated'
                 if ((np.sum(is_undef) > 1) and (len(np.unique(new_labels)) > 2)):
+                    # Adapt CPUs used by KNN-classifier to running conditions
+                    logging.info('\t\t\t\t\tSetting CPUs for KNN-classifier')
+                    if not processpool:
+                        knn_cpu = 1
+                    else:
+                        if multipop:  # If multiple population, use ~half of CPUs
+                            knn_cpu = processpool.ncpus // 2
+                        else:  # If only population, use all CPUs
+                            knn_cpu = processpool.ncpus
+                    logging.info(f"\t\t\t\t\t\tUsing {knn_cpu}{'s' if knn_cpu > 1 else ''} CPUs")
                     # Reannotate cells
                     logging.info('\t\t\t\t\tRefining annotations with KNN-classifier')
-                    reannotated_labels, reannotation_proba = knn_classifier(
-                        mat_representative=mat_subset_rep_markers_comb,
-                        new_labels=new_labels,
-                        is_undef=is_undef,
-                        knn_min_probability=knn_min_probability,
-                        knn_cpu=nb_cpu_eval)
+                    if not processpool:  # Cannot use ProcessPool to parallelise
+                        reannotated_labels, reannotation_proba = knn_classifier(
+                            mat_representative=mat_subset_rep_markers_comb,
+                            new_labels=new_labels,
+                            is_undef=is_undef,
+                            knn_min_probability=knn_min_probability,
+                            knn_cpu=knn_cpu)
+                    else:  # Use 'pipe' to submit task to ProcessPool and parallelise
+                        reannotated_labels, reannotation_proba = processpool.pipe(
+                            knn_classifier,
+                            mat_representative=mat_subset_rep_markers_comb,
+                            new_labels=new_labels,
+                            is_undef=is_undef,
+                            knn_min_probability=knn_min_probability,
+                            knn_cpu=knn_cpu)
 
                     # Reverse dictionary to convert cell types into phenotypes
                     rev_names_conv = {val: key for key, val in names_conv.items()}
