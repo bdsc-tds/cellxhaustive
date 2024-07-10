@@ -85,7 +85,8 @@ parser.add_argument('-n', '--log-level', dest='log_level', type=str,
                     or 'warning' [info]",
                     required=False, default='info', choices=['debug', 'info', 'warning'])
 parser.add_argument('-e', '--three-peaks', dest='three_peak_markers', type=str,
-                    help='Path to file with markers with three peaks []',
+                    help='Path to file with markers with three peaks or comma \
+                    separated list of markers with three peaks []',
                     required=False, default='')
 parser.add_argument('-j', '--thresholds', dest='thresholds', type=str,
                     help='Comma-separated list of 3 floats defining thresholds \
@@ -229,17 +230,23 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     # Get list of arrays describing cells matching each cell type of 'uniq_labels'
     is_label_list = [(cell_labels == label) for label in uniq_labels]
 
-    # Get three peaks markers if file exists, otherwise use empty array
-    three_path = args.three_peak_markers
+    # Get three peaks markers, otherwise use empty array
+    three_peak_markers = args.three_peak_markers
     try:
-        logging.info('Checking for file with 3 peaks markers')
-        with open(three_path) as file:
+        logging.info(f"Checking for 3 peaks markers file at '{three_peak_markers}'")
+        with open(three_peak_markers) as file:
             three_peak_markers = np.array(file.read().splitlines(), dtype='str')
     except FileNotFoundError:
-        logging.warning('\tNo file provided, using default empty array')
-        three_peak_markers = np.empty(0, dtype='str')
+        logging.warning('\tNo file provided, using CLI arguments')
+        if three_peak_markers:
+            three_peak_markers = list(filter(None, three_peak_markers.split(',')))
+            three_peak_markers = np.array(three_peak_markers, dtype='str')
+            logging.info(f"\t\tFound {len(three_peak_markers)} markers: {', '.join(three_peak_markers)}")
+        else:
+            logging.warning('\t\tNo markers provided in CLI, using default empty array')
+            three_peak_markers = np.empty(0, dtype='str')
     else:
-        logging.info(f'\tFound {len(three_peak_markers)} markers in <{three_path}>')
+        logging.info(f"\tFound {len(three_peak_markers)} markers in '{three_peak_markers}'")
 
     # Get markers thresholds
     thresholds = args.thresholds
