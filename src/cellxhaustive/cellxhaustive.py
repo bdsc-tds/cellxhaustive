@@ -38,9 +38,9 @@ from pathos.pools import ProcessPool, ThreadPool
 
 # Import local functions
 from identify_phenotypes import identify_phenotypes  # AT. Double-check path
-from utils import setup_log  # AT. Double-check path
+from utils import parse_config, setup_log  # AT. Double-check path
 # from cellxhaustive.identify_phenotypes import identify_phenotypes
-# from cellxhaustive.utils import setup_log
+# from cellxhaustive.utils import parse_config, setup_log
 
 
 # Parse arguments
@@ -65,14 +65,18 @@ parser.add_argument('-a', '--max-markers', dest='max_markers', type=int,
 parser.add_argument('-mi', '--markers-interest', dest='markers_interest', type=str,
                     help='Comma-separated list of markers of interest that will \
                     appear in final combination. Global setting that applies to \
-                    all cell populations []',
+                    all cell types []',
                     required=False, default='')
 parser.add_argument('-dm', '--detection-method', dest='detection_method', type=str,
                     help="Method to identify length of best marker combination. \
                     Must be 'auto' to use default algorithm or an integer to set \
                     combination length. Integer must be less than '-a' parameter. \
-                    Global setting that applies to all cell populations [auto]",
+                    Global setting that applies to all cell types [auto]",
                     required=False, default='auto')
+parser.add_argument('-b', '--config', dest='config_path', type=str,
+                    help="Path to config file with cell type-specific \
+                    detection method and markers of interest []",
+                    required=False, default='')
 parser.add_argument('-c', '--cell-type-definition', dest='cell_type_path', type=str,
                     help='Path to file with cell types characterisation \
                     [../data/config/major_cell_types.yaml]',
@@ -85,7 +89,8 @@ parser.add_argument('-n', '--log-level', dest='log_level', type=str,
                     or 'warning' [info]",
                     required=False, default='info', choices=['debug', 'info', 'warning'])
 parser.add_argument('-e', '--three-peaks', dest='three_peak_markers', type=str,
-                    help='Path to file with markers with three peaks []',
+                    help='Path to file with markers with three peaks or comma \
+                    separated list of markers with three peaks []',
                     required=False, default='')
 parser.add_argument('-j', '--thresholds', dest='thresholds', type=str,
                     help='Comma-separated list of 3 floats defining thresholds \
@@ -137,7 +142,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Create log directory if it doesn't exist
     log_dir = os.path.dirname(log_file)
-    logging.debug(f'Creating log directory <{log_dir}>')
+    logging.debug(f"Creating log directory '{log_dir}'")
     os.makedirs(log_dir, exist_ok=True)
 
     # Set-up logging configuration
@@ -148,11 +153,11 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Import marker list
     marker_path = args.marker_path
+    logging.info(f"Importing marker list from '{marker_path}'")
     try:
-        logging.info(f'Importing marker list from <{marker_path}>')
         markers = pd.read_csv(marker_path, sep='\t', header=None).to_numpy(dtype=str).flatten()
     except FileNotFoundError:
-        logging.error(f'\tCould not find <{marker_path}>. Please double-check file path')
+        logging.error(f"\tCould not find '{marker_path}'. Please double-check file path")
         sys.exit(1)
     except Exception as e:
         logging.error(f'\t{e}')
@@ -162,11 +167,11 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Parse general input files into several arrays
     input_path = args.input_path
+    logging.info(f"Importing cell data from '{input_path}'")
     try:
-        logging.info(f'Importing cell data from <{input_path}>')
         input_table = pd.read_csv(input_path, sep='\t', header=0, index_col=0)
     except FileNotFoundError:
-        logging.error(f'\tCould not find <{input_path}>. Please double-check file path')
+        logging.error(f"\tCould not find '{input_path}'. Please double-check file path")
         sys.exit(1)
     except Exception as e:
         logging.error(f'\t{e}')
@@ -175,11 +180,11 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         logging.info(f'\tFound {len(input_table.index)} cells')
 
     # Get 2-D array for expression using 'markers'
+    logging.info(f"Selecting ADT counts in '{input_path}'")
     try:
-        logging.info(f'Selecting ADT counts in <{input_path}>')
         mat = input_table.loc[:, markers].to_numpy(dtype=float)
     except KeyError as e:
-        logging.error(f'\tCould not find marker <{e}> in <{input_path}>. Please double-check marker list')
+        logging.error(f"\tCould not find marker '{e}' in '{input_path}'. Please double-check marker list")
         sys.exit(1)
     except Exception as e:
         logging.error(f'\t{e}')
@@ -187,36 +192,36 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Get 1-D array for batches; add common batch value if information is missing
     input_col_low = input_table.columns.str.lower()  # Make column names case-insensitive
+    logging.info(f"Retrieving batch information in '{input_path}'")
     try:
-        logging.info(f'Retrieving batch information in <{input_path}>')
         batches_idx = input_col_low.get_loc('batch')
     except KeyError:
-        logging.warning(f'\tNo batch information in <{input_path}>')
-        logging.warning('\tSetting batch value to <batch0> for all cells')
+        logging.warning(f"\tNo batch information in '{input_path}'")
+        logging.warning("\tSetting batch value to 'batch0' for all cells")
         batches = np.full(input_table.shape[0], 'batch0')
     else:
         batches = input_table.iloc[:, batches_idx].to_numpy(dtype=str)
         logging.info(f'\tFound {len(np.unique(batches))} batches')
 
     # Get 1-D array for samples; add common sample value if information is missing
+    logging.info(f"Retrieving sample information in '{input_path}'")
     try:
-        logging.info(f'Retrieving sample information in <{input_path}>')
         samples_idx = input_col_low.get_loc('sample')
     except KeyError:
-        logging.warning(f'\tNo sample information in <{input_path}>')
-        logging.warning('\tSetting sample value to <sample0> for all cells')
+        logging.warning(f"\tNo sample information in '{input_path}'")
+        logging.warning("\tSetting sample value to 'sample0' for all cells")
         samples = np.full(input_table.shape[0], 'sample0')
     else:
         samples = input_table.iloc[:, samples_idx].to_numpy(dtype=str)
         logging.info(f'\tFound {len(np.unique(samples))} samples')
 
     # Get 1-D array for pre-annotated cell types
+    logging.info(f"Retrieving cell type information in '{input_path}'")
     try:
-        logging.info(f'Retrieving cell type information in <{input_path}>')
         cell_type_idx = input_col_low.get_loc('cell_type')
     except KeyError:
-        logging.warning(f'\tNo cell type information in <{input_path}>')
-        logging.warning('\tSetting cell type value to <cell_type0> for all cells')
+        logging.warning(f"\tNo cell type information in '{input_path}'")
+        logging.warning("\tSetting cell type value to 'cell_type0' for all cells")
         cell_labels = np.full(input_table.shape[0], 'cell_type0')
     else:
         cell_labels = input_table.iloc[:, cell_type_idx].to_numpy(dtype=str)
@@ -224,26 +229,32 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Get array of unique labels
     uniq_labels = np.unique(cell_labels)
-    multipop = False if len(uniq_labels) == 1 else True
+    multipop = (False if len(uniq_labels) == 1 else True)
 
     # Get list of arrays describing cells matching each cell type of 'uniq_labels'
-    is_label_list = [(cell_labels == label) for label in uniq_labels]
+    is_label_lst = [(cell_labels == label) for label in uniq_labels]
 
-    # Get three peaks markers if file exists, otherwise use empty array
-    three_path = args.three_peak_markers
+    # Get three peaks markers, otherwise use empty array
+    three_peak_markers = args.three_peak_markers
     try:
-        logging.info('Checking for file with 3 peaks markers')
-        with open(three_path) as file:
+        logging.info(f"Checking for 3 peaks markers file at '{three_peak_markers}'")
+        with open(three_peak_markers) as file:
             three_peak_markers = np.array(file.read().splitlines(), dtype='str')
     except FileNotFoundError:
-        logging.warning('\tNo file provided, using default empty array')
-        three_peak_markers = np.empty(0, dtype='str')
+        logging.warning('\tNo file provided, using CLI arguments')
+        if three_peak_markers:
+            three_peak_markers = list(filter(None, three_peak_markers.split(',')))
+            three_peak_markers = np.array(three_peak_markers, dtype='str')
+            logging.info(f"\t\tFound {len(three_peak_markers)} markers: {', '.join(three_peak_markers)}")
+        else:
+            logging.warning('\t\tNo markers provided in CLI, using default empty array')
+            three_peak_markers = np.empty(0, dtype='str')
     else:
-        logging.info(f'\tFound {len(three_peak_markers)} markers in <{three_path}>')
+        logging.info(f"\tFound {len(three_peak_markers)} markers in '{three_peak_markers}'")
 
     # Get markers thresholds
     thresholds = args.thresholds
-    logging.info('Parsing markers thresholds')
+    logging.info('Parsing marker expression thresholds from CLI')
     try:
         if three_peak_markers.size == 0:  # Only two peaks markers
             two_peak_threshold = [float(x) for x in thresholds.split(',')][0]
@@ -265,60 +276,29 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Import cell types definitions
     cell_type_path = args.cell_type_path
+    logging.info(f"Importing cell type definitions from '{cell_type_path}'")
     try:
-        logging.info('Checking for file with cell type definitions')
         with open(cell_type_path) as cell_types_input:
             cell_types_dict = yaml.safe_load(cell_types_input)
         # Note: this file was created using data from
         # https://github.com/RGLab/rcellontologymapping/blob/main/src/src/ImmportDefinitions.hs
     except FileNotFoundError:
-        logging.error(f'\tCould not find <{cell_type_path}>. Please double-check file path')
+        logging.error(f"\tCould not find '{cell_type_path}'. Please double-check file path")
         sys.exit(1)
     except Exception as e:
         logging.error(f'\t{e}')
         sys.exit(1)
     else:
-        logging.info(f'\tFound {len(cell_types_dict)} cell types in <{cell_type_path}>')
+        logging.info(f"\tFound {len(cell_types_dict)} cell types: {', '.join(cell_types_dict.keys())}")
 
-    # Get markers of interest, otherwise use empty array
-    markers_interest = args.markers_interest
-    logging.info('Checking for markers of interest')
-    if markers_interest:
-        markers_interest = np.array(markers_interest.split(','), dtype='str')
-        logging.info(f'\tFound {len(markers_interest)} markers')
-        logging.info('\tIdentifying markers of interest in general marker list')
-        if sum(np.isin(markers_interest, markers)) == len(markers_interest):
-            mask_interest_inv = np.isin(markers, markers_interest, invert=True)
-            logging.info('\t\tAll markers of interest located')
-        else:
-            missing_interest = markers_interest[np.isin(markers_interest, markers, invert=True)]
-            logging.error(f'\t\tSome markers of interest are missing in general marker list')
-            logging.error(f"\t\tMissing markers: {', '.join(missing_interest)}")
-            sys.exit(1)
-    else:
-        logging.warning('\tNo markers provided, using default empty array')
-        markers_interest = np.empty(0, dtype='str')
-
-    # Get method to decide final combination length
-    logging.info('Determining detection method')
-    detection_method = args.detection_method
-    if detection_method == 'auto':  # Check if default setting is chosen
-        logging.info('\tUsing default algorithm')
-    elif detection_method.isdecimal():  # Check if an integer is provided
-        detection_method = int(detection_method)
-        if (detection_method > len(markers)):
-            logging.error(f"\t'-dm/--detection-method' must be lower than number of markers in {marker_path}")
-            sys.exit(1)
-        if (detection_method < len(markers_interest)):
-            logging.error(f"\t'-dm/--detection-method' must be higher than number of markers in {markers_interest}")
-            sys.exit(1)
-        logging.info(f'\tWill look for combinations with <{detection_method}> markers')
-    else:
-        logging.error("\tUnknown detection method. Please provide 'auto' or a positive integer")
-        sys.exit(1)
+    # Parse config file
+    logging.info(f"Checking for config file at '{args.config_path}'")
+    config_args = [args.config_path, uniq_labels,
+                   args.markers_interest, args.detection_method]
+    markers_interest_lst, detection_method_lst = parse_config(*config_args)
 
     # Get other parameter values from argument parsing
-    logging.info('Parsing remaining parameters')
+    logging.info('Parsing remaining parameters from CLI')
     max_markers = args.max_markers
     min_samplesxbatch = args.min_samplesxbatch
     min_cellxsample = args.min_cellxsample
@@ -326,6 +306,30 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     logging.info('\tDone')
 
     logging.info('Checking parameter values')
+    logging.info('\tChecking presence of markers of interest in general marker list')
+    mask_interest_inv_lst = []
+    for label, markers_interest in zip(uniq_labels, markers_interest_lst):
+        if sum(np.isin(markers_interest, markers)) == len(markers_interest):
+            mask_interest_inv = np.isin(markers, markers_interest, invert=True)
+            mask_interest_inv_lst.append(mask_interest_inv)
+            logging.info(f"\t\tAll markers of interest located for cell type '{label}'")
+        else:
+            missing_interest = markers_interest[np.isin(markers_interest,
+                                                        markers, invert=True)]
+            logging.error(f"\t\tPlease double-check markers of interest for cell type '{label}'")
+            logging.error(f"\t\tSome markers are missing in general marker list: {', '.join(missing_interest)}")
+            sys.exit(1)
+    logging.info('\tChecking value of detection method')
+    for label, detection_method in zip(uniq_labels, detection_method_lst):
+        if isinstance(detection_method, int):  # Only process integers
+            if (detection_method > len(markers)):
+                logging.error(f"\t'-dm/--detection-method' for cell type '{label}' must be lower than number of markers in {marker_path}")
+                sys.exit(1)
+            if (detection_method < len(markers_interest)):
+                logging.error(f"\t'-dm/--detection-method' for cell type '{label}' must be higher than number of markers in {markers_interest}")
+                sys.exit(1)
+            logging.info(f"\t\tValid detection method for cell type '{label}'")
+    logging.info('\tChecking other parameters')
     if not (1 <= max_markers <= len(markers)):
         logging.error(f"\t'-a/--max-markers' must be an integer between 1 and {len(markers)}")
         sys.exit(1)
@@ -349,14 +353,14 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         nb_cpu_id = nb_cpu_eval = 1
     else:  # Parallelise as much as possible
         logging.info(f'\t{cores} CPUs provided in total')
-        # Adapt number of CPUs in ThreadPool to number of cell populations
-        if len(uniq_labels) == 1:  # Can only parallelise combinations testing
+        # Adapt number of CPUs in ThreadPool to number of cell types
+        if not multipop:  # Can only parallelise combinations testing
             nb_cpu_id = 1  # Use only 1 CPU in ThreadPool
             nb_cpu_eval = cores - nb_cpu_id  # Assign remaining CPUs to ProcessPool
-        else:  # Can parallelise combinations testing and cell population processing
+        else:  # Can parallelise combinations testing and cell type processing
             nb_cpu_eval = floor(0.9 * cores)  # Assign 90% of CPUs to ProcessPool
             nb_cpu_id = cores - nb_cpu_eval  # Assign remaining CPUs to ThreadPool
-            # If more threads than cell populations, reassign excess CPUs from
+            # If more threads than cell types, reassign excess CPUs from
             # ThreadPool to ProcessPool
             diff = nb_cpu_id - len(uniq_labels)
             if diff > 0:
@@ -376,19 +380,19 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     marker_file_path = f'{os.path.splitext(output_path)[0]}_markers.txt'
 
     # Initialise list of arrays to store results
-    mat_subset_rep_list = []
-    batches_label_list = []
-    samples_label_list = []
-    markers_representative_list = []
+    mat_subset_rep_lst = []
+    batches_label_lst = []
+    samples_label_lst = []
+    markers_representative_lst = []
 
     # Specific context manager to save information on marker filtering
     with open(marker_file_path, 'w') as file:
-        for label, is_label in zip(uniq_labels, is_label_list):  # Loop over cell types
-            # Select relevant markers in each batch of each cell population (main gating)
-            logging.info(f'\tProcessing <{label}> cells')
+        for label, is_label in zip(uniq_labels, is_label_lst):  # Loop over cell types
+            # Select relevant markers in each batch of each cell type (main gating)
+            logging.info(f"\tProcessing {label}' cells'")
             markers_rep_batches = []
             for batch in np.unique(batches):
-                logging.debug(f'\t\tProcessing batch <{batch}>')
+                logging.debug(f"\t\tProcessing batch '{batch}'")
                 logging.debug('\t\t\tSelecting cells matching current batch')
                 is_batch = (batches == batch)
                 # Create boolean array to select cells matching current 'label' and 'batch'
@@ -417,7 +421,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                 markers_rep_batches.extend(list(markers_rep))
 
             if len(np.unique(batches)) == 1:  # No need to filter markers if there is only 1 batch
-                logging.info(f'\t\tFound only one batch, no need to filter markers')
+                logging.info('\t\tFound only one batch, no need to filter markers')
                 markers_representative = markers_rep_batches
                 logging.info(f"\t\t\tFound {len(markers_representative)} markers: {', '.join(markers_representative)}")
             else:
@@ -439,7 +443,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
             file.write(f"\tMarkers removed (present in only 1 batch): {', '.join(missing_markers)}\n")
 
             # Extract expression, batch and sample information across all batches
-            # for cell population 'label'
+            # for cell type 'label'
             logging.info('\t\tExtracting matching expression, batch and sample information')
             mat_subset_label = mat[is_label, :]
             batches_label = batches[is_label]
@@ -454,10 +458,10 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
             mat_subset_rep_markers = mat_subset_label[:, markers_rep_int_mask]
 
             logging.info('\t\tStoring data in arrays')
-            mat_subset_rep_list.append(mat_subset_rep_markers)  # Store slice matrix
-            batches_label_list.append(batches_label)  # Store batch information
-            samples_label_list.append(samples_label)  # Store sample information
-            markers_representative_list.append(markers_representative)  # Store representative markers
+            mat_subset_rep_lst.append(mat_subset_rep_markers)  # Store slice matrix
+            batches_label_lst.append(batches_label)  # Store batch information
+            samples_label_lst.append(samples_label)  # Store sample information
+            markers_representative_lst.append(markers_representative)  # Store representative markers
             # Note: keeping data in list of arrays makes multiprocessing easier and
             # reduce overall memory usage
 
@@ -466,15 +470,18 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Process cells by pre-existing annotations
     if nb_cpu_id == 1:  # Use for loop to avoid creating new processes
-        logging.info('Starting population analyses without parallelisation')
+        logging.info('Starting analyses without parallelisation')
         annot_results_lst = []
-        for is_label, cell_name, mat_representative, batches_label, \
-                samples_label, markers_representative in zip(is_label_list,
-                                                             uniq_labels,
-                                                             mat_subset_rep_list,
-                                                             batches_label_list,
-                                                             samples_label_list,
-                                                             markers_representative_list):
+        for is_label, cell_name, mat_representative, \
+                batches_label, samples_label, markers_representative, \
+                markers_interest, detection_method in zip(is_label_lst,
+                                                          uniq_labels,
+                                                          mat_subset_rep_lst,
+                                                          batches_label_lst,
+                                                          samples_label_lst,
+                                                          markers_representative_lst,
+                                                          markers_interest_lst,
+                                                          detection_method_lst):
             results_dict = identify_phenotypes(is_label=is_label,
                                                cell_name=cell_name,
                                                mat_representative=mat_representative,
@@ -497,11 +504,9 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                                processpool=processpool)
             annot_results_lst.append(results_dict)
     else:  # Use ThreadPool to parallelise cell type processing
-        logging.info('Starting population analyses with parallelisation')
+        logging.info('Starting analyses with parallelisation')
         with ThreadPool(nthreads=nb_cpu_id) as threadpool:
             annot_results_lst = list(threadpool.map(partial(identify_phenotypes,
-                                                            markers_interest=markers_interest,  # AT. Ultimately, this should be out of the function and become an iterable, with 1 array/cell-type
-                                                            detection_method=detection_method,  # AT. Ultimately, this should be out of the function and become an iterable, with 1 keyword or integer/cell-type
                                                             cell_types_dict=cell_types_dict,
                                                             two_peak_threshold=two_peak_threshold,
                                                             three_peak_markers=three_peak_markers,
@@ -513,16 +518,19 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                                             knn_refine=knn_refine,
                                                             knn_min_probability=knn_min_probability,
                                                             multipop=multipop,
-                                                            processpool=processpool),  # AT. Rework this
-                                                    is_label_list,
+                                                            processpool=processpool),
+                                                    is_label_lst,
                                                     uniq_labels,
-                                                    mat_subset_rep_list,
-                                                    batches_label_list,
-                                                    samples_label_list,
-                                                    markers_representative_list))
-        # Note: 'partial()' is used to iterate over 'is_label_list', 'uniq_labels',
-        # 'mat_subset_rep_list', 'batches_label_list', 'samples_label_list' and
-        # 'markers_representative_list' and keep other parameters constant
+                                                    mat_subset_rep_lst,
+                                                    batches_label_lst,
+                                                    samples_label_lst,
+                                                    markers_representative_lst,
+                                                    markers_interest_lst,
+                                                    detection_method_lst))
+        # Note: 'partial()' is used to iterate over 'is_label_lst', 'uniq_labels',
+        # 'mat_subset_rep_lst', 'batches_label_lst', 'samples_label_lst',
+        # 'markers_representative_lst', 'markers_interest_lst' and
+        # 'detection_method_lst' and keep other parameters constant
 
     # Make sure ProcessPool is closed. It should already be, but this makes sure
     # there are no zombie processes
@@ -563,20 +571,20 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Fill annotation dataframe with results
     logging.info('\tFilling annotation table with analyses results')
-    for label, is_label in zip(uniq_labels, is_label_list):
-        logging.info(f'\t\tCreating result subtable for <{label}> annotations')
+    for label, is_label in zip(uniq_labels, is_label_lst):
+        logging.info(f"\t\tCreating result subtable for '{label}' annotations")
 
         # Slice general results dictionary
-        logging.debug(f'\t\t\tSelecting associated results')
+        logging.debug('\t\t\tSelecting associated results')
         sub_results = annot_dict[label]
 
         # Find number of optimal combinations for 'label' cells
-        logging.info(f'\t\t\tDetermining maximum number of optimal combinations')
+        logging.info('\t\t\tDetermining maximum number of optimal combinations')
         label_nb_comb = list(sub_results.keys())
         logging.info(f"\t\t\t\tFound {len(label_nb_comb)} combination{'s' if len(label_nb_comb) > 1 else ''}")
 
         # Get number of cells
-        logging.info(f'\t\t\tCounting cells')
+        logging.info('\t\t\tCounting cells')
         cell_nb = sub_results[list(sub_results)[0]]['new_labels'].shape[0]
         # Note: 'list(sub_results)[0]' is used because it will always exist
         logging.info(f'\t\t\t\tFound {cell_nb} cells')
@@ -603,7 +611,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
             annot_df_label.iloc[:, start:(start + 5)] = sub_res_df
 
         # Fill general annotation dataframe with 'label' annotations
-        logging.info(f'\t\t\tIntegrating subtable to general annotation table')
+        logging.info('\t\t\tIntegrating subtable to general annotation table')
         annot_df.iloc[is_label, :end] = annot_df_label.copy(deep=True)
 
     # Merge input dataframe and annotation dataframe
@@ -614,9 +622,9 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Create output directory if it doesn't exist
     output_dir = os.path.dirname(output_path)
-    logging.debug(f'Creating output directory <{output_dir}>')
+    logging.debug(f"Creating output directory '{output_dir}'")
     os.makedirs(output_dir, exist_ok=True)
 
     # Save general table with annotations and phenotypes
-    logging.info(f'Saving final table to <{output_path}>')
+    logging.info(f"Saving final table to '{output_path}'")
     output_table.to_csv(output_path, sep='\t', header=True, index=True)
