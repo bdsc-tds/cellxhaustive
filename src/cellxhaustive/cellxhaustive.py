@@ -38,9 +38,9 @@ from pathos.pools import ProcessPool, ThreadPool
 
 # Import local functions
 from identify_phenotypes import identify_phenotypes  # AT. Double-check path
-from utils import setup_log  # AT. Double-check path
+from utils import parse_config, setup_log  # AT. Double-check path
 # from cellxhaustive.identify_phenotypes import identify_phenotypes
-# from cellxhaustive.utils import setup_log
+# from cellxhaustive.utils import parse_config, setup_log
 
 
 # Parse arguments
@@ -73,6 +73,10 @@ parser.add_argument('-dm', '--detection-method', dest='detection_method', type=s
                     combination length. Integer must be less than '-a' parameter. \
                     Global setting that applies to all cell populations [auto]",
                     required=False, default='auto')
+parser.add_argument('-b', '--config', dest='config_path', type=str,
+                    help="Path to config file with cell type-specific \
+                    detection method and markers of interest []",
+                    required=False, default='')
 parser.add_argument('-c', '--cell-type-definition', dest='cell_type_path', type=str,
                     help='Path to file with cell types characterisation \
                     [../data/config/major_cell_types.yaml]',
@@ -287,42 +291,11 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     else:
         logging.info(f'\tFound {len(cell_types_dict)} cell types in <{cell_type_path}>')
 
-    # Get markers of interest, otherwise use empty array
-    markers_interest = args.markers_interest
-    logging.info('Checking for markers of interest')
-    if markers_interest:
-        markers_interest = np.array(markers_interest.split(','), dtype='str')
-        logging.info(f'\tFound {len(markers_interest)} markers')
-        logging.info('\tIdentifying markers of interest in general marker list')
-        if sum(np.isin(markers_interest, markers)) == len(markers_interest):
-            mask_interest_inv = np.isin(markers, markers_interest, invert=True)
-            logging.info('\t\tAll markers of interest located')
-        else:
-            missing_interest = markers_interest[np.isin(markers_interest, markers, invert=True)]
-            logging.error(f'\t\tSome markers of interest are missing in general marker list')
-            logging.error(f"\t\tMissing markers: {', '.join(missing_interest)}")
-            sys.exit(1)
-    else:
-        logging.warning('\tNo markers provided, using default empty array')
-        markers_interest = np.empty(0, dtype='str')
-
-    # Get method to decide final combination length
-    logging.info('Determining detection method')
-    detection_method = args.detection_method
-    if detection_method == 'auto':  # Check if default setting is chosen
-        logging.info('\tUsing default algorithm')
-    elif detection_method.isdecimal():  # Check if an integer is provided
-        detection_method = int(detection_method)
-        if (detection_method > len(markers)):
-            logging.error(f"\t'-dm/--detection-method' must be lower than number of markers in {marker_path}")
-            sys.exit(1)
-        if (detection_method < len(markers_interest)):
-            logging.error(f"\t'-dm/--detection-method' must be higher than number of markers in {markers_interest}")
-            sys.exit(1)
-        logging.info(f'\tWill look for combinations with <{detection_method}> markers')
-    else:
-        logging.error("\tUnknown detection method. Please provide 'auto' or a positive integer")
-        sys.exit(1)
+    # Parse config file
+    logging.info(f"Checking for config file at '{args.config_path}'")
+    config_args = [args.config_path, uniq_labels,
+                   args.markers_interest, args.detection_method]
+    markers_interest_list, detection_method_list = parse_config(*config_args)
 
     # Get other parameter values from argument parsing
     logging.info('Parsing remaining parameters')
@@ -333,6 +306,30 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     logging.info('\tDone')
 
     logging.info('Checking parameter values')
+    logging.info('\tChecking presence of markers of interest in general marker list')
+    mask_interest_inv_lst = []
+    for label, markers_interest in zip(uniq_labels, markers_interest_list):
+        if sum(np.isin(markers_interest, markers)) == len(markers_interest):
+            mask_interest_inv = np.isin(markers, markers_interest, invert=True)
+            mask_interest_inv_lst.append(mask_interest_inv)
+            logging.info(f'\t\tAll markers of interest located for cell type {label}')
+        else:
+            missing_interest = markers_interest[np.isin(markers_interest,
+                                                        markers, invert=True)]
+            logging.error(f'\t\tPlease double-check markers of interest for cell type {label}')
+            logging.error(f"\t\tSome markers are missing in general marker list: {', '.join(missing_interest)}")
+            sys.exit(1)
+    logging.info('\tChecking value of detection method')
+    for label, detection_method in zip(uniq_labels, detection_method_list):
+        if isinstance(detection_method, int):  # Only process integers
+            if (detection_method > len(markers)):
+                logging.error(f"\t'-dm/--detection-method' for cell type {label} must be lower than number of markers in {marker_path}")
+                sys.exit(1)
+            if (detection_method < len(markers_interest)):
+                logging.error(f"\t'-dm/--detection-method' for cell type {label} must be higher than number of markers in {markers_interest}")
+                sys.exit(1)
+            logging.info(f'\t\tValid detection method for cell type {label}')
+    logging.info('\tChecking other parameters')
     if not (1 <= max_markers <= len(markers)):
         logging.error(f"\t'-a/--max-markers' must be an integer between 1 and {len(markers)}")
         sys.exit(1)
@@ -475,13 +472,16 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     if nb_cpu_id == 1:  # Use for loop to avoid creating new processes
         logging.info('Starting population analyses without parallelisation')
         annot_results_lst = []
-        for is_label, cell_name, mat_representative, batches_label, \
-                samples_label, markers_representative in zip(is_label_list,
-                                                             uniq_labels,
-                                                             mat_subset_rep_list,
-                                                             batches_label_list,
-                                                             samples_label_list,
-                                                             markers_representative_list):
+        for is_label, cell_name, mat_representative, \
+                batches_label, samples_label, markers_representative, \
+                markers_interest, detection_method in zip(is_label_list,
+                                                          uniq_labels,
+                                                          mat_subset_rep_list,
+                                                          batches_label_list,
+                                                          samples_label_list,
+                                                          markers_representative_list,
+                                                          markers_interest_list,
+                                                          detection_method_list):
             results_dict = identify_phenotypes(is_label=is_label,
                                                cell_name=cell_name,
                                                mat_representative=mat_representative,
@@ -507,8 +507,6 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         logging.info('Starting population analyses with parallelisation')
         with ThreadPool(nthreads=nb_cpu_id) as threadpool:
             annot_results_lst = list(threadpool.map(partial(identify_phenotypes,
-                                                            markers_interest=markers_interest,  # AT. Ultimately, this should be out of the function and become an iterable, with 1 array/cell-type
-                                                            detection_method=detection_method,  # AT. Ultimately, this should be out of the function and become an iterable, with 1 keyword or integer/cell-type
                                                             cell_types_dict=cell_types_dict,
                                                             two_peak_threshold=two_peak_threshold,
                                                             three_peak_markers=three_peak_markers,
@@ -520,16 +518,19 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
                                                             knn_refine=knn_refine,
                                                             knn_min_probability=knn_min_probability,
                                                             multipop=multipop,
-                                                            processpool=processpool),  # AT. Rework this
+                                                            processpool=processpool),
                                                     is_label_list,
                                                     uniq_labels,
                                                     mat_subset_rep_list,
                                                     batches_label_list,
                                                     samples_label_list,
-                                                    markers_representative_list))
+                                                    markers_representative_list,
+                                                    markers_interest_list,
+                                                    detection_method_list))
         # Note: 'partial()' is used to iterate over 'is_label_list', 'uniq_labels',
-        # 'mat_subset_rep_list', 'batches_label_list', 'samples_label_list' and
-        # 'markers_representative_list' and keep other parameters constant
+        # 'mat_subset_rep_list', 'batches_label_list', 'samples_label_list',
+        # 'markers_representative_list', 'markers_interest_list' and
+        # 'detection_method_list' and keep other parameters constant
 
     # Make sure ProcessPool is closed. It should already be, but this makes sure
     # there are no zombie processes
