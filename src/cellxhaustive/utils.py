@@ -132,11 +132,11 @@ def parse_config(config_path, uniq_labels, markers_interest, detection_method):
 
     Returns:
     --------
-    markers_interest_list: list(array(str))
+    markers_interest_lst: list(array(str))
       List containing arrays of markers of interest for each cell type. If no
       markers of interest are provided, array of markers will be empty.
 
-    detection_method_list: list('auto' or int)
+    detection_method_lst: list('auto' or int)
       List containing detection method for each cell type. Detection method can
       be 'auto' or an integer superior or equal to 2.
     """
@@ -159,12 +159,12 @@ def parse_config(config_path, uniq_labels, markers_interest, detection_method):
             logging.warning('\t\t\tNo markers provided in CLI, using default empty array')
             markers_interest = np.empty(0, dtype='str')
         logging.info('\t\t\tPropagating this array to all cell types')
-        markers_interest_list = [markers_interest for _ in range(cell_pop_nb)]
+        markers_interest_lst = [markers_interest for _ in range(cell_pop_nb)]
         # Process method to decide final combination length
         logging.info('\t\tChecking for detection method')
         detection_method = get_detection_method(detection_method, 3)
         logging.info('\t\t\tPropagating this setting to all cell types')
-        detection_method_list = [detection_method] * cell_pop_nb
+        detection_method_lst = [detection_method] * cell_pop_nb
     else:  # With config file
         logging.info('\tFound config file. Parsing its content')
         # Process markers of interest
@@ -175,7 +175,7 @@ def parse_config(config_path, uniq_labels, markers_interest, detection_method):
                 logging.warning("\t\t\t'markers_interest' field is present but empty. Using default empty array")
                 markers_interest = np.empty(0, dtype='str')
                 logging.info('\t\t\tPropagating this setting to all cell types')
-                markers_interest_list = [markers_interest for _ in range(cell_pop_nb)]
+                markers_interest_lst = [markers_interest for _ in range(cell_pop_nb)]
             elif 'all' in markers_dict.keys():
                 if markers_dict['all'] is None:  # User probably forgot to delete field, use default
                     logging.warning("\t\t\t'markers_interest: all' field is present but empty. Using default empty array")
@@ -184,9 +184,9 @@ def parse_config(config_path, uniq_labels, markers_interest, detection_method):
                     logging.info(f"\t\t\tFound global setting: {', '.join(markers_dict['all'])}")
                     markers_interest = np.array(markers_dict['all'])
                 logging.info('\t\t\tPropagating this setting to all cell types')
-                markers_interest_list = [markers_interest for _ in range(cell_pop_nb)]
+                markers_interest_lst = [markers_interest for _ in range(cell_pop_nb)]
             else:
-                logging.info(f'\t\t\tFound cell types specific settings')
+                logging.info('\t\t\tFound cell types specific settings')
                 markers_interest_lst = []
                 for label in uniq_labels:
                     if label in markers_dict.keys():
@@ -194,23 +194,23 @@ def parse_config(config_path, uniq_labels, markers_interest, detection_method):
                             logging.warning(f"\t\t\t\t'markers_interest: all: {label}' field is present but empty. Using default empty array")
                             markers_interest_lst.append(np.empty(0, dtype='str'))
                         else:
-                            logging.info(f"\t\t\t\tFound markers for cell type {label}: {', '.join(markers_dict[label])}")
+                            logging.info(f"\t\t\t\tFound markers for cell type '{label}': {', '.join(markers_dict[label])}")
                             markers_interest_lst.append(np.array(markers_dict[label]))
                     else:
-                        logging.warning(f'\t\t\t\tNo markers found for cell type {label}. Using default empty array')
+                        logging.warning(f"\t\t\t\tNo markers found for cell type '{label}'. Using default empty array")
                         markers_interest_lst.append(np.empty(0, dtype='str'))
         except KeyError:  # No information on markers of interest in config file
             logging.warning('\t\t\tNo markers settings provided, using default empty array')
             markers_interest = np.empty(0, dtype='str')
             logging.info('\t\t\tPropagating this array to all cell types')
-            markers_interest_list = [markers_interest for _ in range(cell_pop_nb)]
+            markers_interest_lst = [markers_interest for _ in range(cell_pop_nb)]
         # Process method to decide final combination length
         logging.info('\t\tChecking for detection method')
         try:  # Information on detection method in config file
             detection_dict = config_dict['detection_method']
             if detection_dict is None:  # User probably forgot to delete field, use default
                 logging.warning("\t\t\t'detection_method' field is present but empty. Using default algorithm")
-                detection_method_list = ['auto'] * cell_pop_nb
+                detection_method_lst = ['auto'] * cell_pop_nb
             elif 'all' in detection_dict.keys():
                 if detection_dict['all'] is None:  # User probably forgot to delete field, use default
                     logging.warning("\t\t\t'detection_method: all' field is present but empty. Using default algorithm")
@@ -219,9 +219,9 @@ def parse_config(config_path, uniq_labels, markers_interest, detection_method):
                     logging.info(f"\t\t\tFound global setting: {detection_dict['all']}")
                     detection_method = get_detection_method(detection_dict['all'], 4)
                 logging.info('\t\t\tPropagating this setting to all cell types')
-                detection_method_list = [detection_method] * cell_pop_nb
+                detection_method_lst = [detection_method] * cell_pop_nb
             else:
-                logging.info(f'\t\t\tFound cell types specific settings')
+                logging.info('\t\t\tFound cell types specific settings')
                 detection_method_lst = []
                 for label in uniq_labels:
                     if label in detection_dict.keys():
@@ -229,18 +229,18 @@ def parse_config(config_path, uniq_labels, markers_interest, detection_method):
                             logging.warning(f"\t\t\t\t'detection_method: all: {label}' field is present but empty. Using default algorithm")
                             detection_method_lst.append('auto')
                         else:
-                            logging.info(f"\t\t\t\tFound detection method for cell type {label}: {detection_dict[label]}")
+                            logging.info(f"\t\t\t\tFound detection method for cell type '{label}': {detection_dict[label]}")
                             detection_method = get_detection_method(detection_dict[label], 5)
                             detection_method_lst.append(detection_method)
                     else:
-                        logging.info(f'\t\t\t\tNo detection method found for cell type {label}. Using default algorithm')
+                        logging.info(f"\t\t\t\tNo detection method found for cell type '{label}'. Using default algorithm")
                         detection_method_lst.append('auto')
-                detection_method_list = np.array(detection_method_lst)  # Convert list back to array
+                detection_method_lst = np.array(detection_method_lst)  # Convert list back to array
                 del detection_method_lst
         except KeyError:  # No information on detection method in config file
             logging.warning('\t\t\tNo detection method settings provided, using default algorithm')
             detection_method = 'auto'
             logging.info('\t\t\tPropagating this setting to all cell types')
-            detection_method_list = [detection_method] * cell_pop_nb
+            detection_method_lst = [detection_method] * cell_pop_nb
 
-    return markers_interest_list, detection_method_list
+    return markers_interest_lst, detection_method_lst

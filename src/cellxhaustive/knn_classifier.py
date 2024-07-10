@@ -120,7 +120,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     logging.info(f'\t\t\t\t\t\t\twith a max accuracy of: {best_model.best_score_:.3f}')
 
     # Apply classifier to undefined cells
-    logging.info(f'\t\t\t\t\t\tApplying KNN-classifier to undefined cells')
+    logging.info('\t\t\t\t\t\tApplying KNN-classifier to undefined cells')
     undef_cells_pred = best_model.predict_proba(undef_cells_mat)
     # Note: this returns an array of probabilities for a cell to belong to a
     # certain cell type

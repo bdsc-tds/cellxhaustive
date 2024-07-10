@@ -57,7 +57,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
     markers_representative: array(str)
       1-D numpy array with markers matching each column of 'mat_representative'.
 
-    markers_interest: array(str)
+    markers_interest: array(str) or empty array
       1-D numpy array with markers that must appear in optimal marker combinations.
 
     detection_method: 'auto' or int
@@ -117,7 +117,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
       to previously undefined cells.
 
     multipop: bool
-      Boolean indicating whether multiple cell populations are processed.
+      Boolean indicating whether multiple cell types are processed.
 
     processpool: None or pathos.pools.ProcessPool object
       If not None, ProcessPool object to use in downstream nested functions.
@@ -195,17 +195,17 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
     else:  # At least one solution, but can account for more if needed
 
         # Initialise counter of undefined cells
-        logging.info(f'\t\t\t<{nb_solution}> optimal combinations found, building new cell types on them')
+        logging.info(f'\t\t\tFound {nb_solution} optimal combinations, building new cell types on them')
         undef_counter = []
 
         # Check number of solutions. If too high, randomly pick without repetitions
         if nb_solution > 10:
-            logging.warning(f'\t\t\t\tToo many combinations, choosing 10 randomly')
+            logging.warning('\t\t\t\tToo many combinations, choosing 10 randomly')
             solutions = random.sample(range(nb_solution), 10)
         else:
             solutions = range(nb_solution)
 
-        logging.info(f'\t\t\tProcessing all {cell_name} combinations')
+        logging.info(f"\t\t\tProcessing all '{cell_name}' combinations")
         for i in solutions:
             logging.info(f'\t\t\t\tProcessing combination {i}: {best_marker_comb[i]}')
             # Slice matrix to keep only expression of best combination
@@ -259,16 +259,16 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                     # Calculate proportion of samples in current batch satisfying
                     # cell/sample threshold
                     keep_phenotype_batch = (np.sum(keep_phenotype_batch, axis=0) / samples_nb)
-                    # Notes:
-                    # - 'keep_phenotype_batch' is a boolean array, so it can be summed
+                    # Note: 'keep_phenotype_batch' is a boolean array, so it can
+                    # be summed
 
                     # Check whether previous proportion satisfies sample/batch threshold
                     keep_phenotype_batch = (keep_phenotype_batch >= min_samplesxbatch)
 
                     # Intersect batch results with general results
                     keep_phenotype = (keep_phenotype and keep_phenotype_batch)
-                    # Note: for consistency, phenotypes have to be present in all batches,
-                    # hence usage of 'and'
+                    # Note: for consistency, phenotypes have to be present in
+                    # all batches, hence usage of 'and'
 
                 # If 'phenotype' is 'significant', keep it
                 if keep_phenotype:
@@ -309,9 +309,9 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                     if not processpool:
                         knn_cpu = 1
                     else:
-                        if multipop:  # If multiple population, use ~half of CPUs
+                        if multipop:  # If multiple cell types, use ~half of CPUs
                             knn_cpu = processpool.ncpus // 2
-                        else:  # If only population, use all CPUs
+                        else:  # If only one cell type, use all CPUs
                             knn_cpu = processpool.ncpus
                     logging.info(f"\t\t\t\t\t\tUsing {knn_cpu}{'s' if knn_cpu > 1 else ''} CPUs")
                     # Reannotate cells
@@ -353,8 +353,8 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
 
                 else:  # If conditions are not met, no reannotation
                     logging.warning('\t\t\t\t\tNot enough cell types or undefined cells to refine annotations with KNN-classifier')
-                    logging.warning(f'\t\t\t\t\t\tUndefined cells: <{np.sum(is_undef)}>')
-                    logging.warning(f'\t\t\t\t\t\tAnnotations: <{len(np.unique(new_labels))}>')
+                    logging.warning(f'\t\t\t\t\t\tUndefined cells: {np.sum(is_undef)}')
+                    logging.warning(f'\t\t\t\t\t\tAnnotations: {len(np.unique(new_labels))}')
                     # Use default arrays as placeholders for reannotation results
                     reannotation_proba = np.full(new_labels.shape[0], np.nan)
                     results_dict[i]['reannotated_labels'] = new_labels

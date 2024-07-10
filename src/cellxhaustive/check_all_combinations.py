@@ -35,7 +35,7 @@ def get_poss_comb(marker_counter, markers_representative, markers_interest):
     markers_representative: array(str)
       1-D numpy array with markers matching each column of 'mat_representative'.
 
-    markers_interest: array(str)
+    markers_interest: array(str) or empty array
       1-D numpy array with markers that must appear in optimal marker combinations.
 
     Returns:
@@ -139,7 +139,7 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
     # Set-up logging configuration
     setup_log(os.environ['LOG_FILE'], os.environ['LOG_LEVEL'], 'a')
 
-    logging.debug(f'\t\t\t\tTesting {comb}')
+    logging.debug(f"\t\t\t\tTesting '{comb}'")
     # Slice data based on current marker combination 'comb'
     markers_mask = np.isin(markers_representative, np.asarray(comb))
     markers_comb = markers_representative[markers_mask]
@@ -147,7 +147,7 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
 
     # Find number of phenotypes and undefined cells for a given marker combination
     # 'comb' across 'samplesxbatch' and 'cellxsample' grid
-    logging.debug(f'\t\t\t\t\tScoring combination')
+    logging.debug('\t\t\t\t\tScoring combination')
     nb_phntp, nb_undef_cells = score_marker_combinations(
         mat_comb=mat_comb,
         batches_label=batches_label,
@@ -161,7 +161,7 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
         y_cellxsample_space=y_cellxsample_space)
 
     # Constrain matrix given minimum number of phenotype conditions
-    logging.debug(f'\t\t\t\t\tChecking presence of possible solutions')
+    logging.debug('\t\t\t\t\tChecking presence of possible solutions')
     mask = (nb_phntp < 3)
     nb_phntp = np.where(mask, np.nan, nb_phntp)
     nb_undef_cells = np.where(mask, np.nan, nb_undef_cells)
@@ -235,7 +235,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     markers_representative: array(str)
       1-D numpy array with markers matching each column of 'mat_representative'.
 
-    markers_interest: array(str)
+    markers_interest: array(str) or empty array
       1-D numpy array with markers that must appear in optimal marker combinations.
 
     detection_method: 'auto' or int
@@ -327,11 +327,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     comb_dict = {}
 
     # Empty arrays to store results and find best marker combinations
-    best_comb_idx = np.empty(0)
     best_nb_phntp = np.empty(0)
-    best_nb_undefined = np.empty(0)
-    best_x_values = np.empty(0)
-    best_y_values = np.empty(0)
 
     # Go through all combinations until no better solution can be found: stop
     # while loop if maximum number of markers is reached or if possible solution

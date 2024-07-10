@@ -98,7 +98,7 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
     setup_log(os.environ['LOG_FILE'], os.environ['LOG_LEVEL'], 'a')
 
     # Determine markers status of 'markers_comb' using expression data
-    logging.debug(f'\t\t\t\t\t\tDetermining marker status for each cell')
+    logging.debug('\t\t\t\t\t\tDetermining marker status for each cell')
     phntp_per_cell = determine_marker_status(
         mat_comb=mat_comb,
         markers_comb=markers_comb,
@@ -113,7 +113,7 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
 
     # Process marker phenotypes returned by 'determine_marker_status()' and
     # check whether they are worth keeping
-    logging.debug(f'\t\t\t\t\t\tChecking which phenotypes are passing thresholds')
+    logging.debug('\t\t\t\t\t\tChecking which phenotypes are passing thresholds')
     for phenotype in np.unique(phntp_per_cell):
 
         # Initialise temporary array to store 'phenotype' results
@@ -169,7 +169,7 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
         # Add number of undefined cells to counter
         nb_undef_cells += np.logical_not(keep_phenotype) * np.sum(phntp_per_cell == phenotype)
 
-    logging.debug(f'\t\t\t\t\t\tFinished check')
+    logging.debug('\t\t\t\t\t\tFinished check')
 
     return nb_phntp, nb_undef_cells
     # Note: 'phntp_per_cell' is not returned to avoid memory cost of storing and
