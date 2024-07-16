@@ -55,6 +55,7 @@ def get_poss_comb(marker_counter, markers_representative, markers_interest):
     else:  # Without markers of interest
         # Generate combinations of 'marker_counter' representative markers
         poss_comb = list(ite.combinations(markers_representative, marker_counter))
+        # Note: iterator is converted to list because it is used several times
 
     return poss_comb
 
@@ -324,9 +325,13 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     y_cellxsample_space = np.arange(min_cellxsample, 101)  # y-axis
 
     logging.info('\t\t\tSetting start parameters from detection method and markers of interest')
+    # Split markers of interest from representative markers
+    markers_rep_only = markers_representative[np.isin(markers_representative,
+                                                      markers_interest,
+                                                      invert=True)]
     if detection_method == 'auto':  # Default algorithm for combinations length
         # Theoretical maximum number of markers in combination
-        max_combination = min(max_markers, len(markers_representative))
+        max_combination = min(max_markers, len(markers_rep_only))
         if markers_interest.size > 0:  # With markers of interest
             marker_counter = len(markers_interest)
             max_combination += len(markers_interest)  # Account for markers of interest
@@ -379,8 +384,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
         max_nb_phntp_tot_sum = max_nb_phntp_marker_sum
 
         # Get all possible combinations containing 'marker_counter' markers
-        poss_comb = get_poss_comb(marker_counter, markers_representative, markers_interest)
-        # Note: iterator is converted to list because it is used several times
+        poss_comb = get_poss_comb(marker_counter, markers_rep_only, markers_interest)
 
         # Create new range of indices
         indices = range(enum_start, enum_start + len(poss_comb))
