@@ -442,6 +442,17 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
             file.write(f"\tMarkers kept (found in at least 2 batches): {', '.join(markers_representative)}\n")
             file.write(f"\tMarkers removed (present in only 1 batch): {', '.join(missing_markers)}\n")
 
+            # If 'auto' detection method isn't used, check that number of
+            # representative markers is bigger than requested combination length
+            label_idx = uniq_labels.tolist().index(label)
+            if detection_method_lst[label_idx] != 'auto':
+                if detection_method_lst[label_idx] > len(markers_representative):
+                    logging.error(f"\t\tNumber of markers kept is less than detection_method value for cell type '{label}'")
+                    logging.error(f'\t\tNumber of representative markers: {len(markers_representative)}')
+                    logging.error(f'\t\tRequested combination length: {detection_method_lst[label_idx]}')
+                    logging.error(f"\t\tTry to decrease detection_method value for this cell type or use 'auto' mode")
+                    sys.exit(1)
+
             # Extract expression, batch and sample information across all batches
             # for cell type 'label'
             logging.info('\t\tExtracting matching expression, batch and sample information')
