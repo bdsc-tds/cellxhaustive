@@ -392,6 +392,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
             logging.info(f"\tProcessing {label}' cells'")
             markers_rep_batches = []
             for batch in np.unique(batches):
+                nb_batch = np.unique(batches).size
                 logging.debug(f"\t\tProcessing batch '{batch}'")
                 logging.debug('\t\t\tSelecting cells matching current batch')
                 is_batch = (batches == batch)
@@ -427,10 +428,10 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
             else:
                 logging.info(f'\t\tFound {len(np.unique(batches))} batches. Selecting markers present in at least 2 batches')
                 markers_representative = set([mk for mk in markers_rep_batches
-                                              if markers_rep_batches.count(mk) >= 2])
+                                              if markers_rep_batches.count(mk) == nb_batch])
                 logging.info(f"\t\t\tFound {len(markers_representative)} markers: {', '.join(markers_representative)}")
                 missing_markers = set([mk for mk in markers_rep_batches
-                                       if markers_rep_batches.count(mk) < 2])
+                                       if markers_rep_batches.count(mk) < nb_batch])
                 logging.info(f"\t\t\tFiltered out {len(missing_markers)} marker{'s' if len(missing_markers) > 1 else ''}: {', '.join(missing_markers)}")
 
             # Convert format back to array
