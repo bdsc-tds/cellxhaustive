@@ -10,15 +10,12 @@ phenotypes and minimizing number of cells without phenotypes.
 import itertools as ite
 import logging
 import numpy as np
-import os
 from functools import partial
 
 
 # Import local functions
 from score_marker_combinations import score_marker_combinations  # AT. Double-check path
-from utils import setup_log  # AT. Double-check path
 # from cellxhaustive.score_marker_combinations import score_marker_combinations
-# from cellxhaustive.utils import setup_log
 
 
 # Function used in check_all_combinations()
@@ -136,9 +133,6 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
       was found, keys will be 'idx', 'comb', 'max_nb_phntp', 'min_undefined',
       'max_x_values', and 'max_y_values'
     """
-
-    # Set-up logging configuration
-    setup_log(os.environ['LOG_FILE'], os.environ['LOG_LEVEL'], 'a')
 
     logging.debug(f"\t\t\t\tTesting '{comb}'")
     # Slice data based on current marker combination 'comb'
@@ -296,9 +290,6 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
       found during comparison process. Each tuple contains one combination.
       Number of tuples in 'best_marker_comb' is equal to 'nb_solution'.
     """
-
-    # Set-up logging configuration
-    setup_log(os.environ['LOG_FILE'], os.environ['LOG_LEVEL'], 'a')
 
     # Create total space for each metrics ('samplesxbatch' and 'cellxsample')
     logging.info('\t\t\tCreating spaces for each test metric')

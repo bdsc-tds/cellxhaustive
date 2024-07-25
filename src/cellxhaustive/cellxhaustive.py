@@ -136,17 +136,13 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     else:
         log_file = log_path
 
-    # Make log variables as environment variables
-    os.environ['LOG_FILE'] = log_file
-    os.environ['LOG_LEVEL'] = log_level
+    # Set-up logging configuration
+    setup_log(log_file, log_level)
 
     # Create log directory if it doesn't exist
     log_dir = os.path.dirname(log_file)
     logging.debug(f"Creating log directory '{log_dir}'")
     os.makedirs(log_dir, exist_ok=True)
-
-    # Set-up logging configuration
-    setup_log(log_file, log_level, 'w')
 
     # Get 1-D array for markers
     pd.options.mode.copy_on_write = True  # Save memory by using CoW mode
@@ -550,9 +546,6 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         processpool.close()
         processpool.join()
     del processpool
-
-    # Reset logging configuration
-    setup_log(log_file, log_level, 'a')
 
     # Convert results back to dictionary
     annot_dict = dict(zip(uniq_labels, annot_results_lst))

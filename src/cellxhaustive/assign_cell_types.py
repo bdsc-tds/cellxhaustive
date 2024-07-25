@@ -12,14 +12,11 @@ names derived from this base name.
 # Import utility modules
 import logging
 import numpy as np
-import os
 
 
 # Import local functions
 from find_name_difference import find_name_difference  # AT. Double-check path
-from utils import setup_log  # AT. Double-check path
 # from cellxhaustive.find_name_difference import find_name_difference
-# from cellxhaustive.utils import setup_log
 
 
 # Function used in identify_phenotypes.py
@@ -82,9 +79,6 @@ def assign_cell_types(mat_representative,
       (values) to annotate cells.
     """
 
-    # Set-up logging configuration
-    setup_log(os.environ['LOG_FILE'], os.environ['LOG_LEVEL'], 'a')
-
     # Trim down cell classification to remove any marker that is not present
     # in 'markers_representative'
     logging.info('\t\t\t\t\t\tTrimming cell classification to keep only relevant markers')
@@ -96,8 +90,8 @@ def assign_cell_types(mat_representative,
         signs_lst = [mkers[-1] for mkers in cell_mkers]
         # Test if markers belong to 'markers_representative' and rebuild list
         mkers_lst_clean = [f'{mker}{sign}'
-                            for mker, sign in zip(mkers_lst, signs_lst)
-                            if mker in markers_representative]
+                           for mker, sign in zip(mkers_lst, signs_lst)
+                           if mker in markers_representative]
         # If 'mkers_lst_clean' is not empty, keep it
         if mkers_lst_clean:
             cell_types_filtered[cell_type] = mkers_lst_clean

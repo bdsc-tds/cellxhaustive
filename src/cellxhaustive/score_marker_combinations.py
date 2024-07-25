@@ -8,14 +8,11 @@ across different metrics thresholds.
 # Import utility modules
 import logging
 import numpy as np
-import os
 
 
 # Import local functions
 from determine_marker_status import determine_marker_status  # AT. Double-check path
-from utils import setup_log  # AT. Double-check path
 # from cellxhaustive.determine_marker_status import determine_marker_status
-# from cellxhaustive.utils import setup_log
 
 
 # Function used in check_all_combinations.py
@@ -93,9 +90,6 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
       in 'mat_comb' across grid composed of metrics 'x_samplesxbatch_space' in
       D0 and 'y_cellxsample_space' in D1.
     """
-
-    # Set-up logging configuration
-    setup_log(os.environ['LOG_FILE'], os.environ['LOG_LEVEL'], 'a')
 
     # Determine markers status of 'markers_comb' using expression data
     logging.debug('\t\t\t\t\t\tDetermining marker status for each cell')

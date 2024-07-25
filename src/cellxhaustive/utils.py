@@ -41,46 +41,46 @@ class CustomFormatter(logging.Formatter):
 
 
 # Function to configurate logging; used in cellxhaustive.py
-def setup_log(logfile, loglevel, mode):
+def setup_log(log_file, log_level):
     """
     Function to set-up logging format, log file and log level.
 
     Parameters:
     -----------
-    logfile: str
+    log_file: str
       Path to log file.
 
-    nb_cell_type: str
+    log_file: str
       Verbosity level of log file.
     """
 
-    # Reset logging handler to avoid conflicts
-    logging.root.handlers = []
-
-    if loglevel.upper() == 'DEBUG':
+    # Parse log level
+    if log_level.upper() == 'DEBUG':
         level = logging.DEBUG
-    elif loglevel.upper() == 'INFO':
+    elif log_level.upper() == 'INFO':
         level = logging.INFO
     else:
         level = logging.WARNING
 
-    # Sets handlers with proper redirection and format
-    # File handler
+    # Get root logger
+    root_log = logging.getLogger()
+
+    # Set root logger level
+    root_log.setLevel(level)
+
+    # Create handlers with redirection
+    f_handler = logging.FileHandler(log_file)
+    s_handler = logging.StreamHandler(sys.stdout)
+
+    # Set stream handlers format
     fh_formatter = logging.Formatter(fmt='[%(asctime)s]  [PID:%(process)9d]  %(filename)28s  %(levelname)-8s  %(message)s',
                                      datefmt='%Y.%m.%d - %H:%M:%S')
-    handler_fh = logging.FileHandler(logfile, mode=mode)
-    handler_fh.setFormatter(fh_formatter)
-    # Stream handler
-    handler_sh = logging.StreamHandler(sys.stdout)
-    handler_sh.setFormatter(CustomFormatter())
-    handlers = [handler_fh,  # Output logging in file
-                handler_sh]  # Output logging in stdout
+    f_handler.setFormatter(fh_formatter)  # Set handler format
+    s_handler.setFormatter(CustomFormatter())  # Set handler format
 
-    # Set up logger level, format and handlers
-    logging.basicConfig(
-        level=level,
-        handlers=handlers
-    )
+    # Add handlers to root logger
+    root_log.addHandler(f_handler)  # Output logging to file
+    root_log.addHandler(s_handler)  # Output logging to stdout
 
 
 # Functions and classes related to config file parsing
