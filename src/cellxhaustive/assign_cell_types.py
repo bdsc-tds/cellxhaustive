@@ -85,15 +85,15 @@ def assign_cell_types(mat_representative,
     cell_types_filtered = {}
     for cell_type, cell_mkers in cell_types_dict.items():
         # Separate and protein marker and sign
-        mkers_list = [mkers[:-1] for mkers in cell_mkers]
-        signs_list = [mkers[-1] for mkers in cell_mkers]
+        mkers_lst = [mkers[:-1] for mkers in cell_mkers]
+        signs_lst = [mkers[-1] for mkers in cell_mkers]
         # Test if markers belong to 'markers_representative' and rebuild list
-        mkers_list_clean = [f'{mker}{sign}'
-                            for mker, sign in zip(mkers_list, signs_list)
-                            if mker in markers_representative]
-        # If 'mkers_list_clean' is not empty, keep it
-        if mkers_list_clean:
-            cell_types_filtered[cell_type] = mkers_list_clean
+        mkers_lst_clean = [f'{mker}{sign}'
+                           for mker, sign in zip(mkers_lst, signs_lst)
+                           if mker in markers_representative]
+        # If 'mkers_lst_clean' is not empty, keep it
+        if mkers_lst_clean:
+            cell_types_filtered[cell_type] = mkers_lst_clean
         else:
             cell_types_filtered[cell_type] = []
 
@@ -150,7 +150,7 @@ def assign_cell_types(mat_representative,
     else:  # Several exact matches that were already determined
         base_comb = phntp_match
         base_name = cell_types_match
-        logging.info(f'\t\t\t\t\t{len(base_name)} exact match between phenotypes and cell classification')
+        logging.info(f'\t\t\t\t\tFound {len(base_name)} exact match between phenotypes and cell classification')
 
     # Get mapping dictionary to convert names
     logging.info('\t\t\t\t\t\tBuilding dictionary to convert cell type names')
@@ -161,8 +161,9 @@ def assign_cell_types(mat_representative,
 
     # Convert phenotypes to new names
     logging.info('\t\t\t\t\t\tRenaming cell types')
-    new_labels = np.vectorize(names_conv.get)(cell_phntp, f'Other {cell_name}')
+    new_labels = np.vectorize(names_conv.get, otypes=[str])(cell_phntp,
+                                                            f'Unannotated {cell_name}')
     # Note: with dict.get method, non-representative phenotypes (missing from
-    # 'names_conv') are automatically converted to 'Other {cell_name}'
+    # 'names_conv') are automatically converted to 'Unannotated {cell_name}'
 
     return new_labels, names_conv

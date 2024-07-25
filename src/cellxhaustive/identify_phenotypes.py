@@ -14,23 +14,23 @@ from collections import defaultdict
 # Import local functions
 from cellxhaustive.assign_cell_types import assign_cell_types
 from cellxhaustive.check_all_combinations import check_all_combinations
+from cellxhaustive.determine_marker_status import determine_marker_status
 from cellxhaustive.knn_classifier import knn_classifier
 
 
 # Function used in cellxhaustive.py
 def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
-                        samples_label, markers_representative, cell_types_dict,
-                        two_peak_threshold, three_peak_markers,
-                        three_peak_low, three_peak_high,
-                        max_markers, min_annotations, max_solutions,
-                        min_samplesxbatch, min_cellxsample,
-                        knn_refine, knn_min_probability, cpu_eval_keep):
+                        samples_label, markers_representative, markers_interest,
+                        detection_method, cell_types_dict, two_peak_threshold,
+                        three_peak_markers, three_peak_low, three_peak_high,
+                        max_markers, min_samplesxbatch, min_cellxsample,
+                        knn_refine, knn_min_probability, multipop, processpool):
     """
     Function that identifies most probable cell type and phenotype for a group
     of cells using expression of its most relevant markers.
 
-    Parameters
-    ----------
+    Parameters:
+    -----------
     is_label: array(bool)
       1-D numpy array with booleans to indicate cells matching current cell type.
 
@@ -49,6 +49,14 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
 
     markers_representative: array(str)
       1-D numpy array with markers matching each column of 'mat_representative'.
+
+    markers_interest: array(str) or empty array
+      1-D numpy array with markers that must appear in optimal marker combinations.
+
+    detection_method: 'auto' or int
+      Method used to stop search for optimal marker combinations. If 'auto', use
+      default algorithm relying on maximum number of phenotypes. If int, create a
+      combination with exactly this number of markers.
 
     cell_types_dict: {str: list()}
       Dictionary with cell types as keys and list of cell type defining markers
@@ -79,17 +87,6 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
       Maximum number of relevant markers to select among total list of markers
       from total markers array. Must be less than or equal to 'len(markers_representative)'.
 
-    min_annotations: int (default=3)
-      Minimum number of phenotypes for a combination of markers to be taken into
-      account as a potential cell population. Must be in '[2; len(markers_representative)]',
-      but it is advised to choose a value in '[3; len(markers_representative) - 1]'.
-
-    max_solutions: int (default=10)
-      Maximum number of optimal solutions to keep. If script finds more than
-      'max_solutions' optimal marker combinations, 'max_solutions' combinations
-      will be randomly chosen to be further processed and appear in final
-      output. This parameter aims to limit computational burden.
-
     min_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least 'min_cellxsample'
       cells for a new annotation to be considered. In other words, by default,
@@ -112,8 +109,11 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
       Confidence threshold for KNN-classifier to reassign a new cell type
       to previously undefined cells.
 
-    cpu_eval_keep: tuple(int) (default=(1, 1))
-      Tuple of integers to set up CPU numbers in downstream nested functions.
+    multipop: bool
+      Boolean indicating whether multiple cell types are processed.
+
+    processpool: None or pathos.pools.ProcessPool object
+      If not None, ProcessPool object to use in downstream nested functions.
 
     Returns:
     --------
@@ -140,20 +140,21 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
     # cells and among those, phenotypes passing various thresholds (see function
     # definition for more information on those)
     logging.info('\t\tChecking all possible marker combinations')
-    nb_solution, best_marker_comb, cell_phntp_comb, best_phntp_comb = check_all_combinations(
+    nb_solution, best_marker_comb = check_all_combinations(
         mat_representative=mat_representative,
         batches_label=batches_label,
         samples_label=samples_label,
         markers_representative=markers_representative,
+        markers_interest=markers_interest,
+        detection_method=detection_method,
         two_peak_threshold=two_peak_threshold,
         three_peak_markers=three_peak_markers,
         three_peak_low=three_peak_low,
         three_peak_high=three_peak_high,
         max_markers=max_markers,
-        min_annotations=min_annotations,
         min_samplesxbatch=min_samplesxbatch,
         min_cellxsample=min_cellxsample,
-        cpu_eval_keep=cpu_eval_keep)
+        processpool=processpool)
 
     # Initialise result dictionary with empty lists
     # Note: even if lists end up with only 1 element, it makes processing results
@@ -166,7 +167,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
         # was found to properly represent cell type 'label' (from annotate(), so
         # keep original annotation
         logging.warning('\t\t\tNo optimal combination found, reverting to original cell types')
-        new_labels = np.full(mat_representative.shape[0], cell_name)
+        new_labels = np.full(mat_representative.shape[0], f'Other {cell_name}')
         # No marker combination means no phenotype can be assigned to cells
         cell_phntp_comb = np.full(mat_representative.shape[0], 'No_phenotype')
 
@@ -181,89 +182,87 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
             results_dict[0]['reannotated_phntp'] = cell_phntp_comb
             results_dict[0]['reannotation_proba'] = reannotation_proba
 
-    elif nb_solution == 1:
-        logging.info('\t\t\t<1> optimal combination found, building new cell types on it')
-        logging.info(f'\t\t\t\tBest combination is {best_marker_comb}')
-        # Slice matrix to keep only expression of best combination
-        markers_rep_comb = markers_representative[np.isin(markers_representative, best_marker_comb)]
-        mat_subset_rep_markers_comb = mat_representative[:, np.isin(markers_representative, best_marker_comb)]
-
-        # Assign cell type using only markers from 'best_marker_comb'
-        logging.info('\t\t\tAssigning cell types to each cell')
-        new_labels, names_conv = assign_cell_types(
-            mat_representative=mat_subset_rep_markers_comb,
-            batches_label=batches_label,
-            samples_label=samples_label,
-            markers_representative=markers_rep_comb,
-            cell_types_dict=cell_types_dict,
-            cell_name=cell_name,
-            cell_phntp=cell_phntp_comb,
-            best_phntp=best_phntp_comb)
-
-        # Append results to dictionary
-        results_dict[0]['new_labels'] = new_labels
-        results_dict[0]['cell_phntp_comb'] = cell_phntp_comb
-
-        if knn_refine:
-            # Reannotate only if conditions to run KNN-classifier are met
-            is_undef = (new_labels == f'Other {cell_name}')  # Get number of undefined cells
-
-            # At least 2 undefined cells and 2 cell types different from 'Other'
-            if ((np.sum(is_undef) > 1) and (len(np.unique(new_labels)) > 2)):
-                # Reannotate cells
-                logging.info('\t\t\t\tRefining annotations with KNN-classifier')
-                reannotated_labels, reannotation_proba = knn_classifier(
-                    mat_representative=mat_subset_rep_markers_comb,
-                    new_labels=new_labels,
-                    is_undef=is_undef,
-                    knn_min_probability=knn_min_probability,
-                    knn_cpu=cpu_eval_keep)
-
-                # Reverse dictionary to convert cell types back into phenotypes
-                rev_names_conv = {val: key for key, val in names_conv.items()}
-
-                # Update phenotypes of reannotated cells
-                reannotated_phntp = np.vectorize(rev_names_conv.get)(reannotated_labels,
-                                                                     'tmp')
-                # Note: 'tmp' is only used to easily identify unidentified cells
-                still_undef = (reannotated_phntp == 'tmp')
-                reannotated_phntp[still_undef] = cell_phntp_comb[still_undef]
-
-                # Append results to dictionary
-                results_dict[0]['reannotated_labels'] = reannotated_labels
-                results_dict[0]['reannotated_phntp'] = reannotated_phntp
-                results_dict[0]['reannotation_proba'] = reannotation_proba
-
-            else:  # If conditions are not met, no reannotation
-                logging.warning('\t\t\t\tNot enough cell types or undefined cells to refine annotations with KNN-classifier')
-                logging.warning(f'\t\t\t\t\tUndefined cells: <{np.sum(is_undef)}>')
-                logging.warning(f'\t\t\t\t\tAnnotations: <{len(np.unique(new_labels))}>')
-                # Use default arrays as placeholders for reannotation results
-                reannotation_proba = np.full(new_labels.shape[0], np.nan)
-                results_dict[0]['reannotated_labels'] = new_labels
-                results_dict[0]['reannotated_phntp'] = cell_phntp_comb
-                results_dict[0]['reannotation_proba'] = reannotation_proba
-
-    else:  # Several solutions
+    else:  # At least one solution, but can account for more if needed
 
         # Initialise counter of undefined cells
-        logging.info(f'\t\t\t<{nb_solution}> optimal combinations found, building new cell types on them')
+        logging.info(f'\t\t\tFound {nb_solution} optimal combinations, building new cell types on them')
         undef_counter = []
 
         # Check number of solutions. If too high, randomly pick without repetitions
-        if nb_solution > max_solutions:
-            logging.warning(f'\t\t\t\tToo many combinations, choosing {max_solutions} randomly')
-            logging.warning("\t\t\t\tIncrease '-s' parameter to process all of them")
-            solutions = random.sample(range(nb_solution), max_solutions)
+        if nb_solution > 10:
+            logging.warning('\t\t\t\tToo many combinations, choosing 10 randomly')
+            solutions = random.sample(range(nb_solution), 10)
         else:
             solutions = range(nb_solution)
 
-        logging.info('\t\t\tProcessing the different combinations')
+        logging.info(f"\t\t\tProcessing all '{cell_name}' combinations")
         for i in solutions:
             logging.info(f'\t\t\t\tProcessing combination {i}: {best_marker_comb[i]}')
             # Slice matrix to keep only expression of best combination
             markers_rep_comb = markers_representative[np.isin(markers_representative, best_marker_comb[i])]
             mat_subset_rep_markers_comb = mat_representative[:, np.isin(markers_representative, best_marker_comb[i])]
+
+            # Determine cell phenotypes using markers from 'markers_rep_comb'
+            cell_phntp_comb = determine_marker_status(
+                mat_comb=mat_subset_rep_markers_comb,
+                markers_comb=markers_rep_comb,
+                two_peak_threshold=two_peak_threshold,
+                three_peak_markers=three_peak_markers,
+                three_peak_low=three_peak_low,
+                three_peak_high=three_peak_high)
+
+            # Initialise empty string array to record 'significant' phenotypes,
+            # i.e. passing toth min_cellxsample and min_samplesxbatch thresholds
+            best_phntp_comb = np.empty(0, dtype=cell_phntp_comb.dtype)
+            # Note: get dtype from previous array to avoid using 'object'
+
+            # Determine 'significant' phenotypes
+            for phenotype in np.unique(cell_phntp_comb):
+
+                # Initialise boolean to keep 'phenotype'
+                keep_phenotype = True
+
+                # Process batches separately
+                for batch in np.unique(batches_label):
+                    # Split cell type data according to batch
+                    phenotypes_batch = cell_phntp_comb[batches_label == batch]
+
+                    # Split sample data, first according to batch and then cell type
+                    phenotype_samples = samples_label[batches_label == batch][phenotypes_batch == phenotype]
+
+                    # If there are no cells of type 'phenotype' in 'batch', that means
+                    # 'phenotype' cannot be present in all batches, so stop now
+                    if phenotype_samples.size == 0:
+                        keep_phenotype = False
+                        break
+
+                    # Calculate number of unique samples in current batch and cell type
+                    samples_nb = float(len(np.unique(phenotype_samples)))
+
+                    # Count number of cells per phenotype in each sample
+                    cell_count_sample = np.asarray([np.sum(phenotype_samples == smpl)
+                                                    for smpl in np.unique(phenotype_samples)])
+
+                    # Check whether previous counts satisfy cell/sample threshold
+                    keep_phenotype_batch = (cell_count_sample >= min_cellxsample)
+
+                    # Calculate proportion of samples in current batch satisfying
+                    # cell/sample threshold
+                    keep_phenotype_batch = (np.sum(keep_phenotype_batch, axis=0) / samples_nb)
+                    # Note: 'keep_phenotype_batch' is a boolean array, so it can
+                    # be summed
+
+                    # Check whether previous proportion satisfies sample/batch threshold
+                    keep_phenotype_batch = (keep_phenotype_batch >= min_samplesxbatch)
+
+                    # Intersect batch results with general results
+                    keep_phenotype = (keep_phenotype and keep_phenotype_batch)
+                    # Note: for consistency, phenotypes have to be present in
+                    # all batches, hence usage of 'and'
+
+                # If 'phenotype' is 'significant', keep it
+                if keep_phenotype:
+                    best_phntp_comb = np.append(best_phntp_comb, phenotype)
 
             # Assign cell type using only markers from 'best_marker_comb[i]'
             logging.info('\t\t\t\t\tAssigning cell types to each cell')
@@ -274,37 +273,64 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                 markers_representative=markers_rep_comb,
                 cell_types_dict=cell_types_dict,
                 cell_name=cell_name,
-                cell_phntp=cell_phntp_comb[i],
-                best_phntp=best_phntp_comb[i])
+                cell_phntp=cell_phntp_comb,
+                best_phntp=best_phntp_comb)
+
+            # Update non-significant phenotypes to make final results easier to
+            # understand and process
+            cell_phntp_comb = cell_phntp_comb.astype(dtype=object)  # To avoid strings getting cut
+            cell_phntp_comb[np.isin(cell_phntp_comb,
+                                    best_phntp_comb,
+                                    invert=True)] = f'Other {cell_name} phenotype'
+            cell_phntp_comb = cell_phntp_comb.astype(dtype=str)
 
             # Append results to dictionary
             results_dict[i]['new_labels'] = new_labels
-            results_dict[i]['cell_phntp_comb'] = cell_phntp_comb[i]
+            results_dict[i]['cell_phntp_comb'] = cell_phntp_comb
 
             if knn_refine:
                 # Reannotate only if conditions to run KNN-classifier are met
-                is_undef = (new_labels == f'Other {cell_name}')  # Get number of undefined cells
+                is_undef = (new_labels == f'Unannotated {cell_name}')  # Get number of undefined cells
 
-                # At least 2 undefined cells and 2 cell types different from 'Other'
+                # At least 2 undefined cells and 2 cell types different from 'Unannotated'
                 if ((np.sum(is_undef) > 1) and (len(np.unique(new_labels)) > 2)):
+                    # Adapt CPUs used by KNN-classifier to running conditions
+                    logging.info('\t\t\t\t\tSetting CPUs for KNN-classifier')
+                    if not processpool:
+                        knn_cpu = 1
+                    else:
+                        if multipop:  # If multiple cell types, use ~half of CPUs
+                            knn_cpu = processpool.ncpus // 2
+                        else:  # If only one cell type, use all CPUs
+                            knn_cpu = processpool.ncpus
+                    logging.info(f"\t\t\t\t\t\tUsing {knn_cpu}{'s' if knn_cpu > 1 else ''} CPUs")
                     # Reannotate cells
                     logging.info('\t\t\t\t\tRefining annotations with KNN-classifier')
-                    reannotated_labels, reannotation_proba = knn_classifier(
-                        mat_representative=mat_subset_rep_markers_comb,
-                        new_labels=new_labels,
-                        is_undef=is_undef,
-                        knn_min_probability=knn_min_probability,
-                        knn_cpu=cpu_eval_keep)
+                    if not processpool:  # Cannot use ProcessPool to parallelise
+                        reannotated_labels, reannotation_proba = knn_classifier(
+                            mat_representative=mat_subset_rep_markers_comb,
+                            new_labels=new_labels,
+                            is_undef=is_undef,
+                            knn_min_probability=knn_min_probability,
+                            knn_cpu=knn_cpu)
+                    else:  # Use 'pipe' to submit task to ProcessPool and parallelise
+                        reannotated_labels, reannotation_proba = processpool.pipe(
+                            knn_classifier,
+                            mat_representative=mat_subset_rep_markers_comb,
+                            new_labels=new_labels,
+                            is_undef=is_undef,
+                            knn_min_probability=knn_min_probability,
+                            knn_cpu=knn_cpu)
 
                     # Reverse dictionary to convert cell types into phenotypes
                     rev_names_conv = {val: key for key, val in names_conv.items()}
 
                     # Update phenotypes of reannotated cells
-                    reannotated_phntp = np.vectorize(rev_names_conv.get)(reannotated_labels,
-                                                                         'tmp')
+                    reannotated_phntp = np.vectorize(rev_names_conv.get, otypes=[object])(reannotated_labels,
+                                                                                          'tmp')
                     # Note: 'tmp' is only used to easily identify unidentified cells
                     still_undef = (reannotated_phntp == 'tmp')
-                    reannotated_phntp[still_undef] = cell_phntp_comb[i][still_undef]
+                    reannotated_phntp[still_undef] = cell_phntp_comb[still_undef]
 
                     # Append results to dictionary
                     results_dict[i]['reannotated_labels'] = reannotated_labels
@@ -312,27 +338,31 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
                     results_dict[i]['reannotation_proba'] = reannotation_proba
 
                     # Record number of undefined cells after reannotation
-                    nb_undef = np.sum(reannotated_labels == f'Other {cell_name}')
+                    nb_undef = np.sum(reannotated_labels == f'Unannotated {cell_name}')
                     undef_counter.append(nb_undef)
 
                 else:  # If conditions are not met, no reannotation
                     logging.warning('\t\t\t\t\tNot enough cell types or undefined cells to refine annotations with KNN-classifier')
-                    logging.warning(f'\t\t\t\t\t\tUndefined cells: <{np.sum(is_undef)}>')
-                    logging.warning(f'\t\t\t\t\t\tAnnotations: <{len(np.unique(new_labels))}>')
+                    logging.warning(f'\t\t\t\t\t\tUndefined cells: {np.sum(is_undef)}')
+                    logging.warning(f'\t\t\t\t\t\tAnnotations: {len(np.unique(new_labels))}')
                     # Use default arrays as placeholders for reannotation results
                     reannotation_proba = np.full(new_labels.shape[0], np.nan)
                     results_dict[i]['reannotated_labels'] = new_labels
-                    results_dict[i]['reannotated_phntp'] = cell_phntp_comb[i]
+                    results_dict[i]['reannotated_phntp'] = cell_phntp_comb
                     results_dict[i]['reannotation_proba'] = reannotation_proba
 
                     # Record number of undefined cells after reannotation
                     nb_undef = np.sum(is_undef)
                     undef_counter.append(nb_undef)
 
-        if knn_refine:  # If KNN-classifier was run, count undefined cells again
+        # If there are several solutions and KNN-classifier was run, check
+        # number of remaining undefined cells to keep only solutions minimising
+        # this number
+        if knn_refine and nb_solution > 1:
             logging.info('\t\t\tRedefining optimal combinations after KNN-classification')
             # Get index of undefined cells minimum
-            min_undef_idx = [i for i, x in enumerate(undef_counter) if x == min(undef_counter)]
+            min_undef_idx = [i for i, x in enumerate(undef_counter)
+                             if x == min(undef_counter)]
 
             # Filter results using previous indices
             for key in list(results_dict.keys()):

@@ -8,7 +8,6 @@ probability for reclassification.
 import copy
 import logging
 import numpy as np
-import os
 from joblib import parallel_config
 
 
@@ -47,7 +46,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
       previously undefined cells.
 
     knn_cpu: int (default=1)
-      Integer to set up number of CPUs in multiprocessing jobs.
+      Number of CPUs to use for KNN-classifier processing.
 
     Returns:
     --------
@@ -60,14 +59,9 @@ def knn_classifier(mat_representative, new_labels, is_undef,
       cell types and phenotypes for each cell of 'mat_representative'.
     """
 
-    # Set environment variables to prevent sklearn from using all cores
-    tot_cpu = knn_cpu[0] * knn_cpu[1]
-    os.environ['OPENBLAS_NUM_THREADS'] = f'{tot_cpu}'
-    os.environ['OMP_NUM_THREADS'] = f'{tot_cpu}'
-    os.environ['MKL_NUM_THREADS'] = f'{tot_cpu}'
-
     # Copy 'new_labels' array to avoid changing the original array
     reannotated_labels = copy.deepcopy(new_labels)
+    reannotated_labels = reannotated_labels.astype(dtype='object')  # To avoid strings getting cut
 
     # Split data in annotated (train/test) cells and undefined cells (i.e. cells
     # that will be re-annotated by classifier)
@@ -90,7 +84,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     scaler = StandardScaler()
 
     # Initialise KNN-classifier
-    clf = KNeighborsClassifier(p=2, metric='minkowski', n_jobs=knn_cpu[1])
+    clf = KNeighborsClassifier(p=2, metric='minkowski', n_jobs=None)
     # Note: default arguments "p=2, metric='minkowski'" are equivalent to
     # calculating Euclidean distances
 
@@ -104,26 +98,26 @@ def knn_classifier(mat_representative, new_labels, is_undef,
 
     # Build parameters grid object
     knn_grid = GridSearchCV(pipeline, param_grid=param_grid, scoring='accuracy',
-                            cv=5, n_jobs=knn_cpu[0], refit=True, verbose=0)
+                            cv=5, n_jobs=None, refit=True, verbose=0)
 
     # Find best parameters
     logging.info('\t\t\t\t\t\tTuning hyperparameters')
     # Use different backend for parallel computing to avoid GridSearchCV hanging
     # and returning joblib loky 'resource_tracker' warnings
-    with parallel_config(backend='multiprocessing'):
+    with parallel_config(backend='multiprocessing', n_jobs=knn_cpu):
         best_model = knn_grid.fit(X_train, y_train)
     logging.info(f'\t\t\t\t\t\t\tBest parameters found: {best_model.best_params_}')
     logging.info(f'\t\t\t\t\t\t\twith a max accuracy of: {best_model.best_score_:.3f}')
 
     # Apply classifier to undefined cells
-    logging.info(f'\t\t\t\t\t\tApplying KNN-classifier to undefined cells')
+    logging.info('\t\t\t\t\t\tApplying KNN-classifier to undefined cells')
     undef_cells_pred = best_model.predict_proba(undef_cells_mat)
     # Note: this returns an array of probabilities for a cell to belong to a
     # certain cell type
 
     logging.info('\t\t\t\t\t\tSelecting annotations passing knn_min_probability threshold')
     # Initialise empty array to store updated annotations
-    reannotated = np.full(undef_cells_mat.shape[0], undef_phntp, dtype='U150')
+    reannotated = np.full(undef_cells_mat.shape[0], undef_phntp, dtype='object')  # To avoid strings getting cut
 
     # Extract cell types ordered by sklearn
     ordered_cell_types = best_model.classes_
@@ -146,10 +140,6 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     # Assign new annotations to original array
     logging.info('\t\t\t\t\t\tAssigning new annotations passing threshold')
     reannotated_labels[is_undef] = reannotated
-
-    # Reset environment variables
-    del os.environ['OPENBLAS_NUM_THREADS']
-    del os.environ['OMP_NUM_THREADS']
-    del os.environ['MKL_NUM_THREADS']
+    reannotated_labels = reannotated_labels.astype(dtype='str')
 
     return reannotated_labels, reannotation_proba
