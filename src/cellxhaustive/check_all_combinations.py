@@ -41,7 +41,7 @@ def get_poss_comb(marker_counter, markers_representative, markers_interest):
       List of tuples of strings with marker combinations to score.
     """
 
-    if markers_interest.size > 0:  # With markers of interest
+    if len(markers_interest) > 0:  # With markers of interest
         # Determine number of representative markers to add
         missing_counter = marker_counter - len(markers_interest)
         # Generate combinations of representative markers
@@ -305,7 +305,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     if detection_method == 'auto':  # Default algorithm for combinations length
         # Theoretical maximum number of markers in combination
         max_combination = min(max_markers, len(markers_rep_only))
-        if markers_interest.size > 0:  # With markers of interest
+        if len(markers_interest) > 0:  # With markers of interest
             marker_counter = len(markers_interest)
             max_combination += len(markers_interest)  # Account for markers of interest
         else:  # Without markers of interest

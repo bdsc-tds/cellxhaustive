@@ -38,9 +38,9 @@ from pathos.pools import ProcessPool, ThreadPool
 
 # Import local functions
 from identify_phenotypes import identify_phenotypes  # AT. Double-check path
-from utils import parse_config, setup_log  # AT. Double-check path
+from utils import parse_config, setup_log, get_repr_markers  # AT. Double-check path
 # from cellxhaustive.identify_phenotypes import identify_phenotypes
-# from cellxhaustive.utils import parse_config, setup_log
+# from cellxhaustive.utils import parse_config, setup_log, get_repr_markers
 
 
 # Parse arguments
@@ -252,7 +252,7 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
     thresholds = args.thresholds
     logging.info('Parsing marker expression thresholds from CLI')
     try:
-        if three_peak_markers.size == 0:  # Only two peaks markers
+        if len(three_peak_markers) == 0:  # Only two peaks markers
             two_peak_threshold = [float(x) for x in thresholds.split(',')][0]
             three_peak_low = None  # Not needed so set to None
             three_peak_high = None  # Not needed so set to None
@@ -383,61 +383,52 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
 
     # Specific context manager to save information on marker filtering
     with open(marker_file_path, 'w') as file:
+        # Aim is to select relevant markers in each batch of each cell type
         for label, is_label in zip(uniq_labels, is_label_lst):  # Loop over cell types
-            # Select relevant markers in each batch of each cell type (main gating)
             logging.info(f"\tProcessing {label}' cells'")
             markers_rep_batches = []
-            for batch in np.unique(batches):
-                nb_batch = np.unique(batches).size
+            label_unique_batch = np.unique(batches[is_label])  # Get batch names in 'label' cells
+            nb_batch = len(label_unique_batch)  # Get number of batch in 'label' cells
+            for batch in label_unique_batch:
                 logging.debug(f"\t\tProcessing batch '{batch}'")
-                logging.debug('\t\t\tSelecting cells matching current batch')
+                logging.debug('\t\t\tSelecting matching cells')
                 is_batch = (batches == batch)
-                # Create boolean array to select cells matching current 'label' and 'batch'
                 is_label_batch = np.logical_and(is_batch, is_label)
-
-                # Subset expression matrix to cells of current 'batch' and 'label' only
                 logging.debug('\t\t\tSelecting corresponding expression data')
                 try:
                     mat_subset = mat[is_label_batch, :][:, mask_interest_inv]  # With markers of interest
                 except NameError:
                     mat_subset = mat[is_label_batch, :]  # Without markers of interest
-
-                # Check bimodality of markers and select best ones
                 logging.debug('\t\t\tEvaluating marker bimodality')
                 marker_center_values = np.abs(np.mean(mat_subset, axis=0) - two_peak_threshold)
                 marker_threshold_value = np.sort(marker_center_values)[max_markers - 1]  # Select max_markers-th center value (in ascending order)
                 # Note: '- 1' is used to compensate 0-based indexing
-                is_center_greater = (marker_center_values <= marker_threshold_value)
-                try:  # Select markers with center higher than max_markers-th center
-                    markers_rep = markers[mask_interest_inv][is_center_greater]  # With markers of interest
+                # Select markers with center smaller than max_markers-th center
+                is_center_smaller = (marker_center_values <= marker_threshold_value)
+                try:
+                    markers_rep = markers[mask_interest_inv][is_center_smaller]  # With markers of interest
                 except NameError:
-                    markers_rep = markers[is_center_greater]  # Without markers of interest
-
-                # Store list of relevant markers for every batch
+                    markers_rep = markers[is_center_smaller]  # Without markers of interest
                 logging.debug('\t\t\tStoring relevant markers')
                 markers_rep_batches.extend(list(markers_rep))
 
-            if len(np.unique(batches)) == 1:  # No need to filter markers if there is only 1 batch
-                logging.info('\t\tFound only one batch, no need to filter markers')
+            if nb_batch == 1:  # No need to filter markers if there is only 1 batch
+                logging.info('\t\tOnly one batch in total, no need to filter markers')
                 markers_representative = markers_rep_batches
                 logging.info(f"\t\t\tFound {len(markers_representative)} markers: {', '.join(markers_representative)}")
             else:
-                logging.info(f'\t\tFound {len(np.unique(batches))} batches. Selecting markers present in at least 2 batches')
-                markers_representative = set([mk for mk in markers_rep_batches
-                                              if markers_rep_batches.count(mk) == nb_batch])
-                logging.info(f"\t\t\tFound {len(markers_representative)} markers: {', '.join(markers_representative)}")
-                missing_markers = set([mk for mk in markers_rep_batches
-                                       if markers_rep_batches.count(mk) < nb_batch])
-                logging.info(f"\t\t\tFiltered out {len(missing_markers)} marker{'s' if len(missing_markers) > 1 else ''}: {', '.join(missing_markers)}")
+                logging.info(f'\t\t{nb_batch} batches in total. Selecting markers present in all batches')
+                markers_representative, missing_markers, nb_batch_end = get_repr_markers(markers_rep_batches,
+                                                                                         nb_batch)
 
             # Convert format back to array
             markers_representative = np.array(list(markers_representative))
 
-            # Save marker information in different file
+            # Save marker information to file
             file.write(f'{label} cells:\n')
             file.write(f"\tMarkers found: {', '.join(markers_rep_batches)}\n")
-            file.write(f"\tMarkers kept (found in at least 2 batches): {', '.join(markers_representative)}\n")
-            file.write(f"\tMarkers removed (present in only 1 batch): {', '.join(missing_markers)}\n")
+            file.write(f"\tMarkers kept (found in {nb_batch_end} batches): {', '.join(markers_representative)}\n")
+            file.write(f"\tMarkers removed (found in less than {nb_batch_end} batches): {', '.join(missing_markers)}\n\n")
 
             # If 'auto' detection method isn't used, check that number of
             # representative markers is bigger than requested combination length

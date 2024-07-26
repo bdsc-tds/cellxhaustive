@@ -14,7 +14,7 @@ import itertools as ite
 
 
 # Functions and classes related to logging
-# Custom logging format
+# Custom logging format; used in setup_log()
 class CustomFormatter(logging.Formatter):
 
     # Colors and format
@@ -84,7 +84,7 @@ def setup_log(log_file, log_level):
 
 
 # Functions and classes related to config file parsing
-# Function to check status of 'detection_method' parameter
+# Function to check status of 'detection_method' parameter; used in parse_config()
 def get_detection_method(detection_method, offset):
     """
     Helper function to check status of 'detection_method' parameter.
@@ -117,7 +117,7 @@ def get_detection_method(detection_method, offset):
     return method
 
 
-# Function to parse config file and return parameter values
+# Function to parse config file and return parameter values; used in cellxhaustive.py
 def parse_config(config_path, uniq_labels, markers_interest, detection_method):
     """
     Function to parse config file and return parameter values.
@@ -244,3 +244,44 @@ def parse_config(config_path, uniq_labels, markers_interest, detection_method):
             detection_method_lst = [detection_method] * cell_pop_nb
 
     return markers_interest_lst, detection_method_lst
+
+
+# Function to find representative markers; used in cellxhaustive.py
+def get_repr_markers(markers_rep_batches, nb_batch):
+    '''
+    Function that finds markers shared between a specific number of batches.
+
+    Parameters:
+    -----------
+    markers_rep_batches: list(str)
+      List containing representative markers of every batch.
+
+    nb_batch: int
+      Number of batches to consider during marker selection.
+
+    Returns:
+    --------
+    markers_representative: set(str)
+      Set of markers present in 'nb_batch' batches.
+
+    missing_markers: set(str)
+      Set of markers present in less than 'nb_batch' batches.
+
+    nb_batch: int
+      Number of batches that was finally considered during marker selection.
+    '''
+
+    # Select markers present in 'nb_batch' batches
+    markers_representative = set([mk for mk in markers_rep_batches
+                                  if markers_rep_batches.count(mk) == nb_batch])
+
+    if len(markers_representative) > 0:  # 'markers_representative' contains markers
+        logging.info(f"\t\t\tFound {len(markers_representative)} markers: {', '.join(markers_representative)}")
+        missing_markers = set([mk for mk in markers_rep_batches
+                               if markers_rep_batches.count(mk) < nb_batch])
+        logging.info(f"\t\t\tFiltered out {len(missing_markers)} marker{'s' if len(missing_markers) > 1 else ''}: {', '.join(missing_markers)}")
+        return markers_representative, missing_markers, nb_batch
+    else:  # No markers in 'markers_representative': retry with one less batch
+        nb_batch -= 1
+        logging.info(f"\t\t\tNo markers found. Retrying with {nb_batch} batches")
+        markers_representative = get_repr_markers(markers_rep_batches, nb_batch)
