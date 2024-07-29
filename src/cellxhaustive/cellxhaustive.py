@@ -594,7 +594,8 @@ if __name__ == '__main__':  # AT. Double check behaviour inside package
         logging.debug('\t\t\tInitialising empty table to proper dimensions')
         annot_df_label = pd.DataFrame(np.nan,
                                       index=range(cell_nb),
-                                      columns=col_names_sub)
+                                      columns=col_names_sub,
+                                      dtype=object)
 
         # Create dataframe results for all optimal combinations of 'label'
         logging.debug('\t\t\tFilling table')
