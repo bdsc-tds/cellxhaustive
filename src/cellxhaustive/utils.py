@@ -105,13 +105,13 @@ def get_detection_method(detection_method, offset):
 
     try:  # Integer was provided
         method = int(detection_method)
-        logging.info(f"{'\t' * offset}Limiting combinations to {method} markers")
+        logging.info('{offset}Limiting combinations to {method} markers'.format(offset='\t' * offset, method=method))
     except ValueError:
         if detection_method == 'auto':  # Default setting was provided
-            logging.info(f"{'\t' * offset}Using default algorithm")
+            logging.info('{offset}Using default algorithm'.format(offset='\t' * offset))
             method = 'auto'
         else:
-            logging.error(f"{'\t' * offset}Unknown detection method. Please provide 'auto' or an integer superior or equal to 2.")
+            logging.error("{offset}Unknown detection method. Please provide 'auto' or an integer superior or equal to 2".format(offset='\t' * offset))
             sys.exit(1)
 
     return method
