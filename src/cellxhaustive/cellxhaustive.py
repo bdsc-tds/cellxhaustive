@@ -39,8 +39,19 @@ from cellxhaustive.identify_phenotypes import identify_phenotypes
 from cellxhaustive.utils import get_repr_markers
 
 
-# Main script execution
-if __name__ == '__main__':
+# Function to run cellxhaustive; used in if __name__ == '__main__'
+def main():
+    """
+    Main function to run cellxhaustive package.
+
+    Parameters:
+    -----------
+    None
+
+    Returns:
+    --------
+    None
+    """
 
     # Save memory by forcing Copy on Write mode
     pd.options.mode.copy_on_write = True
@@ -346,3 +357,8 @@ if __name__ == '__main__':
     # Save general table with annotations and phenotypes
     logging.info(f"Saving final table to '{output_path}'")
     output_table.to_csv(output_path, sep='\t', header=True, index=True)
+
+
+# Script execution
+if __name__ == '__main__':
+    main()
