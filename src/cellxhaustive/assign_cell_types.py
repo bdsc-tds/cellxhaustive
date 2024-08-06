@@ -53,7 +53,7 @@ def assign_cell_types(mat_representative,
     markers_representative: array(str)
       1-D numpy array with markers matching each column of 'mat_representative'.
 
-    cell_types_dict: dict {str: list()}
+    cell_types_dict: dict({str: list()})
       Dictionary with cell types as keys and list of cell type defining markers
       as values.
 
@@ -73,7 +73,7 @@ def assign_cell_types(mat_representative,
     new_labels: array(str)
       1-D numpy array of strings with new names for each cell of 'mat_representative'.
 
-    names_conv: dict {str: str}
+    names_conv: dict({str: str})
       Dictionary with name mapping between phenotypes (keys) and updated names
       (values) to annotate cells.
     """

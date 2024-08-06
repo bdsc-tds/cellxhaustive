@@ -40,7 +40,7 @@ def get_poss_comb(marker_counter, markers_representative, markers_interest):
       List of tuples of strings with marker combinations to score.
     """
 
-    if markers_interest.size > 0:  # With markers of interest
+    if len(markers_interest) > 0:  # With markers of interest
         # Determine number of representative markers to add
         missing_counter = marker_counter - len(markers_interest)
         # Generate combinations of representative markers
@@ -126,14 +126,14 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
 
     Returns:
     --------
-    comb_result_dict: dict {str: obj}
+    comb_result_dict: dict({str: obj})
       Dictionary with 1 or 8 key-value pairs. If no relevant solution was found,
       dictionary will have following structure {'idx': None}. If relevant solution
       was found, keys will be 'idx', 'comb', 'max_nb_phntp', 'min_undefined',
       'max_x_values', and 'max_y_values'
     """
 
-    logging.debug(f"\t\t\t\tTesting '{comb}'")
+    logging.debug(f"\t\t\t\tTesting ({', '.join(comb)})")
     # Slice data based on current marker combination 'comb'
     markers_mask = np.isin(markers_representative, np.asarray(comb))
     markers_comb = markers_representative[markers_mask]
@@ -304,7 +304,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     if detection_method == 'auto':  # Default algorithm for combinations length
         # Theoretical maximum number of markers in combination
         max_combination = min(max_markers, len(markers_rep_only))
-        if markers_interest.size > 0:  # With markers of interest
+        if len(markers_interest) > 0:  # With markers of interest
             marker_counter = len(markers_interest)
             max_combination += len(markers_interest)  # Account for markers of interest
         else:  # Without markers of interest

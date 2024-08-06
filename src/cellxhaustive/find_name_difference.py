@@ -28,7 +28,7 @@ def find_name_difference(base_comb, base_name, best_phntp):
 
     Returns:
     --------
-    names_conv: dict {str: str}
+    names_conv: dict({str: str})
       Dictionary with name mapping between phenotypes (keys) and updated names
       (values) to annotate cells.
     """

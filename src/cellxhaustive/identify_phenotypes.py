@@ -117,7 +117,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
 
     Returns:
     --------
-    results_dict: dict {str: list(array(str, float, np.nan))}
+    results_dict: dict({str: list(array(str, float, np.nan))})
       Dictionary with 2 mandatory keys and 2 optional keys:
         - 'new_labels' (mandatory): list of 1-D numpy arrays with cell type for
           each cell of 'mat_representative[is_label]'. 1 array per optimal
@@ -197,7 +197,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
 
         logging.info(f"\t\t\tProcessing all '{cell_name}' combinations")
         for i in solutions:
-            logging.info(f'\t\t\t\tProcessing combination {i}: {best_marker_comb[i]}')
+            logging.info(f"\t\t\t\tProcessing combination {i}: ({', '.join(best_marker_comb[i])})")
             # Slice matrix to keep only expression of best combination
             markers_rep_comb = markers_representative[np.isin(markers_representative, best_marker_comb[i])]
             mat_subset_rep_markers_comb = mat_representative[:, np.isin(markers_representative, best_marker_comb[i])]
