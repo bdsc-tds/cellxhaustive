@@ -15,8 +15,7 @@ from math import floor
 
 
 # Import other function from package
-from utils import setup_log  # AT. Double-check path
-# from cellxhaustive.utils import setup_log
+from cellxhaustive.utils import setup_log
 
 
 # Function to create a default parser; used in cellxhaustive.py
