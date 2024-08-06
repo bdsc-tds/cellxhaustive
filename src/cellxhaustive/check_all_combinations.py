@@ -13,7 +13,7 @@ import numpy as np
 from functools import partial
 
 
-# Import local functions
+# Import other function from package
 from score_marker_combinations import score_marker_combinations  # AT. Double-check path
 # from cellxhaustive.score_marker_combinations import score_marker_combinations
 
@@ -127,14 +127,14 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
 
     Returns:
     --------
-    comb_result_dict: dict {str: obj}
+    comb_result_dict: dict({str: obj})
       Dictionary with 1 or 8 key-value pairs. If no relevant solution was found,
       dictionary will have following structure {'idx': None}. If relevant solution
       was found, keys will be 'idx', 'comb', 'max_nb_phntp', 'min_undefined',
       'max_x_values', and 'max_y_values'
     """
 
-    logging.debug(f"\t\t\t\tTesting '{comb}'")
+    logging.debug(f"\t\t\t\tTesting ({', '.join(comb)})")
     # Slice data based on current marker combination 'comb'
     markers_mask = np.isin(markers_representative, np.asarray(comb))
     markers_comb = markers_representative[markers_mask]

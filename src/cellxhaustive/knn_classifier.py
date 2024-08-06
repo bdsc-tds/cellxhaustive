@@ -106,7 +106,8 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     # and returning joblib loky 'resource_tracker' warnings
     with parallel_config(backend='multiprocessing', n_jobs=knn_cpu):
         best_model = knn_grid.fit(X_train, y_train)
-    logging.info(f'\t\t\t\t\t\t\tBest parameters found: {best_model.best_params_}')
+
+    logging.info(f"\t\t\t\t\t\t\tBest parameters found: {', '.join(f'{k}: {v}' for k, v in best_model.best_params_.items())}")
     logging.info(f'\t\t\t\t\t\t\twith a max accuracy of: {best_model.best_score_:.3f}')
 
     # Apply classifier to undefined cells

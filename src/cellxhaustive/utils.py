@@ -52,6 +52,10 @@ def setup_log(log_file, log_level):
 
     log_file: str
       Verbosity level of log file.
+
+    Returns:
+    --------
+      None
     """
 
     # Parse log level
@@ -69,7 +73,7 @@ def setup_log(log_file, log_level):
     root_log.setLevel(level)
 
     # Create handlers with redirection
-    f_handler = logging.FileHandler(log_file)
+    f_handler = logging.FileHandler(log_file, mode='w')
     s_handler = logging.StreamHandler(sys.stdout)
 
     # Set stream handlers format

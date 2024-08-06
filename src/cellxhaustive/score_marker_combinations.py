@@ -10,7 +10,7 @@ import logging
 import numpy as np
 
 
-# Import local functions
+# Import other function from package
 from determine_marker_status import determine_marker_status  # AT. Double-check path
 # from cellxhaustive.determine_marker_status import determine_marker_status
 
