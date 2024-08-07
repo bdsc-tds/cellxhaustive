@@ -1,18 +1,20 @@
 [tool.poetry]
 name = "cellxhaustive"
-version = "1.1.4"
+version = "1.0.0"
 description = "A Python package for performing an exhaustive search of cell phenotypes"
 keywords = ["cell annotations", "cite-seq", "single cell"]
 authors = ["Antonin Thiébaut <antonin.thiebaut57@gmail.com>", "Bernat Bramon Mora <bernat.bramon@gmail.com>"]
 maintainers = ["Antonin Thiébaut <antonin.thiebaut57@gmail.com>", "Bernat Bramon Mora <bernat.bramon@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-include = ["CHANGELOG.md", "CONDUCT.md", "CONTRIBUTING.md"]  # Supplementary files to include in dist
-packages = [{include = "cellxhaustive", from = "src"}]  # Package location in file structure
+include = ["CHANGELOG.md", "CONDUCT.md", "CONTRIBUTING.md"]
+packages = [{include = "cellxhaustive", from = "src"}]
 homepage = "https://github.com/bdsc-tds/cellxhaustive/"
 repository = "https://github.com/bdsc-tds/cellxhaustive/"
-# documentation = ""  # Package documentation
-classifiers = ["Topic :: Scientific/Engineering :: Bio-Informatics"]  # Specific classifiers
+classifiers = ["Topic :: Scientific/Engineering :: Bio-Informatics",
+			   "Operating System :: MacOS",
+			   "Operating System :: Microsoft",
+			   "Operating System :: Unix"]
 
 [tool.poetry.urls]
 "Changelog" = "https://github.com/bdsc-tds/cellxhaustive/blob/main/CHANGELOG.md"
@@ -33,13 +35,3 @@ scikit-learn = "^1.5.1"
 [build-system]
 requires = ["poetry-core >= 1.8.0"]
 build-backend = "poetry.core.masonry.api"
-
-# [tool.semantic_release]
-# version_toml = ["pyproject.toml:tool.poetry.version"]  # Location of version number
-# branch = "main"  # Branch to release
-# build_command = "pip install poetry && poetry build"  # Command to build dists
-# changelog_file = "CHANGELOG.md"  # Path to changelog
-
-# [tool.semantic_release.publish]
-# dist_glob_patterns = "dist/*"  # Path to dists
-# upload_to_vcs_release = true  # Upload to remote VCS (here, GitHub)
