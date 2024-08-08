@@ -8,7 +8,6 @@ probability for reclassification.
 import copy
 import logging
 import numpy as np
-import os
 from joblib import parallel_config
 
 
@@ -19,14 +18,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 
-# Import local functions
-from utils import setup_log  # AT. Double-check path
-# from cellxhaustive.utils import setup_log
-
-
 # Function used in identify_phenotypes.py
 def knn_classifier(mat_representative, new_labels, is_undef,
-                   # knn_min_probability):
                    knn_min_probability, knn_cpu):
     """
     Reclassify unidentified cells using a KNN-classifier and return predicted
@@ -65,9 +58,6 @@ def knn_classifier(mat_representative, new_labels, is_undef,
       1-D numpy array with prediction probability from KNN-classifier for reannotated
       cell types and phenotypes for each cell of 'mat_representative'.
     """
-
-    # Set-up logging configuration
-    setup_log(os.environ['LOG_FILE'], os.environ['LOG_LEVEL'], 'a')
 
     # Copy 'new_labels' array to avoid changing the original array
     reannotated_labels = copy.deepcopy(new_labels)
@@ -116,7 +106,8 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     # and returning joblib loky 'resource_tracker' warnings
     with parallel_config(backend='multiprocessing', n_jobs=knn_cpu):
         best_model = knn_grid.fit(X_train, y_train)
-    logging.info(f'\t\t\t\t\t\t\tBest parameters found: {best_model.best_params_}')
+
+    logging.info(f"\t\t\t\t\t\t\tBest parameters found: {', '.join(f'{k}: {v}' for k, v in best_model.best_params_.items())}")
     logging.info(f'\t\t\t\t\t\t\twith a max accuracy of: {best_model.best_score_:.3f}')
 
     # Apply classifier to undefined cells

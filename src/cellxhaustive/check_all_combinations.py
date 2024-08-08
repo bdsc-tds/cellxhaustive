@@ -11,15 +11,12 @@ import itertools as ite
 import logging
 import numpy as np
 import pandas as pd
-import os
 from functools import partial
 
 
 # Import local functions
 from score_marker_combinations import score_marker_combinations  # AT. Double-check path
-from utils import setup_log  # AT. Double-check path
 # from cellxhaustive.score_marker_combinations import score_marker_combinations
-# from cellxhaustive.utils import setup_log
 
 
 # Function used in check_all_combinations()
@@ -45,7 +42,7 @@ def get_poss_comb(marker_counter, markers_representative, markers_interest):
       List of tuples of strings with marker combinations to score.
     """
 
-    if markers_interest.size > 0:  # With markers of interest
+    if len(markers_interest) > 0:  # With markers of interest
         # Determine number of representative markers to add
         missing_counter = marker_counter - len(markers_interest)
         # Generate combinations of representative markers
@@ -131,17 +128,14 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
 
     Returns:
     --------
-    comb_result_dict: dict {str: obj}
+    comb_result_dict: dict({str: obj})
       Dictionary with 1 or 8 key-value pairs. If no relevant solution was found,
       dictionary will have following structure {'idx': None}. If relevant solution
       was found, keys will be 'idx', 'comb', 'max_nb_phntp', 'min_undefined',
       'max_x_values', and 'max_y_values'
     """
 
-    # Set-up logging configuration
-    setup_log(os.environ['LOG_FILE'], os.environ['LOG_LEVEL'], 'a')
-
-    logging.debug(f"\t\t\t\tTesting '{comb}'")
+    logging.debug(f"\t\t\t\tTesting ({', '.join(comb)})")
     # Slice data based on current marker combination 'comb'
     markers_mask = np.isin(markers_representative, np.asarray(comb))
     markers_comb = markers_representative[markers_mask]
@@ -315,9 +309,6 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
       Number of tuples in 'best_marker_comb' is equal to 'nb_solution'.
     """
 
-    # Set-up logging configuration
-    setup_log(os.environ['LOG_FILE'], os.environ['LOG_LEVEL'], 'a')
-
     # Create total space for each metrics ('samplesxbatch' and 'cellxsample')
     logging.info('\t\t\tCreating spaces for each test metric')
     x_samplesxbatch_space = np.round(np.arange(min_samplesxbatch, 1.01, 0.01), 2)  # x-axis
@@ -332,7 +323,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     if detection_method == 'auto':  # Default algorithm for combinations length
         # Theoretical maximum number of markers in combination
         max_combination = min(max_markers, len(markers_rep_only))
-        if markers_interest.size > 0:  # With markers of interest
+        if len(markers_interest) > 0:  # With markers of interest
             marker_counter = len(markers_interest)
             max_combination += len(markers_interest)  # Account for markers of interest
         else:  # Without markers of interest

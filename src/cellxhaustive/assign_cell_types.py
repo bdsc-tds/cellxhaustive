@@ -12,14 +12,11 @@ names derived from this base name.
 # Import utility modules
 import logging
 import numpy as np
-import os
 
 
 # Import local functions
 from find_name_difference import find_name_difference  # AT. Double-check path
-from utils import setup_log  # AT. Double-check path
 # from cellxhaustive.find_name_difference import find_name_difference
-# from cellxhaustive.utils import setup_log
 
 
 # Function used in identify_phenotypes.py
@@ -57,7 +54,7 @@ def assign_cell_types(mat_representative,
     markers_representative: array(str)
       1-D numpy array with markers matching each column of 'mat_representative'.
 
-    cell_types_dict: dict {str: list()}
+    cell_types_dict: dict({str: list()})
       Dictionary with cell types as keys and list of cell type defining markers
       as values.
 
@@ -77,13 +74,10 @@ def assign_cell_types(mat_representative,
     new_labels: array(str)
       1-D numpy array of strings with new names for each cell of 'mat_representative'.
 
-    names_conv: dict {str: str}
+    names_conv: dict({str: str})
       Dictionary with name mapping between phenotypes (keys) and updated names
       (values) to annotate cells.
     """
-
-    # Set-up logging configuration
-    setup_log(os.environ['LOG_FILE'], os.environ['LOG_LEVEL'], 'a')
 
     # Trim down cell classification to remove any marker that is not present
     # in 'markers_representative'
@@ -96,8 +90,8 @@ def assign_cell_types(mat_representative,
         signs_lst = [mkers[-1] for mkers in cell_mkers]
         # Test if markers belong to 'markers_representative' and rebuild list
         mkers_lst_clean = [f'{mker}{sign}'
-                            for mker, sign in zip(mkers_lst, signs_lst)
-                            if mker in markers_representative]
+                           for mker, sign in zip(mkers_lst, signs_lst)
+                           if mker in markers_representative]
         # If 'mkers_lst_clean' is not empty, keep it
         if mkers_lst_clean:
             cell_types_filtered[cell_type] = mkers_lst_clean
