@@ -170,7 +170,7 @@ def main():
                     logging.error(f"\t\tNumber of markers kept is less than detection_method value for cell type '{label}'")
                     logging.error(f'\t\tNumber of representative markers: {len(markers_representative)}')
                     logging.error(f'\t\tRequested combination length: {detection_method_lst[label_idx]}')
-                    logging.error(f"\t\tTry to decrease detection_method value for this cell type or use 'auto' mode")
+                    logging.error("\t\tTry to decrease detection_method value for this cell type or use 'auto' mode")
                     sys.exit(1)
 
             # Extract expression, batch and sample information across all batches
