@@ -161,7 +161,7 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
     # in cellxhaustive.py easier
     results_dict = defaultdict(dict)
 
-    logging.info('\t\tAssigning cell types based on optimal combinations')
+    logging.info(f"\t\tAssigning '{cell_name}' sub-cell types based on optimal combinations")
     if nb_solution == 0:
         # 'best_marker_comb' is empty, which means that no marker combination
         # was found to properly represent cell type 'label' (from annotate(), so
@@ -185,17 +185,19 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
     else:  # At least one solution, but can account for more if needed
 
         # Initialise counter of undefined cells
-        logging.info(f'\t\t\tFound {nb_solution} optimal combinations, building new cell types on them')
+        str1 = 's' if nb_solution > 1 else ''
+        str2 = 'them' if nb_solution > 1 else 'it'
+        logging.info(f"\t\t\tFound {nb_solution} optimal combination{str1}, building new cell types on {str2}")
         undef_counter = []
 
         # Check number of solutions. If too high, randomly pick without repetitions
         if nb_solution > 10:
             logging.warning('\t\t\t\tToo many combinations, choosing 10 randomly')
+            random.seed(42)  # Set seed for reproducibility
             solutions = random.sample(range(nb_solution), 10)
         else:
             solutions = range(nb_solution)
 
-        logging.info(f"\t\t\tProcessing all '{cell_name}' combinations")
         for i in solutions:
             logging.info(f"\t\t\t\tProcessing combination {i}: ({', '.join(best_marker_comb[i])})")
             # Slice matrix to keep only expression of best combination
