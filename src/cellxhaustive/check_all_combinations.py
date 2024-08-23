@@ -13,7 +13,7 @@ import numpy as np
 from functools import partial
 
 
-# Import other function from package
+# Import local functions
 from score_marker_combinations import score_marker_combinations  # AT. Double-check path
 # from cellxhaustive.score_marker_combinations import score_marker_combinations
 

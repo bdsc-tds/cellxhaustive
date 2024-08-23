@@ -14,7 +14,7 @@ import logging
 import numpy as np
 
 
-# Import other function from package
+# Import local functions
 from find_name_difference import find_name_difference  # AT. Double-check path
 # from cellxhaustive.find_name_difference import find_name_difference
 
