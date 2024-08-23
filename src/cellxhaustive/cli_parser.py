@@ -269,8 +269,6 @@ def parse_config_file(config_path, uniq_labels, markers_interest, detection_meth
                     else:
                         logging.info(f"\t\t\t\tNo detection method found for cell type '{label}'. Using default algorithm")
                         detection_method_lst.append('auto')
-                detection_method_lst = np.array(detection_method_lst)  # Convert list back to array
-                del detection_method_lst
         except KeyError:  # No information on detection method in config file
             logging.warning('\t\t\tNo detection method settings provided, using default algorithm')
             detection_method = 'auto'
