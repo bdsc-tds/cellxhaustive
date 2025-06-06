@@ -146,7 +146,7 @@ def main():
 
             if nb_batch == 1:  # No need to filter markers if there is only 1 batch
                 logging.info('\t\tOnly one batch in total, no need to filter markers')
-                markers_representative = markers_rep_batches
+                markers_representative, nb_batch_end = markers_rep_batches, 1
                 logging.info(f"\t\t\tFound {len(markers_representative)} markers: {', '.join(markers_representative)}")
             else:
                 logging.info(f'\t\t{nb_batch} batches in total. Selecting markers present in all batches')
