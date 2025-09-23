@@ -128,7 +128,7 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
     Returns:
     --------
     comb_result_dict: dict({str: obj})
-      Dictionary with 1 or 8 key-value pairs. If no relevant solution was found,
+      Dictionary with 1 or 6 key-value pairs. If no relevant solution was found,
       dictionary will have following structure {'idx': None}. If relevant solution
       was found, keys will be 'idx', 'comb', 'max_nb_phntp', 'min_undefined',
       'max_x_values', and 'max_y_values'
@@ -140,8 +140,11 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
     markers_comb = markers_representative[markers_mask]
     mat_comb = mat_representative[:, markers_mask]
 
-    # Find number of phenotypes and undefined cells for a given marker combination
-    # 'comb' across 'samplesxbatch' and 'cellxsample' grid
+    # Count number of three peaks markers in 'markers_comb'
+    nb_three = sum(np.isin(markers_comb, three_peak_markers))
+
+    # Find number of phenotypes and undefined cells for a given marker
+    # combination 'comb' across 'samplesxbatch' and 'cellxsample' grid
     logging.debug('\t\t\t\t\tScoring combination')
     nb_phntp, nb_undef_cells = score_marker_combinations(
         mat_comb=mat_comb,
@@ -186,6 +189,9 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
 
         # ... and maximum cells per sample
         max_y_values = np.nanmax(y_values)
+
+        # Normalise given number of three peaks markers
+        max_nb_phntp = np.round(max_nb_phntp * ((2 / 3) ** nb_three))
 
         # Gather all results in dict
         comb_result_dict = {'idx': idx,
@@ -386,8 +392,8 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
         # Increase marker counter; it doesn't matter whether a solution is found
         marker_counter += 1
 
-        # Reset enumerate start to avoid overwriting data in next iteration
-        enum_start = len(score_results_lst)
+        # Increment enumerate start to avoid overwriting data in next iteration
+        enum_start += len(poss_comb)
 
         # Post-process results
         if len(score_results_dict) == 0:  # No combination is relevant, skip to next iteration
