@@ -352,10 +352,11 @@ def main():
     # Note: set indices to avoid problem during concatenation
     output_table = pd.concat([input_table, annot_df], axis=1)
 
-    # Create output directory if it doesn't exist
+    # Create output directory if not empty and missing
     output_dir = os.path.dirname(output_path)
-    logging.debug(f"Creating output directory '{output_dir}'")
-    os.makedirs(output_dir, exist_ok=True)
+    if output_dir and not os.path.exists(output_dir):
+        logging.debug(f"Creating output directory '{output_dir}'")
+        os.makedirs(output_dir, exist_ok=True)
 
     # Save general table with annotations and phenotypes
     logging.info(f"Saving final table to '{output_path}'")

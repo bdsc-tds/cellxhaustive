@@ -301,13 +301,14 @@ def validate_cli(args):
     if not args.log_path:
         args.log_path = f'{os.path.splitext(args.output_path)[0]}.log'
 
+    # Create log directory if not empty and missing
+    log_dir = os.path.dirname(args.log_path)
+    if log_dir and not os.path.exists(log_dir):
+        logging.debug(f"Creating log directory '{log_dir}'")
+        os.makedirs(log_dir, exist_ok=True)
+
     # Set-up logging configuration
     setup_log(args.log_path, args.log_level)
-
-    # Create log directory if not existing
-    log_dir = os.path.dirname(args.log_path)
-    logging.debug(f"Creating log directory '{log_dir}'")
-    os.makedirs(log_dir, exist_ok=True)
 
     # Get 1-D markers array
     logging.info(f"Importing marker list from '{args.marker_path}'")
