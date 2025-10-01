@@ -7,8 +7,8 @@
 # -- Project information -----------------------------------------------------
 
 project = u"cellxhaustive"
-copyright = u"2023, Bernat Bramon Mora"
-author = u"Bernat Bramon Mora"
+copyright = u"2025, Antonin Thiébaut, Bernat Bramon Mora"
+author = u"Antonin Thiébaut, Bernat Bramon Mora"
 
 # -- General configuration ---------------------------------------------------
 

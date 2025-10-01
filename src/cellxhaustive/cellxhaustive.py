@@ -143,7 +143,7 @@ def main():
 
             if nb_batch == 1:  # No need to filter markers if there is only 1 batch
                 logging.info('\t\tOnly one batch in total, no need to filter markers')
-                markers_representative = markers_rep_batches
+                markers_representative, missing_markers, nb_batch_end = markers_rep_batches, [], 1
                 logging.info(f"\t\t\tFound {len(markers_representative)} markers: {', '.join(markers_representative)}")
             else:
                 logging.info(f'\t\t{nb_batch} batches in total. Selecting markers present in all batches')
@@ -349,10 +349,11 @@ def main():
     # Note: set indices to avoid problem during concatenation
     output_table = pd.concat([input_table, annot_df], axis=1)
 
-    # Create output directory if it doesn't exist
+    # Create output directory if not empty and missing
     output_dir = os.path.dirname(output_path)
-    logging.debug(f"Creating output directory '{output_dir}'")
-    os.makedirs(output_dir, exist_ok=True)
+    if output_dir and not os.path.exists(output_dir):
+        logging.debug(f"Creating output directory '{output_dir}'")
+        os.makedirs(output_dir, exist_ok=True)
 
     # Save general table with annotations and phenotypes
     logging.info(f"Saving final table to '{output_path}'")
