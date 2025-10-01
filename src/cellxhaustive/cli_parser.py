@@ -12,11 +12,16 @@ import pandas as pd
 import sys
 import yaml
 from math import floor
+from importlib import resources as imp_resources
 
 
 # Import other function from package
 from utils import setup_log  # AT. Double-check path
 # from cellxhaustive.utils import setup_log
+
+# Relative import *package* containing config
+import config
+# from . import config
 
 
 # Function to create a default parser; used in cellxhaustive.py
@@ -66,14 +71,14 @@ def get_default_parser():
                         combination length. Integer must be less than '-a' parameter. \
                         Global setting that applies to all cell types [auto]",
                         required=False, default='auto')
-    parser.add_argument('-b', '--config', dest='config_path', type=str,
+    parser.add_argument('-c', '--config', dest='config_path', type=str,
                         help="Path to config file with cell type-specific \
                         detection method and markers of interest []",
                         required=False, default='')
-    parser.add_argument('-c', '--cell-type-definition', dest='cell_type_path', type=str,
+    parser.add_argument('-b', '--cell-type-definition', dest='cell_type_path', type=str,
                         help='Path to file with cell types characterisation \
-                        [../data/config/major_cell_types.yaml]',
-                        required=False, default='../data/config/major_cell_types.yaml')
+                        [src/cellxhaustive/config/major_cell_types.yaml]',
+                        required=False, default='')
     parser.add_argument('-l', '--log', dest='log_path', type=str,
                         help='Path to log file [output_path.log]',
                         required=False, default='')
@@ -426,19 +431,24 @@ def validate_cli(args):
         logging.info(f'\tthree_peak_high set to {three_peak_high}')
 
     # Get cell types definitions dictionary
-    logging.info(f"Importing cell type definitions from '{args.cell_type_path}'")
+    logging.info("Importing cell type definitions'")
     try:
+        # First try loading cell types file from user
+        logging.info(f"\tImporting definitions from '{args.cell_type_path}'")
         with open(args.cell_type_path) as cell_types_input:
             cell_types_dict = yaml.safe_load(cell_types_input)
-        # Note: this file was created using data from
-        # https://github.com/RGLab/rcellontologymapping/blob/main/src/src/ImmportDefinitions.hs
     except FileNotFoundError:
-        logging.error(f"\tCould not find '{args.cell_type_path}'. Please double-check file path")
-        sys.exit(1)
+        # Parameter is empty or file doesn't exist
+        logging.warning(f"\tCould not find '{args.cell_type_path}'. Loading default file")
+        # Note: default file was created using data from
+        # https://github.com/RGLab/rcellontologymapping/blob/main/src/src/ImmportDefinitions.hs
+        default_config_file = (imp_resources.files(config) / 'major_cell_types.yaml')
+        with default_config_file.open("rt") as cell_types_input:
+            cell_types_dict = yaml.safe_load(cell_types_input)
     except Exception as e:
         logging.error(f'\t{e}')
         sys.exit(1)
-    else:
+    finally:
         logging.info(f"\tFound {len(cell_types_dict)} cell types: {', '.join(cell_types_dict.keys())}")
 
     # Parse config file
