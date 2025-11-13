@@ -6,6 +6,9 @@ A python package for performing an exhaustive search of cell phenotypes.
 
 ### Using `pip` (recommended)
 
+> [!IMPORTANT]
+> `cellxhaustive` requires **Python 3.9 or higher** and has not been tested with earlier Python versions.
+
 You can install `cellxhaustive` from TestPyPI (for now):
 
 ```bash
@@ -13,7 +16,7 @@ pip install -i https://test.pypi.org/simple/ cellxhaustive --extra-index-url htt
 ```
 
 > [!NOTE]
-> We recommend to install the package in a dedicated environment, created with [`virtualenv`](https://virtualenv.pypa.io/en/latest/) or [conda/mamba](https://github.com/conda-forge/miniforge) to avoid dependency conflicts with other packages you may have installed.
+> We recommend to install the package in a dedicated environment, created with [`virtualenv`](https://virtualenv.pypa.io/en/latest/) or [`conda/mamba`](https://github.com/conda-forge/miniforge) to avoid dependency conflicts with other packages you have installed.
 
 ### Using `mamba`
 
@@ -123,11 +126,10 @@ The output file is a `Tab-Separated Values` (`.tsv`) table which includes:
 All the following parameters are optional and are preset with default values. As such, they do not need to be specified to run the analyses, but they can be very useful to tweak the analyses or reduce the computational burden.
 
 - `-a`, `--max-markers MAX_MARKERS`: maximum number of relevant markers to select among the total list of markers. Must be less than or equal to the number of markers available in `INPUT_PATH`. Set to 15 by default. Must be a positive integer
-- `-mi`, `--markers-interest MARKERS_INTEREST`: comma-separated list of markers of interest that must appear in the final combination (_i.e._ each resulting marker combination will include all specified markers). Global setting that applies to all cell types. Empty by default. Can also be specified in a config file allowing tuning at cell type level (see `-b` parameter below)
-- `-dm`, `--detection-method 'auto'|INT`: method used to determine the length of the best marker combination. Can be:
-  - `'auto'`: use the default heuristic algorithm (default). Global setting that applies to all cell types
-  - Integer: set a fixed combination length manually. Must be less than `MAX_MARKERS`. Global setting that applies to all cell types
-  - Can also be specified in a config file allowing tuning at cell type level (see `-b` parameter below)
+- `-mi`, `--markers-interest MARKERS_INTEREST`: comma-separated list of markers of interest that must appear in the final combination (_i.e._ each resulting marker combination will include all specified markers). Empty by default. **Global setting that applies to all cell types.** Can also be specified in a config file allowing tuning at cell type level (see `-c` parameter below)
+- `-dm`, `--detection-method 'auto'|INT`: method used to determine the length of the best marker combination. If used, only combinations of length `INT` will be tested. **Global setting that applies to all cell types.** Can also be specified in a config file allowing tuning at cell type level (see `-c` parameter below). Can be:
+  - `'auto'`: use the default heuristic algorithm (default)
+  - Integer: set a fixed combination length manually. Must be less than `MAX_MARKERS`
 - `-c`, `--config CONFIG`: path to a config file in [`.yaml`](https://yaml.org/) format that provides cell type–specific detection methods and `MARKER_INTEREST` settings. Empty by default. Example of configuration:
     ```yaml
     # Use 'all' or specific cell types as in the 'cell_type' column of the input file
