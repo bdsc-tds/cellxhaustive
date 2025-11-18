@@ -206,18 +206,16 @@ def main():
     if nb_cpu_id == 1:  # Use for loop to avoid creating new processes
         logging.info('Starting analyses without parallelisation')
         annot_results_lst = []
-        for is_label, cell_name, mat_representative, \
+        for cell_name, mat_representative, \
                 batches_label, samples_label, markers_representative, \
-                markers_interest, detection_method in zip(is_label_lst,
-                                                          uniq_labels,
+                markers_interest, detection_method in zip(uniq_labels,
                                                           mat_subset_rep_lst,
                                                           batches_label_lst,
                                                           samples_label_lst,
                                                           markers_representative_lst,
                                                           markers_interest_lst,
                                                           detection_method_lst):
-            results_dict = identify_phenotypes(is_label=is_label,
-                                               cell_name=cell_name,
+            results_dict = identify_phenotypes(cell_name=cell_name,
                                                mat_representative=mat_representative,
                                                batches_label=batches_label,
                                                samples_label=samples_label,
@@ -253,7 +251,6 @@ def main():
                                                             knn_min_probability=knn_min_probability,
                                                             multipop=multipop,
                                                             processpool=processpool),
-                                                    is_label_lst,
                                                     uniq_labels,
                                                     mat_subset_rep_lst,
                                                     batches_label_lst,
@@ -261,7 +258,7 @@ def main():
                                                     markers_representative_lst,
                                                     markers_interest_lst,
                                                     detection_method_lst))
-        # Note: 'partial()' is used to iterate over 'is_label_lst', 'uniq_labels',
+        # Note: 'partial()' is used to iterate over 'uniq_labels',
         # 'mat_subset_rep_lst', 'batches_label_lst', 'samples_label_lst',
         # 'markers_representative_lst', 'markers_interest_lst' and
         # 'detection_method_lst' and keep other parameters constant

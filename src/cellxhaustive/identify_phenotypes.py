@@ -23,7 +23,7 @@ from knn_classifier import knn_classifier  # AT. Double-check path
 
 
 # Function used in cellxhaustive.py
-def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
+def identify_phenotypes(cell_name, mat_representative, batches_label,
                         samples_label, markers_representative, markers_interest,
                         detection_method, cell_types_dict, two_peak_threshold,
                         three_peak_markers, three_peak_low, three_peak_high,
@@ -35,9 +35,6 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
 
     Parameters:
     -----------
-    is_label: array(bool)
-      1-D numpy array with booleans to indicate cells matching current cell type.
-
     cell_name: str or None
       Base name for cell types (e.g. CD4 T-cells for 'CD4T').
 
@@ -124,19 +121,19 @@ def identify_phenotypes(is_label, cell_name, mat_representative, batches_label,
     results_dict: dict({str: list(array(str, float, np.nan))})
       Dictionary with 2 mandatory keys and 2 optional keys:
         - 'new_labels' (mandatory): list of 1-D numpy arrays with cell type for
-          each cell of 'mat_representative[is_label]'. 1 array per optimal
-          marker combination.
+          each cell of 'mat_representative'. 1 array per optimal marker
+          combination.
         - 'cell_phntp_comb' (mandatory): list of 1-D numpy arrays with full
-          phenotype for each cell of 'mat_representative[is_label]'. 1 array per
-          optimal marker combination.
+          phenotype for each cell of 'mat_representative'. 1 array per optimal
+          marker combination.
         - 'reannotated_labels' (optional): list of 1-D numpy arrays with cell
-          type for each cell of 'mat_representative[is_label]'. 1 array per
-          optimal marker combination. Undefined cell types are reannotated by a
+          type for each cell of 'mat_representative'. 1 array per optimal marker
+          combination. Undefined cell types are reannotated by a
           KNN-classifier. Available only if 'knn_refine=True'.
         - 'reannotation_proba' (optional): list of 1-D numpy arrays with
           reannotation prediction probability determined by a KNN-classifier for
-          each undefined cell of 'mat_representative[is_label]'. 1 array per
-          optimal marker combination. Available only if 'knn_refine=True'.
+          each undefined cell of 'mat_representative'. 1 array per optimal
+          marker combination. Available only if 'knn_refine=True'.
     """
 
     # Evaluate combinations of markers: go over every combination and find all
