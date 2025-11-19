@@ -4,14 +4,19 @@ in a case of a marker with three peaks, positive or negative in other cases)
 depending on their expression.
 """
 
-
 # Import utility modules
 import numpy as np
 
 
 # Function used in score_marker_combinations.py
-def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,
-                            three_peak_markers, three_peak_low, three_peak_high):
+def determine_marker_status(
+    mat_comb,
+    markers_comb,
+    two_peak_threshold,
+    three_peak_markers,
+    three_peak_low,
+    three_peak_high,
+):
     """
     Function that multiprocesses marker status computing.
 
@@ -64,17 +69,24 @@ def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,
     # Find marker status
     if any(is_three):  # With three peak markers
         # Find status of three peak markers
-        mat_comb_obj[:, is_three] = np.where(mat_comb_obj[:, is_three] >= three_peak_high, '+',
-                                             (np.where(mat_comb_obj[:, is_three] < three_peak_low, '-', 'low')))
+        mat_comb_obj[:, is_three] = np.where(
+            mat_comb_obj[:, is_three] >= three_peak_high,
+            "+",
+            (np.where(mat_comb_obj[:, is_three] < three_peak_low, "-", "low")),
+        )
         # Find status of other markers
-        mat_comb_obj[:, ~ is_three] = np.where(mat_comb_obj[:, ~ is_three] < two_peak_threshold, '-', '+')
+        mat_comb_obj[:, ~is_three] = np.where(
+            mat_comb_obj[:, ~is_three] < two_peak_threshold, "-", "+"
+        )
     else:  # Without three peak markers
-        mat_comb_obj = np.where(mat_comb_obj < two_peak_threshold, '-', '+')
+        mat_comb_obj = np.where(mat_comb_obj < two_peak_threshold, "-", "+")
 
     # Concatenate markers and status
     mat_comb_obj = np.char.add(markers_comb, mat_comb_obj.astype(dtype=str))
 
     # Concatenate all columns into one
-    phntp_per_cell = np.array(['/'.join(row) for row in mat_comb_obj], dtype=str)
+    phntp_per_cell = np.array(
+        ["/".join(row) for row in mat_comb_obj], dtype=str
+    )
 
     return phntp_per_cell

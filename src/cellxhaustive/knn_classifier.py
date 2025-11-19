@@ -3,7 +3,6 @@ Reclassify unidentified cells using a KNN-classifier and return predicted
 probability for reclassification.
 """
 
-
 # Import utility modules
 import copy
 import logging
@@ -19,8 +18,15 @@ from sklearn.preprocessing import StandardScaler
 
 
 # Function used in identify_phenotypes.py
-def knn_classifier(cell_name, best_comb_name, mat_representative, new_labels, is_undef,
-                   knn_min_probability, knn_cpu):
+def knn_classifier(
+    cell_name,
+    best_comb_name,
+    mat_representative,
+    new_labels,
+    is_undef,
+    knn_min_probability,
+    knn_cpu,
+):
     """
     Reclassify unidentified cells using a KNN-classifier and return predicted
     probability for reclassification.
@@ -44,8 +50,9 @@ def knn_classifier(cell_name, best_comb_name, mat_representative, new_labels, is
       assign_cell_types(), for each cell of 'mat_representative'.
 
     is_undef: array(bool)
-      1-D numpy array with cell type annotation for each cell of 'mat_representative'.
-      True if cell type is undefined ('Other <main type>'), False otherwise.
+      1-D numpy array with cell type annotation for each cell of
+      'mat_representative'. True if cell type is undefined ('Other
+      <main type>'), False otherwise.
 
     knn_min_probability: float (default=0.5)
       Confidence threshold for KNN-classifier to reassign a new cell type to
@@ -57,75 +64,107 @@ def knn_classifier(cell_name, best_comb_name, mat_representative, new_labels, is
     Returns:
     --------
     reannotated_labels: array(str)
-      1-D numpy array with cell types and phenotypes reannotated by KNN-classifier
-      for each cell of 'mat_representative'.
+      1-D numpy array with cell types and phenotypes reannotated by
+      KNN-classifier for each cell of 'mat_representative'.
 
     reannotation_proba: array(float, nan)
-      1-D numpy array with prediction probability from KNN-classifier for reannotated
-      cell types and phenotypes for each cell of 'mat_representative'.
+      1-D numpy array with prediction probability from KNN-classifier for
+      reannotated cell types and phenotypes for each cell of
+      'mat_representative'.
     """
 
     # Copy 'new_labels' array to avoid changing the original array
     reannotated_labels = copy.deepcopy(new_labels)
-    reannotated_labels = reannotated_labels.astype(dtype='object')  # To avoid strings getting cut
+    reannotated_labels = reannotated_labels.astype(
+        dtype="object"
+    )  # To avoid strings getting cut
 
     # Split data in annotated (train/test) cells and undefined cells (i.e. cells
     # that will be re-annotated by classifier)
-    logging.info(f'\t\t\t\t\t{cell_name} - ({best_comb_name}): Splitting data in training and test datasets')
-    annot_cells_mat = mat_representative[~ is_undef]
-    annot_phntp = reannotated_labels[~ is_undef]
+    logging.info(
+        f"\t\t\t\t\t{cell_name} - ({best_comb_name}): Splitting data in training and test datasets"
+    )
+    annot_cells_mat = mat_representative[~is_undef]
+    annot_phntp = reannotated_labels[~is_undef]
     undef_cells_mat = mat_representative[is_undef]
     undef_phntp = reannotated_labels[is_undef][0]
 
     # Further split annotated cells in training and test datasets
-    X_train, X_test, y_train, y_test = train_test_split(annot_cells_mat,
-                                                        annot_phntp,
-                                                        test_size=0.2,
-                                                        random_state=42,
-                                                        shuffle=True,
-                                                        stratify=annot_phntp)
+    X_train, X_test, y_train, y_test = train_test_split(
+        annot_cells_mat,
+        annot_phntp,
+        test_size=0.2,
+        random_state=42,
+        shuffle=True,
+        stratify=annot_phntp,
+    )
 
     # Initialise scaler
-    logging.info(f'\t\t\t\t\t{cell_name} - ({best_comb_name}): Initializing KNN-classifier and parameters grid')
+    logging.info(
+        f"\t\t\t\t\t{cell_name} - ({best_comb_name}): Initializing KNN-classifier and parameters grid"
+    )
     scaler = StandardScaler()
 
     # Initialise KNN-classifier
-    clf = KNeighborsClassifier(p=2, metric='minkowski', n_jobs=None)
+    clf = KNeighborsClassifier(p=2, metric="minkowski", n_jobs=None)
     # Note: default arguments "p=2, metric='minkowski'" are equivalent to
     # calculating Euclidean distances
 
     # Initialise pipeline with scaler and classifier
-    pipeline = Pipeline([('scaler', scaler), ('KNN', clf)], verbose=False)
+    pipeline = Pipeline([("scaler", scaler), ("KNN", clf)], verbose=False)
 
     # Define parameters grid for hypertuning
-    param_grid = {'KNN__n_neighbors': np.arange(5, 21, 5),
-                  'KNN__weights': ['uniform', 'distance'],
-                  'KNN__leaf_size': np.arange(10, 31, 10)}
+    param_grid = {
+        "KNN__n_neighbors": np.arange(5, 21, 5),
+        "KNN__weights": ["uniform", "distance"],
+        "KNN__leaf_size": np.arange(10, 31, 10),
+    }
 
     # Build parameters grid object
-    knn_grid = GridSearchCV(pipeline, param_grid=param_grid, scoring='accuracy',
-                            cv=5, n_jobs=None, refit=True, verbose=0)
+    knn_grid = GridSearchCV(
+        pipeline,
+        param_grid=param_grid,
+        scoring="accuracy",
+        cv=5,
+        n_jobs=None,
+        refit=True,
+        verbose=0,
+    )
 
     # Find best parameters
-    logging.info(f'\t\t\t\t\t{cell_name} - ({best_comb_name}): Tuning hyperparameters')
+    logging.info(
+        f"\t\t\t\t\t{cell_name} - ({best_comb_name}): Tuning hyperparameters"
+    )
     # Use different backend for parallel computing to avoid GridSearchCV hanging
     # and returning joblib loky 'resource_tracker' warnings
-    with parallel_config(backend='multiprocessing', n_jobs=knn_cpu):
+    with parallel_config(backend="multiprocessing", n_jobs=knn_cpu):
         best_model = knn_grid.fit(X_train, y_train)
 
-    best_model_str = ', '.join(f'{k}: {v}' for k, v in best_model.best_params_.items())
-    logging.info(f'\t\t\t\t\t\t{cell_name} - ({best_comb_name}): Best parameters found: {best_model_str}')
-    logging.info(f'\t\t\t\t\t\twith a max accuracy of: {best_model.best_score_:.3f}')
+    best_model_str = ", ".join(
+        f"{k}: {v}" for k, v in best_model.best_params_.items()
+    )
+    logging.info(
+        f"\t\t\t\t\t\t{cell_name} - ({best_comb_name}): Best parameters found: {best_model_str}"
+    )
+    logging.info(
+        f"\t\t\t\t\t\twith a max accuracy of: {best_model.best_score_:.3f}"
+    )
 
     # Apply classifier to undefined cells
-    logging.info(f'\t\t\t\t\t{cell_name} - ({best_comb_name}): Applying KNN-classifier to undefined cells')
+    logging.info(
+        f"\t\t\t\t\t{cell_name} - ({best_comb_name}): Applying KNN-classifier to undefined cells"
+    )
     undef_cells_pred = best_model.predict_proba(undef_cells_mat)
     # Note: this returns an array of probabilities for a cell to belong to a
     # certain cell type
 
-    logging.info(f'\t\t\t\t\t{cell_name} - ({best_comb_name}): Selecting annotations passing knn_min_probability threshold')
+    logging.info(
+        f"\t\t\t\t\t{cell_name} - ({best_comb_name}): Selecting annotations passing knn_min_probability threshold"
+    )
     # Initialise empty array to store updated annotations
-    reannotated = np.full(undef_cells_mat.shape[0], undef_phntp, dtype='object')  # To avoid strings getting cut
+    reannotated = np.full(
+        undef_cells_mat.shape[0], undef_phntp, dtype="object"
+    )  # To avoid strings getting cut
 
     # Extract cell types ordered by sklearn
     ordered_cell_types = best_model.classes_
@@ -137,7 +176,7 @@ def knn_classifier(cell_name, best_comb_name, mat_representative, new_labels, is
     reannotation_proba[is_undef] = np.max(undef_cells_pred, axis=1)
 
     # Check if maximum proba of each row is larger than 'knn_min_probability'
-    is_max_higher = (reannotation_proba[is_undef] > knn_min_probability)
+    is_max_higher = reannotation_proba[is_undef] > knn_min_probability
 
     # Find index of maximum probability for each row
     max_idx = np.argmax(undef_cells_pred, axis=1)
@@ -146,8 +185,10 @@ def knn_classifier(cell_name, best_comb_name, mat_representative, new_labels, is
     reannotated[is_max_higher] = ordered_cell_types[max_idx][is_max_higher]
 
     # Assign new annotations to original array
-    logging.info(f'\t\t\t\t\t{cell_name} - ({best_comb_name}): Assigning new annotations passing threshold')
+    logging.info(
+        f"\t\t\t\t\t{cell_name} - ({best_comb_name}): Assigning new annotations passing threshold"
+    )
     reannotated_labels[is_undef] = reannotated
-    reannotated_labels = reannotated_labels.astype(dtype='str')
+    reannotated_labels = reannotated_labels.astype(dtype="str")
 
     return reannotated_labels, reannotation_proba
