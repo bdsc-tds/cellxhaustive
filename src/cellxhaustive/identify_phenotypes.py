@@ -353,6 +353,21 @@ def identify_phenotypes(cell_name, mat_representative, batches_label,
                     nb_undef = np.sum(reannotated_labels == f'Unannotated {cell_name}')
                     undef_counter.append(nb_undef)
 
+                    # If there are several solutions and KNN-classifier was run,
+                    # check number of remaining undefined cells to keep only
+                    # solutions minimising this number
+                    if nb_solution > 1:
+                        logging.info(f'\t\t\t\t{cell_name}: Redefining optimal combinations after KNN-classification')
+                        # Get index of undefined cells minimum
+                        min_undef_idx = [i for i, x in enumerate(undef_counter)
+                                         if x == min(undef_counter)]
+
+                        # Filter results using previous indices
+                        for key in list(results_dict.keys()):
+                            if key not in min_undef_idx:
+                                del results_dict[key]  # Keep only indices with minimum undefined cells
+                        logging.info(f'\t\t\t\t\tFound {len(results_dict)} optimal combination{str1}')
+
                 else:  # If conditions are not met, no reannotation
                     logging.warning(f'\t\t\t\t{cell_name} - ({best_comb_name}): Not enough cell types or undefined cells to refine annotations with KNN-classifier')
                     logging.warning(f'\t\t\t\t\t{cell_name} - ({best_comb_name}): Undefined cells: {np.sum(is_undef)}')
@@ -366,20 +381,6 @@ def identify_phenotypes(cell_name, mat_representative, batches_label,
                     nb_undef = np.sum(is_undef)
                     undef_counter.append(nb_undef)
 
-        # If there are several solutions and KNN-classifier was run, check
-        # number of remaining undefined cells to keep only solutions minimising
-        # this number
-        if knn_refine and nb_solution > 1:
-            logging.info('\t\t\tRedefining optimal combinations after KNN-classification')
-            # Get index of undefined cells minimum
-            min_undef_idx = [i for i, x in enumerate(undef_counter)
-                             if x == min(undef_counter)]
-
-            # Filter results using previous indices
-            for key in list(results_dict.keys()):
-                if key not in min_undef_idx:
-                    del results_dict[key]  # Keep only indices with minimum undefined cells
-            logging.info(f'\t\t\t\tFound {len(results_dict)} optimal combinations')
             logging.info(f'\t\t\t\t{cell_name}: Combination {i} processed')
 
     return results_dict
