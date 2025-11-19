@@ -19,7 +19,7 @@ from sklearn.preprocessing import StandardScaler
 
 
 # Function used in identify_phenotypes.py
-def knn_classifier(mat_representative, new_labels, is_undef,
+def knn_classifier(cell_name, best_comb_name, mat_representative, new_labels, is_undef,
                    knn_min_probability, knn_cpu):
     """
     Reclassify unidentified cells using a KNN-classifier and return predicted
@@ -27,6 +27,12 @@ def knn_classifier(mat_representative, new_labels, is_undef,
 
     Parameters:
     -----------
+    cell_name: str
+      Base name for cell types (e.g. CD4 T-cells for 'CD4T').
+
+    best_comb_name: str
+      Best combination name.
+
     mat_representative: array(float)
       2-D numpy array expression matrix, with cells in D0 and markers in D1.
       In other words, rows contain cells and columns contain markers. This
@@ -65,7 +71,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
 
     # Split data in annotated (train/test) cells and undefined cells (i.e. cells
     # that will be re-annotated by classifier)
-    logging.info('\t\t\t\t\t\tSplitting data in training and test datasets')
+    logging.info(f'\t\t\t\t\t{cell_name} - ({best_comb_name}): Splitting data in training and test datasets')
     annot_cells_mat = mat_representative[~ is_undef]
     annot_phntp = reannotated_labels[~ is_undef]
     undef_cells_mat = mat_representative[is_undef]
@@ -80,7 +86,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
                                                         stratify=annot_phntp)
 
     # Initialise scaler
-    logging.info('\t\t\t\t\t\tInitializing KNN-classifier and parameters grid')
+    logging.info(f'\t\t\t\t\t{cell_name} - ({best_comb_name}): Initializing KNN-classifier and parameters grid')
     scaler = StandardScaler()
 
     # Initialise KNN-classifier
@@ -101,22 +107,23 @@ def knn_classifier(mat_representative, new_labels, is_undef,
                             cv=5, n_jobs=None, refit=True, verbose=0)
 
     # Find best parameters
-    logging.info('\t\t\t\t\t\tTuning hyperparameters')
+    logging.info(f'\t\t\t\t\t{cell_name} - ({best_comb_name}): Tuning hyperparameters')
     # Use different backend for parallel computing to avoid GridSearchCV hanging
     # and returning joblib loky 'resource_tracker' warnings
     with parallel_config(backend='multiprocessing', n_jobs=knn_cpu):
         best_model = knn_grid.fit(X_train, y_train)
 
-    logging.info(f"\t\t\t\t\t\t\tBest parameters found: {', '.join(f'{k}: {v}' for k, v in best_model.best_params_.items())}")
-    logging.info(f'\t\t\t\t\t\t\twith a max accuracy of: {best_model.best_score_:.3f}')
+    best_model_str = ', '.join(f'{k}: {v}' for k, v in best_model.best_params_.items())
+    logging.info(f'\t\t\t\t\t\t{cell_name} - ({best_comb_name}): Best parameters found: {best_model_str}')
+    logging.info(f'\t\t\t\t\t\twith a max accuracy of: {best_model.best_score_:.3f}')
 
     # Apply classifier to undefined cells
-    logging.info('\t\t\t\t\t\tApplying KNN-classifier to undefined cells')
+    logging.info(f'\t\t\t\t\t{cell_name} - ({best_comb_name}): Applying KNN-classifier to undefined cells')
     undef_cells_pred = best_model.predict_proba(undef_cells_mat)
     # Note: this returns an array of probabilities for a cell to belong to a
     # certain cell type
 
-    logging.info('\t\t\t\t\t\tSelecting annotations passing knn_min_probability threshold')
+    logging.info(f'\t\t\t\t\t{cell_name} - ({best_comb_name}): Selecting annotations passing knn_min_probability threshold')
     # Initialise empty array to store updated annotations
     reannotated = np.full(undef_cells_mat.shape[0], undef_phntp, dtype='object')  # To avoid strings getting cut
 
@@ -139,7 +146,7 @@ def knn_classifier(mat_representative, new_labels, is_undef,
     reannotated[is_max_higher] = ordered_cell_types[max_idx][is_max_higher]
 
     # Assign new annotations to original array
-    logging.info('\t\t\t\t\t\tAssigning new annotations passing threshold')
+    logging.info(f'\t\t\t\t\t{cell_name} - ({best_comb_name}): Assigning new annotations passing threshold')
     reannotated_labels[is_undef] = reannotated
     reannotated_labels = reannotated_labels.astype(dtype='str')
 

@@ -150,7 +150,7 @@ def get_detection_method(detection_method, offset):
             logging.info('{offset}Using default algorithm'.format(offset='\t' * offset))
             method = 'auto'
         else:
-            logging.error("{offset}Unknown detection method. Please provide 'auto' or an integer superior or equal to 2".format(offset='\t' * offset))
+            logging.error('{offset}Unknown detection method. Please provide <auto> or an integer superior or equal to 2'.format(offset='\t' * offset))
             sys.exit(1)
 
     return method
@@ -194,7 +194,8 @@ def parse_config_file(config_path, uniq_labels, markers_interest, detection_meth
         logging.info('\t\tChecking for markers of interest')
         if markers_interest:  # With markers in CLI
             markers_interest = np.array(markers_interest.split(','), dtype='str')
-            logging.info(f"\t\t\tFound {len(markers_interest)} markers: {', '.join(markers_interest)}")
+            mk_int_str = ', '.join(markers_interest)
+            logging.info(f'\t\t\tFound {len(markers_interest)} markers: {mk_int_str}')
         else:  # # Without markers in CLI
             logging.warning('\t\t\tNo markers provided in CLI, using default empty array')
             markers_interest = np.empty(0, dtype='str')
@@ -212,16 +213,17 @@ def parse_config_file(config_path, uniq_labels, markers_interest, detection_meth
         try:  # Information on markers of interest in config file
             markers_dict = config_dict['markers_interest']
             if markers_dict is None:  # User probably forgot to delete field, use default
-                logging.warning("\t\t\t'markers_interest' field is present but empty. Using default empty array")
+                logging.warning('\t\t\t<markers_interest> field is present but empty. Using default empty array')
                 markers_interest = np.empty(0, dtype='str')
                 logging.info('\t\t\tPropagating this setting to all cell types')
                 markers_interest_lst = [markers_interest for _ in range(cell_pop_nb)]
             elif 'all' in markers_dict.keys():
                 if markers_dict['all'] is None:  # User probably forgot to delete field, use default
-                    logging.warning("\t\t\t'markers_interest: all' field is present but empty. Using default empty array")
+                    logging.warning('\t\t\t<markers_interest: all> field is present but empty. Using default empty array')
                     markers_interest = np.empty(0, dtype='str')
                 else:
-                    logging.info(f"\t\t\tFound global setting: {', '.join(markers_dict['all'])}")
+                    mk_all_str = ', '.join(markers_dict['all'])
+                    logging.info(f'\t\t\tFound global setting: {mk_all_str}')
                     markers_interest = np.array(markers_dict['all'])
                 logging.info('\t\t\tPropagating this setting to all cell types')
                 markers_interest_lst = [markers_interest for _ in range(cell_pop_nb)]
@@ -231,13 +233,14 @@ def parse_config_file(config_path, uniq_labels, markers_interest, detection_meth
                 for label in uniq_labels:
                     if label in markers_dict.keys():
                         if markers_dict[label] is None:  # User probably forgot to delete field, use default
-                            logging.warning(f"\t\t\t\t'markers_interest: all: {label}' field is present but empty. Using default empty array")
+                            logging.warning(f'\t\t\t\t<markers_interest: all: {label}> field is present but empty. Using default empty array')
                             markers_interest_lst.append(np.empty(0, dtype='str'))
                         else:
-                            logging.info(f"\t\t\t\tFound markers for cell type '{label}': {', '.join(markers_dict[label])}")
+                            mk_ct_str = ', '.join(markers_dict[label])
+                            logging.info(f'\t\t\t\tFound markers for cell type <{label}>: {mk_ct_str}')
                             markers_interest_lst.append(np.array(markers_dict[label]))
                     else:
-                        logging.warning(f"\t\t\t\tNo markers found for cell type '{label}'. Using default empty array")
+                        logging.warning(f'\t\t\t\tNo markers found for cell type <{label}>. Using default empty array')
                         markers_interest_lst.append(np.empty(0, dtype='str'))
         except KeyError:  # No information on markers of interest in config file
             logging.warning('\t\t\tNo markers settings provided, using default empty array')
@@ -249,14 +252,15 @@ def parse_config_file(config_path, uniq_labels, markers_interest, detection_meth
         try:  # Information on detection method in config file
             detection_dict = config_dict['detection_method']
             if detection_dict is None:  # User probably forgot to delete field, use default
-                logging.warning("\t\t\t'detection_method' field is present but empty. Using default algorithm")
+                logging.warning('\t\t\t<detection_method> field is present but empty. Using default algorithm')
                 detection_method_lst = ['auto'] * cell_pop_nb
             elif 'all' in detection_dict.keys():
                 if detection_dict['all'] is None:  # User probably forgot to delete field, use default
-                    logging.warning("\t\t\t'detection_method: all' field is present but empty. Using default algorithm")
+                    logging.warning('\t\t\t<detection_method: all> field is present but empty. Using default algorithm')
                     detection_method = 'auto'
                 else:
-                    logging.info(f"\t\t\tFound global setting: {detection_dict['all']}")
+                    detection_all = detection_dict['all']
+                    logging.info(f'\t\t\tFound global setting: {detection_all}')
                     detection_method = get_detection_method(detection_dict['all'], 4)
                 logging.info('\t\t\tPropagating this setting to all cell types')
                 detection_method_lst = [detection_method] * cell_pop_nb
@@ -266,14 +270,14 @@ def parse_config_file(config_path, uniq_labels, markers_interest, detection_meth
                 for label in uniq_labels:
                     if label in detection_dict.keys():
                         if detection_dict[label] is None:  # User probably forgot to delete field, use default
-                            logging.warning(f"\t\t\t\t'detection_method: all: {label}' field is present but empty. Using default algorithm")
+                            logging.warning(f'\t\t\t\t<detection_method: all: {label}> field is present but empty. Using default algorithm')
                             detection_method_lst.append('auto')
                         else:
-                            logging.info(f"\t\t\t\tFound detection method for cell type '{label}': {detection_dict[label]}")
+                            logging.info(f'\t\t\t\tFound detection method for cell type <{label}>: {detection_dict[label]}')
                             detection_method = get_detection_method(detection_dict[label], 5)
                             detection_method_lst.append(detection_method)
                     else:
-                        logging.info(f"\t\t\t\tNo detection method found for cell type '{label}'. Using default algorithm")
+                        logging.info(f'\t\t\t\tNo detection method found for cell type <{label}>. Using default algorithm')
                         detection_method_lst.append('auto')
         except KeyError:  # No information on detection method in config file
             logging.warning('\t\t\tNo detection method settings provided, using default algorithm')
@@ -309,18 +313,18 @@ def validate_cli(args):
     # Create log directory if not empty and missing
     log_dir = os.path.dirname(args.log_path)
     if log_dir and not os.path.exists(log_dir):
-        logging.debug(f"Creating log directory '{log_dir}'")
+        logging.debug(f'Creating log directory <{log_dir}>')
         os.makedirs(log_dir, exist_ok=True)
 
     # Set-up logging configuration
     setup_log(args.log_path, args.log_level)
 
     # Get 1-D markers array
-    logging.info(f"Importing marker list from '{args.marker_path}'")
+    logging.info(f'Importing marker list from <{args.marker_path}>')
     try:
         markers = pd.read_csv(args.marker_path, sep='\t', header=None).to_numpy(dtype=str).flatten()
     except FileNotFoundError:
-        logging.error(f"\tCould not find '{args.marker_path}'. Please double-check file path")
+        logging.error(f'\tCould not find <{args.marker_path}>. Please double-check file path')
         sys.exit(1)
     except Exception as e:
         logging.error(f'\t{e}')
@@ -329,11 +333,11 @@ def validate_cli(args):
         logging.info(f'\tFound {len(markers)} markers')
 
     # Import input file and extract data of interest in arrays
-    logging.info(f"Importing cell data from '{args.input_path}'")
+    logging.info(f'Importing cell data from <{args.input_path}>')
     try:
         input_table = pd.read_csv(args.input_path, sep='\t', header=0, index_col=0)
     except FileNotFoundError:
-        logging.error(f"\tCould not find '{args.input_path}'. Please double-check file path")
+        logging.error(f'\tCould not find <{args.input_path}>. Please double-check file path')
         sys.exit(1)
     except Exception as e:
         logging.error(f'\t{e}')
@@ -342,11 +346,11 @@ def validate_cli(args):
         logging.info(f'\tFound {len(input_table.index)} cells')
 
     # Get 2-D expression array using 'markers'
-    logging.info(f"Selecting ADT counts in '{args.input_path}'")
+    logging.info(f'Selecting ADT counts in <{args.input_path}>')
     try:
         mat = input_table.loc[:, markers].to_numpy(dtype=float)
     except KeyError as e:
-        logging.error(f"\tCould not find marker '{e}' in '{args.input_path}'. Please double-check marker list")
+        logging.error(f'\tCould not find marker <{e}> in <{args.input_path}>. Please double-check marker list')
         sys.exit(1)
     except Exception as e:
         logging.error(f'\t{e}')
@@ -354,36 +358,36 @@ def validate_cli(args):
 
     # Get 1-D batches array; add common batch value if information is missing
     input_col_low = input_table.columns.str.lower()  # Make column names case-insensitive
-    logging.info(f"Retrieving batch information in '{args.input_path}'")
+    logging.info(f'Retrieving batch information in <{args.input_path}>')
     try:
         batches_idx = input_col_low.get_loc('batch')
     except KeyError:
-        logging.warning(f"\tNo batch information in '{args.input_path}'")
-        logging.warning("\tSetting batch value to 'batch0' for all cells")
+        logging.warning(f'\tNo batch information in <{args.input_path}>')
+        logging.warning('\tSetting batch value to <batch0> for all cells')
         batches = np.full(input_table.shape[0], 'batch0')
     else:
         batches = input_table.iloc[:, batches_idx].to_numpy(dtype=str)
         logging.info(f'\tFound {len(np.unique(batches))} batches')
 
     # Get 1-D samples array; add common sample value if information is missing
-    logging.info(f"Retrieving sample information in '{args.input_path}'")
+    logging.info(f'Retrieving sample information in <{args.input_path}>')
     try:
         samples_idx = input_col_low.get_loc('sample')
     except KeyError:
-        logging.warning(f"\tNo sample information in '{args.input_path}'")
-        logging.warning("\tSetting sample value to 'sample0' for all cells")
+        logging.warning(f'\tNo sample information in <{args.input_path}>')
+        logging.warning('\tSetting sample value to <sample0> for all cells')
         samples = np.full(input_table.shape[0], 'sample0')
     else:
         samples = input_table.iloc[:, samples_idx].to_numpy(dtype=str)
         logging.info(f'\tFound {len(np.unique(samples))} samples')
 
     # Get 1-D pre-annotated cell types array
-    logging.info(f"Retrieving cell type information in '{args.input_path}'")
+    logging.info(f'Retrieving cell type information in <{args.input_path}>')
     try:
         cell_type_idx = input_col_low.get_loc('cell_type')
     except KeyError:
-        logging.warning(f"\tNo cell type information in '{args.input_path}'")
-        logging.warning("\tSetting cell type value to 'cell_type0' for all cells")
+        logging.warning(f'\tNo cell type information in <{args.input_path}>')
+        logging.warning('\tSetting cell type value to <cell_type0> for all cells')
         cell_labels = np.full(input_table.shape[0], 'cell_type0')
     else:
         cell_labels = input_table.iloc[:, cell_type_idx].to_numpy(dtype=str)
@@ -394,7 +398,7 @@ def validate_cli(args):
 
     # Get 1-D three peaks markers array, otherwise use empty array
     try:
-        logging.info(f"Checking for 3 peaks markers file at '{args.three_peak_markers}'")
+        logging.info(f'Checking for 3 peaks markers file at <{args.three_peak_markers}>')
         with open(args.three_peak_markers) as file:
             three_peak_markers = np.array(file.read().splitlines(), dtype='str')
     except FileNotFoundError:
@@ -402,12 +406,13 @@ def validate_cli(args):
         if args.three_peak_markers:
             three_peak_markers = list(filter(None, args.three_peak_markers.split(',')))
             three_peak_markers = np.array(three_peak_markers, dtype='str')
-            logging.info(f"\t\tFound {len(three_peak_markers)} markers: {', '.join(three_peak_markers)}")
+            mk_3p_str = ', '.join(three_peak_markers)
+            logging.info(f'\t\tFound {len(three_peak_markers)} markers: {mk_3p_str}')
         else:
             logging.warning('\t\tNo markers provided in CLI, using default empty array')
             three_peak_markers = np.empty(0, dtype='str')
     else:
-        logging.info(f"\tFound {len(three_peak_markers)} markers in '{three_peak_markers}'")
+        logging.info(f'\tFound {len(three_peak_markers)} markers in <{three_peak_markers}>')
 
     # Get markers thresholds
     logging.info('Parsing marker expression thresholds from CLI')
@@ -431,15 +436,15 @@ def validate_cli(args):
         logging.info(f'\tthree_peak_high set to {three_peak_high}')
 
     # Get cell types definitions dictionary
-    logging.info("Importing cell type definitions'")
+    logging.info('Importing cell type definitions')
     try:
         # First try loading cell types file from user
-        logging.info(f"\tImporting definitions from '{args.cell_type_path}'")
+        logging.info(f'\tImporting definitions from <{args.cell_type_path}>')
         with open(args.cell_type_path) as cell_types_input:
             cell_types_dict = yaml.safe_load(cell_types_input)
     except FileNotFoundError:
         # Parameter is empty or file doesn't exist
-        logging.warning(f"\tCould not find '{args.cell_type_path}'. Loading default file")
+        logging.warning(f'\t\tCould not find <{args.cell_type_path}>. Loading default file')
         # Note: default file was created using data from
         # https://github.com/RGLab/rcellontologymapping/blob/main/src/src/ImmportDefinitions.hs
         default_config_file = (imp_resources.files(config) / 'major_cell_types.yaml')
@@ -449,10 +454,11 @@ def validate_cli(args):
         logging.error(f'\t{e}')
         sys.exit(1)
     finally:
-        logging.info(f"\tFound {len(cell_types_dict)} cell types: {', '.join(cell_types_dict.keys())}")
+        ct_str = ', '.join(cell_types_dict.keys())
+        logging.info(f'\t\tFound {len(cell_types_dict)} cell types: {ct_str}')
 
     # Parse config file
-    logging.info(f"Checking for config file at '{args.config_path}'")
+    logging.info(f'Checking for config file at <{args.config_path}>')
     config_args = [args.config_path, uniq_labels,
                    args.markers_interest, args.detection_method]
     markers_interest_lst, detection_method_lst = parse_config_file(*config_args)
@@ -486,38 +492,39 @@ def validate_cli(args):
         if sum(np.isin(markers_interest, markers)) == len(markers_interest):
             mask_interest_inv = np.isin(markers, markers_interest, invert=True)
             mask_interest_inv_lst.append(mask_interest_inv)
-            logging.info(f"\t\tAll markers of interest located for cell type '{label}'")
+            logging.info(f'\t\tAll markers of interest located for cell type <{label}>')
         else:
             missing_interest = markers_interest[np.isin(markers_interest,
                                                         markers, invert=True)]
-            logging.error(f"\t\tPlease double-check markers of interest for cell type '{label}'")
-            logging.error(f"\t\tSome markers are missing in general marker list: {', '.join(missing_interest)}")
+            logging.error(f'\t\tPlease double-check markers of interest for cell type <{label}>')
+            mk_missing_str = ', '.join(missing_interest)
+            logging.error(f'\t\tSome markers are missing in general marker list: {mk_missing_str}')
             sys.exit(1)
 
     logging.info('\tChecking value of detection method')
     for label, detection_method in zip(uniq_labels, detection_method_lst):
         if isinstance(detection_method, int):  # Only process integers
             if (detection_method > len(markers)):
-                logging.error(f"\t'-dm/--detection-method' for cell type '{label}' must be lower than number of markers in {args.marker_path}")
+                logging.error(f'\t<-dm/--detection-method> for cell type <{label}> must be lower than number of markers in <{args.marker_path}>')
                 sys.exit(1)
             elif (detection_method < len(markers_interest)):
-                logging.error(f"\t'-dm/--detection-method' for cell type '{label}' must be higher than number of markers in {markers_interest}")
+                logging.error(f'\t<-dm/--detection-method> for cell type <{label}> must be higher than number of markers in {markers_interest}')
                 sys.exit(1)
             else:
-                logging.info(f"\t\tValid detection method value for cell type '{label}'")
+                logging.info(f'\t\tValid detection method value for cell type <{label}>')
 
     logging.info('\tChecking other parameters')
     if not (1 <= args.max_markers <= len(markers)):
-        logging.error(f"\t'-a/--max-markers' must be an integer between 1 and {len(markers)}")
+        logging.error(f'\t<-a/--max-markers> must be an integer between 1 and {len(markers)}')
         sys.exit(1)
     if not (0.01 <= args.min_samplesxbatch <= 1):
-        logging.error("\t'-q/--min-samplesxbatch' must be a float between 0.01 and 1")
+        logging.error('\t<-q/--min-samplesxbatch> must be a float between 0.01 and 1')
         sys.exit(1)
     if not (1 <= args.min_cellxsample <= 100):
-        logging.error("\t'-r/--min-cellxsample' must be an integer between 1 and 100")
+        logging.error('\t<-r/--min-cellxsample> must be an integer between 1 and 100')
         sys.exit(1)
     if not (0 <= args.knn_min_probability <= 1):
-        logging.error("\t'-p/--knn-min-probability' must be a float between 0 and 1")
+        logging.error('\t<-p/--knn-min-probability> must be a float between 0 and 1')
         sys.exit(1)
     knn_refine = (False if args.knn_min_probability == 0 else True)
     logging.info('\tAll parameter values within range')

@@ -117,12 +117,12 @@ def main():
                                                            is_label_lst,
                                                            markers_interest_lst,
                                                            mask_interest_inv_lst):  # Loop over cell types
-            logging.info(f"\tProcessing {label}' cells'")
+            logging.info(f'\tProcessing <{label}> cells')
             markers_rep_batches = []
             label_unique_batch = np.unique(batches[is_label])  # Get batch names in 'label' cells
             nb_batch = len(label_unique_batch)  # Get number of batch in 'label' cells
             for batch in label_unique_batch:
-                logging.debug(f"\t\tProcessing batch '{batch}'")
+                logging.debug(f'\t\tProcessing batch <{batch}>')
                 logging.debug('\t\t\tSelecting matching cells')
                 is_batch = (batches == batch)
                 is_label_batch = np.logical_and(is_batch, is_label)
@@ -147,7 +147,8 @@ def main():
             if nb_batch == 1:  # No need to filter markers if there is only 1 batch
                 logging.info('\t\tOnly one batch in total, no need to filter markers')
                 markers_representative, missing_markers, nb_batch_end = markers_rep_batches, [], 1
-                logging.info(f"\t\t\tFound {len(markers_representative)} markers: {', '.join(markers_representative)}")
+                mk_rep_str = ', '.join(markers_representative)
+                logging.info(f'\t\t\tFound {len(markers_representative)} markers: {mk_rep_str}')
             else:
                 logging.info(f'\t\t{nb_batch} batches in total. Selecting markers present in all batches')
                 markers_representative, missing_markers, nb_batch_end = get_repr_markers(markers_rep_batches,
@@ -167,10 +168,10 @@ def main():
             label_idx = uniq_labels.tolist().index(label)
             if detection_method_lst[label_idx] != 'auto':
                 if detection_method_lst[label_idx] > len(markers_representative):
-                    logging.error(f"\t\tNumber of markers kept is less than detection_method value for cell type '{label}'")
+                    logging.error(f'\t\tNumber of markers kept is less than detection_method value for cell type <{label}>')
                     logging.error(f'\t\tNumber of representative markers: {len(markers_representative)}')
                     logging.error(f'\t\tRequested combination length: {detection_method_lst[label_idx]}')
-                    logging.error("\t\tTry to decrease detection_method value for this cell type or use 'auto' mode")
+                    logging.error('\t\tTry to decrease <detection_method> value for this cell type or use <auto> mode')
                     sys.exit(1)
 
             # Extract expression, batch and sample information across all batches
@@ -188,7 +189,7 @@ def main():
             markers_representative = markers[markers_rep_int_mask]  # Reorder markers
             mat_subset_rep_markers = mat_subset_label[:, markers_rep_int_mask]
 
-            logging.info('\t\tStoring data in arrays')
+            logging.info('\t\tStoring data in separated arrays')
             mat_subset_rep_lst.append(mat_subset_rep_markers)  # Store slice matrix
             batches_label_lst.append(batches_label)  # Store batch information
             samples_label_lst.append(samples_label)  # Store sample information
@@ -277,9 +278,10 @@ def main():
     logging.info('Gathering results in annotation table')
 
     # Find maximum number of optimal combinations across all 'cell_labels'
-    logging.debug('\tDetermining total maximum number of optimal combinations')
+    logging.debug('\tDetermining maximum number of optimal combinations across all cell types')
     max_comb = max([len(annot_dict[label].keys()) for label in uniq_labels])
-    logging.debug(f"\t\tFound {max_comb} combination{'s' if max_comb > 1 else ''}")
+    str1 = 's' if max_comb > 1 else ''
+    logging.debug(f'\t\tFound {max_comb} combination{str1}')
 
     # Build list with all column names
     logging.debug('\tBuilding column names')
@@ -300,7 +302,7 @@ def main():
     # Fill annotation dataframe with results
     logging.info('\tFilling annotation table with analyses results')
     for label, is_label in zip(uniq_labels, is_label_lst):
-        logging.info(f"\t\tCreating result subtable for '{label}' annotations")
+        logging.info(f'\t\tCreating result table for <{label}> annotations')
 
         # Slice general results dictionary
         logging.debug('\t\t\tSelecting associated results')
@@ -309,7 +311,8 @@ def main():
         # Find number of optimal combinations for 'label' cells
         logging.info('\t\t\tDetermining maximum number of optimal combinations')
         label_nb_comb = list(sub_results.keys())
-        logging.info(f"\t\t\t\tFound {len(label_nb_comb)} combination{'s' if len(label_nb_comb) > 1 else ''}")
+        str1 = 's' if len(label_nb_comb) > 1 else ''
+        logging.info(f'\t\t\t\tFound {len(label_nb_comb)} combination{str1}')
 
         # Get number of cells
         logging.info('\t\t\tCounting cells')
@@ -318,7 +321,7 @@ def main():
         logging.info(f'\t\t\t\tFound {cell_nb} cells')
 
         # Get column names
-        logging.debug('\t\t\tBuilding column names')
+        logging.debug('\t\t\tSelecting column names')
         end = (5 * len(label_nb_comb)) if knn_refine else (2 * len(label_nb_comb))
         col_names_sub = col_names[:end]
 
@@ -330,7 +333,7 @@ def main():
                                       dtype=object)
 
         # Create dataframe results for all optimal combinations of 'label'
-        logging.debug('\t\t\tFilling table')
+        logging.info('\t\t\tFilling table')
         for idx, comb_nb in enumerate(label_nb_comb):
             # Extract results
             sub_res_df = pd.DataFrame.from_dict(sub_results[comb_nb], orient='index').transpose()
@@ -340,8 +343,10 @@ def main():
             annot_df_label.iloc[:, start:(start + 5)] = sub_res_df
 
         # Fill general annotation dataframe with 'label' annotations
-        logging.info('\t\t\tIntegrating subtable to general annotation table')
+        logging.info(f'\t\tIntegrating <{label}> annotations to general table')
         annot_df.iloc[is_label, :end] = annot_df_label.copy(deep=True)
+
+    logging.info('\t\tAll annotations gathered in general table')
 
     # Merge input dataframe and annotation dataframe
     logging.info('\tMerging input data and annotation table')
@@ -352,11 +357,11 @@ def main():
     # Create output directory if not empty and missing
     output_dir = os.path.dirname(output_path)
     if output_dir and not os.path.exists(output_dir):
-        logging.debug(f"Creating output directory '{output_dir}'")
+        logging.debug(f'Creating output directory <{output_dir}>')
         os.makedirs(output_dir, exist_ok=True)
 
     # Save general table with annotations and phenotypes
-    logging.info(f"Saving final table to '{output_path}'")
+    logging.info(f'Saving final table to <{output_path}>')
     output_table.to_csv(output_path, sep='\t', header=True, index=True)
 
 

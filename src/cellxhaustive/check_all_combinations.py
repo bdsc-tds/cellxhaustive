@@ -57,7 +57,7 @@ def get_poss_comb(marker_counter, markers_representative, markers_interest):
 
 
 # Function used in check_all_combinations()
-def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
+def evaluate_comb(idx, comb, cell_name, mat_representative, batches_label, samples_label,
                   markers_representative, two_peak_threshold, three_peak_markers,
                   three_peak_low, three_peak_high,
                   x_samplesxbatch_space, y_cellxsample_space):
@@ -74,6 +74,9 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
 
     comb: tuple(str)
       Tuple of strings with marker combination to score.
+
+    cell_name: str
+      Base name for cell types (e.g. CD4 T-cells for 'CD4T').
 
     mat_representative: array(float)
       2-D numpy array expression matrix, with cells in D0 and markers in D1.
@@ -134,7 +137,8 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
       'max_x_values', and 'max_y_values'
     """
 
-    logging.debug(f"\t\t\t\tTesting ({', '.join(comb)})")
+    comb_name = ', '.join(comb)
+    logging.debug(f'\t\t\t{cell_name}: Testing ({comb_name})')
     # Slice data based on current marker combination 'comb'
     markers_mask = np.isin(markers_representative, np.asarray(comb))
     markers_comb = markers_representative[markers_mask]
@@ -145,8 +149,10 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
 
     # Find number of phenotypes and undefined cells for a given marker
     # combination 'comb' across 'samplesxbatch' and 'cellxsample' grid
-    logging.debug('\t\t\t\t\tScoring combination')
+    logging.debug(f'\t\t\t\t{cell_name} - ({comb_name}): Scoring combination')
     nb_phntp, nb_undef_cells = score_marker_combinations(
+        cell_name=cell_name,
+        comb_name=comb_name,
         mat_comb=mat_comb,
         batches_label=batches_label,
         samples_label=samples_label,
@@ -159,7 +165,7 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
         y_cellxsample_space=y_cellxsample_space)
 
     # Constrain matrix given minimum number of phenotype conditions
-    logging.debug('\t\t\t\t\tChecking presence of possible solutions')
+    logging.debug(f'\t\t\t\t{cell_name} - ({comb_name}): Checking presence of possible solutions')
     mask = (nb_phntp < 3)
     nb_phntp = np.where(mask, np.nan, nb_phntp)
     nb_undef_cells = np.where(mask, np.nan, nb_undef_cells)
@@ -208,7 +214,7 @@ def evaluate_comb(idx, comb, mat_representative, batches_label, samples_label,
 
 
 # Function used in identify_phenotypes.py
-def check_all_combinations(mat_representative, batches_label, samples_label,
+def check_all_combinations(cell_name, mat_representative, batches_label, samples_label,
                            markers_representative, markers_interest,
                            detection_method, two_peak_threshold,
                            three_peak_markers, three_peak_low, three_peak_high,
@@ -221,6 +227,9 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
 
     Parameters:
     -----------
+    cell_name: str
+      Base name for cell types (e.g. CD4 T-cells for 'CD4T').
+
     mat_representative: array(float)
       2-D numpy array expression matrix, with cells in D0 and markers in D1.
       In other words, rows contain cells and columns contain markers. This
@@ -298,12 +307,12 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     """
 
     # Create total space for each metrics ('samplesxbatch' and 'cellxsample')
-    logging.info('\t\t\tCreating spaces for each test metric')
+    logging.info(f'\t\t{cell_name}: Creating spaces for each test metric')
     x_samplesxbatch_space = np.round(np.arange(min_samplesxbatch, 1.01, 0.01), 2)  # x-axis
     # Note: 'np.round()' is used to avoid floating point problem
     y_cellxsample_space = np.arange(min_cellxsample, 101)  # y-axis
 
-    logging.info('\t\t\tSetting start parameters from detection method and markers of interest')
+    logging.info(f'\t\t{cell_name}: Setting start parameters from detection method and markers of interest')
     # Split markers of interest from representative markers
     markers_rep_only = markers_representative[np.isin(markers_representative,
                                                       markers_interest,
@@ -318,7 +327,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
             marker_counter = 2
     else:  # Combinations with exactly 'detection_method' markers
         marker_counter = max_combination = detection_method
-    logging.info(f'\t\t\t\tSet marker_counter to {marker_counter} and max_combination to {max_combination}')
+    logging.info(f'\t\t\t{cell_name}: Set marker_counter to {marker_counter} and max_combination to {max_combination}')
 
     # Initialise counters and objects to store results. Note that by default, it
     # is assumed that minimum number of relevant markers is 2 (only 1 marker can
@@ -335,7 +344,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     # while loop if maximum number of markers is reached or if possible solution
     # using more markers are worse than current best. If loop isn't stopped, it
     # means scores can still be improved
-    logging.info('\t\t\tTesting all combinations')
+    logging.info(f'\t\t{cell_name}: Testing all combinations')
     while ((marker_counter <= max_combination)
            and (max_nb_phntp_tot < max_nb_phntp_marker)):
 
@@ -354,6 +363,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
             for idx, comb in zip(indices, poss_comb):
                 comb_result_dict = evaluate_comb(idx=idx,
                                                  comb=comb,
+                                                 cell_name=cell_name,
                                                  mat_representative=mat_representative,
                                                  batches_label=batches_label,
                                                  samples_label=samples_label,
@@ -367,6 +377,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                 score_results_lst.append(comb_result_dict)
         else:  # Use ProcessPool to parallelise combination testing
             score_results_lst = list(processpool.map(partial(evaluate_comb,
+                                                             cell_name=cell_name,
                                                              mat_representative=mat_representative,
                                                              batches_label=batches_label,
                                                              samples_label=samples_label,
@@ -433,6 +444,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
                 del score_max_phntp, score_min_undef, score_max_x, score_final
 
     # If no marker combination was found, stop now
+    logging.info(f'\t\t\t{cell_name}: All combinations checked')
     if len(best_nb_phntp) == 0:
         nb_solution = 0
         best_marker_comb = ()
@@ -441,7 +453,7 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     # If several possible marker combinations were found, further refine results
     # according to metrics previously defined: number of phenotypes, number of
     # undefined cells, x and y values
-    logging.info('\t\t\tRefining results to reduce number of possible combinations')
+    logging.info(f'\t\t{cell_name}: Refining results to reduce number of possible combinations')
 
     # Find combination(s) with maximum number of phenotypes
     max_phntp_idx = np.where(best_nb_phntp == np.max(best_nb_phntp))[0]
@@ -481,5 +493,6 @@ def check_all_combinations(mat_representative, batches_label, samples_label,
     # Keep remaining solution(s) that satisfied all previous conditions
     best_marker_comb = list(comb_dict.get(k)
                             for k in best_comb_idx[final_idx])
+    logging.info(f'\t\t\t{cell_name}: Finished cleaning results')
 
     return nb_solution, best_marker_comb

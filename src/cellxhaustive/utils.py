@@ -112,12 +112,15 @@ def get_repr_markers(markers_rep_batches, nb_batch):
                                   if markers_rep_batches.count(mk) == nb_batch])
 
     if len(markers_representative) > 0:  # 'markers_representative' contains markers
-        logging.info(f"\t\t\tFound {len(markers_representative)} markers: {', '.join(markers_representative)}")
+        mk_rep_str = ', '.join(markers_representative)
+        logging.info(f'\t\t\tFound {len(markers_representative)} markers: {mk_rep_str}')
         missing_markers = set([mk for mk in markers_rep_batches
                                if markers_rep_batches.count(mk) < nb_batch])
-        logging.info(f"\t\t\tFiltered out {len(missing_markers)} marker{'s' if len(missing_markers) > 1 else ''}: {', '.join(missing_markers)}")
+        str1 = 's' if len(missing_markers) > 1 else ''
+        missing_mk_str = ', '.join(missing_markers)
+        logging.info(f'\t\t\tFiltered out {len(missing_markers)} marker{str1}: {missing_mk_str}')
         return markers_representative, missing_markers, nb_batch
     else:  # No markers in 'markers_representative': retry with one less batch
         nb_batch -= 1
-        logging.info(f"\t\t\tNo markers found. Retrying with {nb_batch} batches")
+        logging.info(f'\t\t\tNo markers found. Retrying with {nb_batch} batches')
         markers_representative = get_repr_markers(markers_rep_batches, nb_batch)

@@ -16,17 +16,23 @@ from determine_marker_status import determine_marker_status  # AT. Double-check 
 
 
 # Function used in check_all_combinations.py
-def score_marker_combinations(mat_comb, batches_label, samples_label,
+def score_marker_combinations(cell_name, comb_name, mat_comb, batches_label, samples_label,
                               markers_comb, two_peak_threshold,
                               three_peak_markers, three_peak_low, three_peak_high,
                               x_samplesxbatch_space, y_cellxsample_space):
     """
-    Function that determines number of unique cell phenotypes (combination of
+    Function that determines number of unique cell phenotypes (combinations of
     positive and negative markers) and number of cells without phenotype in an
     expression matrix across different metrics thresholds.
 
     Parameters:
     -----------
+    cell_name: str
+      Base name for cell types (e.g. CD4 T-cells for 'CD4T').
+
+    comb_name: str
+      Combination name.
+
     mat_comb: array(float)
       2-D numpy array expression matrix, with cells in D0 and markers in D1.
       In other words, rows contain cells and columns contain markers. This
@@ -92,7 +98,7 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
     """
 
     # Determine markers status of 'markers_comb' using expression data
-    logging.debug('\t\t\t\t\t\tDetermining marker status for each cell')
+    logging.debug(f'\t\t\t\t\t{cell_name} - ({comb_name}): Determining marker status for each cell')
     phntp_per_cell = determine_marker_status(
         mat_comb=mat_comb,
         markers_comb=markers_comb,
@@ -107,7 +113,7 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
 
     # Process marker phenotypes returned by 'determine_marker_status()' and
     # check whether they are worth keeping
-    logging.debug('\t\t\t\t\t\tChecking which phenotypes are passing thresholds')
+    logging.debug(f'\t\t\t\t\t{cell_name} - ({comb_name}): Checking which phenotypes are passing thresholds')
     for phenotype in np.unique(phntp_per_cell):
 
         # Initialise temporary array to store 'phenotype' results
@@ -163,7 +169,7 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
         # Add number of undefined cells to counter
         nb_undef_cells += np.logical_not(keep_phenotype) * np.sum(phntp_per_cell == phenotype)
 
-    logging.debug('\t\t\t\t\t\tFinished check')
+    logging.debug(f'\t\t\t\t\t{cell_name} - ({comb_name}): Finished check')
 
     return nb_phntp, nb_undef_cells
     # Note: 'phntp_per_cell' is not returned to avoid memory cost of storing and
