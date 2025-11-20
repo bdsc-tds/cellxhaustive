@@ -144,10 +144,7 @@ def knn_classifier(
         f"{k}: {v}" for k, v in best_model.best_params_.items()
     )
     logging.info(
-        f"\t\t\t\t\t\t{cell_name} - ({best_comb_name}): Best parameters found: {best_model_str}"
-    )
-    logging.info(
-        f"\t\t\t\t\t\twith a max accuracy of: {best_model.best_score_:.3f}"
+        f"\t\t\t\t\t\t{cell_name} - ({best_comb_name}): Best parameters found: {best_model_str} with a max accuracy of: {best_model.best_score_:.3f}"
     )
 
     # Apply classifier to undefined cells

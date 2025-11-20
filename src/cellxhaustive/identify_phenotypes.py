@@ -210,7 +210,7 @@ def identify_phenotypes(
         str1 = "s" if nb_solution > 1 else ""
         str2 = "them" if nb_solution > 1 else "it"
         logging.info(
-            f"\t\t{cell_name}: Found {nb_solution} optimal combination{str1}, building new cell types on {str2}"
+            f"\t\t{cell_name}: Found {nb_solution} optimal combination{str1}, building new cell types from {str2}"
         )
         undef_counter = []
 
@@ -268,43 +268,41 @@ def identify_phenotypes(
                         phenotypes_batch == phenotype
                     ]
 
-                    # If there are no cells of type 'phenotype' in 'batch', that
-                    # means 'phenotype' cannot be present in all batches, so
-                    # stop now
+                    # If there are no 'phenotype' cells in 'batch', then it
+                    # cannot be present in all batches, so stop now and don't
+                    # keep this phenotype
                     if phenotype_samples.size == 0:
                         keep_phenotype = False
                         break
 
-                    # Calculate number of unique samples in current batch
-                    # and cell type
+                    # Calculate number of unique samples in current batch and
+                    # phenotype
                     samples_nb = float(len(np.unique(phenotype_samples)))
 
                     # Count number of cells per phenotype in each sample
-                    cell_count_sample = np.asarray([
+                    cell_count_samples = np.asarray([
                         np.sum(phenotype_samples == smpl)
                         for smpl in np.unique(phenotype_samples)
                     ])
 
                     # Check whether counts satisfy cell/sample threshold
-                    keep_phenotype_batch = cell_count_sample >= min_cellxsample
+                    cell_sample_bool = cell_count_samples >= min_cellxsample
 
                     # Calculate proportion of samples in current batch
                     # satisfying cell/sample threshold
-                    keep_phenotype_batch = (
-                        np.sum(keep_phenotype_batch, axis=0) / samples_nb
-                    )
-                    # Note: 'keep_phenotype_batch' is a boolean array, so it can
+                    sample_batch_prop = np.sum(cell_sample_bool) / samples_nb
+                    # Note: 'cell_sample_bool' is a boolean array, so it can
                     # be summed
 
                     # Check whether proportion satisfies sample/batch threshold
                     keep_phenotype_batch = (
-                        keep_phenotype_batch >= min_samplesxbatch
+                        sample_batch_prop >= min_samplesxbatch
                     )
 
                     # Intersect batch results with general results
                     keep_phenotype = keep_phenotype and keep_phenotype_batch
-                    # Note: for consistency, phenotypes have to be present in
-                    # all batches, hence usage of 'and'
+                    # Note: phenotypes should be present in all batches for
+                    # consistency
 
                 # If 'phenotype' is 'significant', keep it
                 if keep_phenotype:
@@ -439,9 +437,7 @@ def identify_phenotypes(
                         for key in list(results_dict.keys()):
                             # Keep only indices with minimum undefined cells
                             if key not in min_undef_idx:
-                                del results_dict[
-                                    key
-                                ]
+                                del results_dict[key]
                         logging.info(
                             f"\t\t\t\t\tFound {len(results_dict)} optimal combination{str1}"
                         )

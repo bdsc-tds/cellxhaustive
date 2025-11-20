@@ -75,8 +75,8 @@ def evaluate_comb(
     three_peak_markers,
     three_peak_low,
     three_peak_high,
-    x_samplesxbatch_space,
-    y_cellxsample_space,
+    min_samplesxbatch,
+    min_cellxsample,
 ):
     """
     Function that scores a marker combination and checks whether it contains
@@ -131,27 +131,27 @@ def evaluate_comb(
       will be considered positive. Expression between 'three_peak_low' and
       'three_peak_high' means marker will be considered low_positive.
 
-    x_samplesxbatch_space: array(float) (default=[0.5, 0.6, 0.7, ..., 1])
+    min_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least
-      'y_cellxsample_space' cells for a new annotation to be considered. In
-      other words, by default, an annotation needs to be assigned to at least
-      10, 20... 100 cells/sample (see description of next parameter) in at least
-      50%, 60%... 100% of samples within a batch to be considered.
+      'min_cellxsample' cells for a new annotation to be considered. In other
+      words, by default, an annotation needs to be assigned to at least 10
+      cells/sample (see description of next parameter) in at least 50% of
+      samples within a batch to be considered.
 
-    y_cellxsample_space: array(float) (default=[10, 20, 30, ..., 100])
-      Minimum number of cells within each sample in 'x_samplesxbatch_space' % of
+    min_cellxsample: float (default=10)
+      Minimum number of cells within each sample in 'min_samplesxbatch' % of
       samples within each batch for a new annotation to be considered. In other
-      words, by default, an annotation needs to be assigned to at least 10, 20..
-      100 cells/sample in at least 50%, 60%... 100% of samples (see description
-      of previous parameter) within a batch to be considered.
+      words, by default, an annotation needs to be assigned to at least 10
+      cells/sample in at least 50% of samples (see description of previous
+      parameter) within a batch to be considered.
 
     Returns:
     --------
     comb_result_dict: dict({str: obj})
-      Dictionary with 1 or 6 key-value pairs. If no relevant solution was found,
+      Dictionary with 1 or 4 key-value pairs. If no relevant solution was found,
       dictionary will have following structure {'idx': None}. If relevant
-      solution(s) was(were) found, keys will be 'idx', 'comb', 'max_nb_phntp',
-      'min_undefined', 'max_x_values', and 'max_y_values'
+      solution(s) was(were) found, keys will be 'idx', 'comb', 'nb_phntp', and
+      'nb_undef_cells'.
     """
 
     comb_name = ", ".join(comb)
@@ -178,59 +178,30 @@ def evaluate_comb(
         three_peak_markers=three_peak_markers,
         three_peak_low=three_peak_low,
         three_peak_high=three_peak_high,
-        x_samplesxbatch_space=x_samplesxbatch_space,
-        y_cellxsample_space=y_cellxsample_space,
+        min_samplesxbatch=min_samplesxbatch,
+        min_cellxsample=min_cellxsample,
     )
 
-    # Constrain matrix given minimum number of phenotype conditions
+    # Further check combination and normalise number of phenotype for
+    # three-peaks markers
     logging.debug(
-        f"\t\t\t\t{cell_name} - ({comb_name}): Checking presence of possible solutions"
+        f"\t\t\t\t{cell_name} - ({comb_name}): Normalising combination score"
     )
-    mask = nb_phntp < 3
-    nb_phntp = np.where(mask, np.nan, nb_phntp)
-    nb_undef_cells = np.where(mask, np.nan, nb_undef_cells)
-
-    # If there are possible good solutions, further process them
-    if np.any(np.isfinite(nb_phntp)):
-        # Create metrics grid matching x and y space
-        x_values, y_values = np.meshgrid(
-            x_samplesxbatch_space, y_cellxsample_space, indexing="ij"
-        )
-
-        # Constrain grid
-        x_values = np.where(mask, np.nan, x_values)
-        y_values = np.where(mask, np.nan, y_values)
-
-        # Best solution has maximum number of new phenotypes...
-        max_nb_phntp = np.nanmax(nb_phntp)
-        nb_undef_cells[nb_phntp != max_nb_phntp] = np.nan
-
-        # ... and minimum number of undefined cells...
-        min_undefined = np.nanmin(nb_undef_cells)
-        x_values[nb_undef_cells != min_undefined] = np.nan
-
-        # ... and maximum percentage within batch
-        max_x_values = np.nanmax(x_values)
-        y_values[x_values != max_x_values] = np.nan
-
-        # ... and maximum cells per sample
-        max_y_values = np.nanmax(y_values)
-
+    # Check whether combination satisfies minimum number of phenotype threshold
+    if nb_phntp < 3:
+        # Not enough phenotypes, so return None to facilitate post-processing
+        comb_result_dict = {"idx": None}
+    else:
         # Normalise given number of three peaks markers
-        max_nb_phntp = np.round(max_nb_phntp * ((2 / 3) ** nb_three))
+        nb_phntp = np.round(nb_phntp * ((2 / 3) ** nb_three))
 
         # Gather all results in dict
         comb_result_dict = {
             "idx": idx,
             "comb": comb,
-            "max_nb_phntp": max_nb_phntp,
-            "min_undefined": min_undefined,
-            "max_x_values": max_x_values,
-            "max_y_values": max_y_values,
+            "nb_phntp": nb_phntp,
+            "nb_undef_cells": nb_undef_cells,
         }
-
-    else:  # No good solution, so return None to facilitate post-processing
-        comb_result_dict = {"idx": None}
 
     return comb_result_dict
 
@@ -336,19 +307,11 @@ def check_all_combinations(
       Number of optimal combinations found when checking and comparing all
       possible marker combinations.
 
-    best_marker_comb: tuple(str) or list(tuple(str))
-      Tuple of strings or list of tuples of strings with optimal combinations
+    best_marker_comb: tuple() or list(tuple(str))
+      Empty tuple or list of tuple(s) of strings with optimal combination(s)
       found during comparison process. Each tuple contains one combination.
       Number of tuples in 'best_marker_comb' is equal to 'nb_solution'.
     """
-
-    # Create total space for each metrics ('samplesxbatch' and 'cellxsample')
-    logging.info(f"\t\t{cell_name}: Creating spaces for each test metric")
-    x_samplesxbatch_space = np.round(
-        np.arange(min_samplesxbatch, 1.01, 0.01), 2
-    )  # x-axis
-    # Note: 'np.round()' is used to avoid floating point problem
-    y_cellxsample_space = np.arange(min_cellxsample, 101)  # y-axis
 
     logging.info(
         f"\t\t{cell_name}: Setting start parameters from detection method and markers of interest"
@@ -362,10 +325,10 @@ def check_all_combinations(
         max_combination = min(max_markers, len(markers_rep_only))
         if len(markers_interest) > 0:  # With markers of interest
             marker_counter = len(markers_interest)
-            max_combination += len(
-                markers_interest
-            )  # Account for markers of interest
-        else:  # Without markers of interest
+            # Account for markers of interest
+            max_combination += len(markers_interest)
+        else:
+            # Without markers of interest
             marker_counter = 2
     else:  # Combinations with exactly 'detection_method' markers
         marker_counter = max_combination = detection_method
@@ -374,14 +337,14 @@ def check_all_combinations(
     )
 
     # Initialise counters and objects to store results. Note that by default, it
-    # is assumed that minimum number of relevant markers is 2 (only 1 marker can
-    # not define a phenotype)
+    # is assumed that minimum number of relevant markers is 2 (a single marker
+    # cannot define a phenotype)
     enum_start = 0
     max_nb_phntp_marker = 0
     max_nb_phntp_tot = -1
     comb_dict = {}
 
-    # Empty arrays to store results and find best marker combinations
+    # Empty array to store results and find best marker combinations
     best_nb_phntp = np.empty(0)
 
     # Go through all combinations until no better solution can be found: stop
@@ -419,8 +382,8 @@ def check_all_combinations(
                     three_peak_markers=three_peak_markers,
                     three_peak_low=three_peak_low,
                     three_peak_high=three_peak_high,
-                    x_samplesxbatch_space=x_samplesxbatch_space,
-                    y_cellxsample_space=y_cellxsample_space,
+                    min_samplesxbatch=min_samplesxbatch,
+                    min_cellxsample=min_cellxsample,
                 )
                 score_results_lst.append(comb_result_dict)
         else:  # Use ProcessPool to parallelise combination testing
@@ -437,15 +400,15 @@ def check_all_combinations(
                         three_peak_markers=three_peak_markers,
                         three_peak_low=three_peak_low,
                         three_peak_high=three_peak_high,
-                        x_samplesxbatch_space=x_samplesxbatch_space,
-                        y_cellxsample_space=y_cellxsample_space,
+                        min_samplesxbatch=min_samplesxbatch,
+                        min_cellxsample=min_cellxsample,
                     ),
                     indices,
                     poss_comb,
                 )
             )
-            # Note: 'partial()' is used to iterate over 'indices' and 'poss_comb'
-            # and keep other parameters constant
+            # Note: 'partial()' is used to iterate over 'indices' and
+            # 'poss_comb' and keep other parameters constant
 
         # Remove combinations without solution and turn list into dict using
         # combination indices as keys
@@ -462,149 +425,103 @@ def check_all_combinations(
         enum_start += len(poss_comb)
 
         # Post-process results
-        if (
-            len(score_results_dict) == 0
-        ):  # No combination is relevant, skip to next iteration
-            max_nb_phntp_marker = (
-                0  # Re-initialise counter of maximum number of phenotype
-            )
+        if len(score_results_dict) == 0:
+            # No combination is relevant, so re-initialise counter of maximum
+            # number of phenotype and skip to next iteration
+            max_nb_phntp_marker = 0
             continue
         else:  # At least one combination is relevant
             # Get maximum number of phenotypes with 'marker_counter' markers
             max_nb_phntp_marker = max(
-                dct["max_nb_phntp"] for dct in score_results_dict.values()
+                dct["nb_phntp"] for dct in score_results_dict.values()
             )
 
             # Only process better results: if 'm' and 'm + 1' markers give same
             # number of phenotypes, keep only solutions with 'm' markers
             if max_nb_phntp_marker > max_nb_phntp_tot:
-                # Filter out combinations not reaching maximum number of phenotype
+                # Filter out combinations not reaching maximum number of
+                # phenotype
                 score_max_phntp = {
-                    indx: v
-                    for indx, v in score_results_dict.items()
-                    if v["max_nb_phntp"] == max_nb_phntp_marker
+                    indx: val
+                    for indx, val in score_results_dict.items()
+                    if val["nb_phntp"] == max_nb_phntp_marker
                 }
 
-                # Filter out combinations not reaching minimum number of undefined cells
-                min_nb_undef = max(
-                    dct["min_undefined"] for dct in score_max_phntp.values()
+                # Get minimum number of undefined cells
+                min_nb_undef = min(
+                    dct["nb_undef_cells"] for dct in score_max_phntp.values()
                 )
-                score_min_undef = {
-                    indx: v
-                    for indx, v in score_max_phntp.items()
-                    if v["min_undefined"] == min_nb_undef
-                }
-
-                # Filter out combinations not reaching maximum samplesxbatch
-                max_x_val = max(
-                    dct["max_x_values"] for dct in score_min_undef.values()
-                )
-                score_max_x = {
-                    indx: v
-                    for indx, v in score_min_undef.items()
-                    if v["max_x_values"] == max_x_val
-                }
-
-                # Filter out combinations not reaching maximum cellxsample
-                max_y_val = max(
-                    dct["max_y_values"] for dct in score_max_x.values()
-                )
-                score_final = {
-                    indx: v
-                    for indx, v in score_max_x.items()
-                    if v["max_y_values"] == max_y_val
+                # Filter out combinations not reaching minimum number of
+                # undefined cells
+                final_score = {
+                    indx: val
+                    for indx, val in score_max_phntp.items()
+                    if val["nb_undef_cells"] == min_nb_undef
                 }
 
                 # Save best results in general dictionaries and arrays
-                comb_dict = {indx: v["comb"] for indx, v in score_final.items()}
-                best_comb_idx = np.fromiter(score_final.keys(), dtype=int)
+                comb_dict = {indx: v["comb"] for indx, v in final_score.items()}
+                best_comb_idx = np.fromiter(final_score.keys(), dtype=int)
                 best_nb_phntp = np.fromiter(
-                    (d["max_nb_phntp"] for d in score_final.values()),
+                    (dct["nb_phntp"] for dct in final_score.values()),
                     dtype=float,
                 )
                 best_nb_undefined = np.fromiter(
-                    (d["min_undefined"] for d in score_final.values()),
-                    dtype=float,
-                )
-                best_x_values = np.fromiter(
-                    (d["max_x_values"] for d in score_final.values()),
-                    dtype=float,
-                )
-                best_y_values = np.fromiter(
-                    (d["max_y_values"] for d in score_final.values()),
+                    (dct["nb_undef_cells"] for dct in final_score.values()),
                     dtype=float,
                 )
 
                 # Free memory by deleting heavy objects
-                del score_max_phntp, score_min_undef, score_max_x, score_final
+                del score_max_phntp, final_score
 
-    # If no marker combination was found, stop now
     logging.info(f"\t\t\t{cell_name}: All combinations checked")
-    if len(best_nb_phntp) == 0:
+
+    # Final post-processing of best results
+    if len(best_comb_idx) == 0:
+        # No marker combination was found, stop now
+        logging.info(f"\t\t{cell_name}: No optimal marker combination found")
         nb_solution = 0
         best_marker_comb = ()
-        return nb_solution, best_marker_comb
+    elif len(best_comb_idx) == 1:
+        # Only one combination, no need to further filter results
+        logging.info(f"\t\t{cell_name}: 1 optimal marker combination found")
+        nb_solution = 1
+        best_marker_comb = list(comb_dict.values())
+    else:
+        # Several combinations, further filter results according to number of
+        # phenotypes and number of undefined cells
+        logging.info(
+            f"\t\t{cell_name}: {len(best_comb_idx)} optimal marker combination found"
+        )
+        logging.info(
+            f"\t\t\t{cell_name}: Filtering results to reduce number of combinations"
+        )
+        # Find combination(s) with maximum number of phenotypes
+        max_phntp_idx = np.where(best_nb_phntp == np.max(best_nb_phntp))[0]
+        final_idx = max_phntp_idx  # Store final indices
 
-    # If several possible marker combinations were found, further refine results
-    # according to metrics previously defined: number of phenotypes, number of
-    # undefined cells, x and y values
-    logging.info(
-        f"\t\t{cell_name}: Refining results to reduce number of possible combinations"
-    )
+        # If several combinations are still available, filter with number of
+        # undefined cells
+        if len(final_idx) > 1:
+            # Subset arrays to keep combination(s) with maximum number of
+            # phenotypes
+            best_comb_idx = best_comb_idx[max_phntp_idx]
+            best_nb_undefined = best_nb_undefined[max_phntp_idx]
 
-    # Find combination(s) with maximum number of phenotypes
-    max_phntp_idx = np.where(best_nb_phntp == np.max(best_nb_phntp))[0]
-    final_idx = max_phntp_idx
+            # Find combination(s) with minimum number of undefined cells
+            min_undefined_idx = np.where(
+                best_nb_undefined == np.min(best_nb_undefined)
+            )[0]
+            final_idx = min_undefined_idx  # Update final indices
 
-    # Most likely only one solution, but it will be updated if there are more
-    nb_solution = 1
-
-    # Further refine results according to number of phntp
-    if (
-        len(max_phntp_idx) > 1
-    ):  # Several combinations with maximum number of phenotypes
-        # Subset arrays to keep combination(s) with maximum number of phenotypes
-        best_comb_idx = best_comb_idx[max_phntp_idx]
-        best_nb_undefined = best_nb_undefined[max_phntp_idx]
-        # Find combination(s) with minimum number of undefined cells
-        min_undefined_idx = np.where(
-            best_nb_undefined == np.min(best_nb_undefined)
-        )[0]
-        final_idx = min_undefined_idx  # Store new final indices
-
-        # Further refine results according to number of undefined cells
-        if (
-            len(min_undefined_idx) > 1
-        ):  # Several combinations with minimum number of undefined cells
-            # Subset arrays to keep combination(s) with minimum number of undefined cells
-            best_comb_idx = best_comb_idx[min_undefined_idx]
-            best_x_values = best_x_values[max_phntp_idx][min_undefined_idx]
-            # Find combination(s) with maximum x value
-            max_xvalues_idx = np.where(best_x_values == np.max(best_x_values))[
-                0
-            ]
-            final_idx = max_xvalues_idx  # Store new final indices
-
-            # Further refine results according to x value
-            if (
-                len(max_xvalues_idx) > 1
-            ):  # Several combinations with maximum x value
-                # Subset arrays to keep combination(s) with maximum x value
-                best_comb_idx = best_comb_idx[max_xvalues_idx]
-                best_y_values = best_y_values[max_phntp_idx][min_undefined_idx][
-                    max_xvalues_idx
-                ]
-                # Find combination(s) with maximum y value
-                max_yvalues_idx = np.where(
-                    best_y_values == np.max(best_y_values)
-                )[0]
-                final_idx = max_yvalues_idx  # Store new final indices
-                nb_solution = len(
-                    max_yvalues_idx
-                )  # If number of solution is still not 1
-
-    # Keep remaining solution(s) that satisfied all previous conditions
-    best_marker_comb = list(comb_dict.get(k) for k in best_comb_idx[final_idx])
-    logging.info(f"\t\t\t{cell_name}: Finished cleaning results")
+        # Final results: remaining solution(s) that satisfied all conditions
+        nb_solution = len(final_idx)  # Can be 1 or more
+        best_marker_comb = list(
+            comb_dict.get(k) for k in best_comb_idx[final_idx]
+        )
+        str1 = "s" if nb_solution > 1 else ""
+        logging.info(
+            f"\t\t\t{cell_name}: {nb_solution} combination{str1} found"
+        )
 
     return nb_solution, best_marker_comb
