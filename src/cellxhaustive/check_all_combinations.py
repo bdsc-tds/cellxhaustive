@@ -339,13 +339,12 @@ def check_all_combinations(
     # Initialise counters and objects to store results. Note that by default, it
     # is assumed that minimum number of relevant markers is 2 (a single marker
     # cannot define a phenotype)
-    enum_start = 0
-    max_nb_phntp_marker = 0
-    max_nb_phntp_tot = -1
-    comb_dict = {}
-
-    # Empty array to store results and find best marker combinations
-    best_nb_phntp = np.empty(0)
+    enum_start = 0  # Combination enumeration start index
+    max_nb_phntp_marker = 0  # Maximum nb of phenotypes for specific comb length
+    max_nb_phntp_tot = -1  # Overall maximum number of phenotypes
+    comb_dict = {}  # Dictionary to store best combinations
+    best_comb_idx = np.empty(0)  # Indices of best marker combinations
+    # Note: also used to avoid crashes when no combination is found
 
     # Go through all combinations until no better solution can be found: stop
     # while loop if maximum number of markers is reached or if possible solution
