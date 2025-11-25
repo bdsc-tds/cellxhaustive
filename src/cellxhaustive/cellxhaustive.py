@@ -454,6 +454,7 @@ def main():
     # Save general table with annotations and phenotypes
     logging.info(f"Saving final table to <{output_path}>")
     output_table.to_csv(output_path, sep="\t", header=True, index=True)
+    logging.info("Done")
 
 
 # Script execution

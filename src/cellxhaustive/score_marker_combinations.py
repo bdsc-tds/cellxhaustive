@@ -7,6 +7,8 @@ matrix across different metrics thresholds.
 # Import utility modules
 import logging
 import numpy as np
+import pandas as pd
+from scipy.sparse import csr_matrix
 
 
 # Import local functions
@@ -124,56 +126,84 @@ def score_marker_combinations(
     logging.debug(
         f"\t\t\t\t\t{cell_name} - ({comb_name}): Checking which phenotypes are passing thresholds"
     )
-    for phenotype in np.unique(phntp_per_cell):
-        # Initialise boolean marker deciding whether to keep 'phenotype'
-        keep_phenotype = True
 
-        # Process batches separately
-        for batch in np.unique(batches_label):
-            # Split phenotype data according to batch
-            phenotype_batches = phntp_per_cell[batches_label == batch]
+    # Create categorical integer codes for faster operations
+    # Note: map strings to integers "phenotype0" -> 0, "phenotype1" -> 1...
+    # phntp_cat.codes = array of integers
+    # phntp_cat.categories = array of original strings
+    phntp_cat = pd.Categorical(phntp_per_cell)
+    batch_cat = pd.Categorical(batches_label)
+    sample_cat = pd.Categorical(samples_label)
 
-            # Split sample data, first according to batch and then phenotype
-            phenotype_samples = samples_label[batches_label == batch][
-                phenotype_batches == phenotype
-            ]
+    # Create sparse matrix with number of cells for each phenotype/sample pair
+    # with the following structure:
+    # - Shape: (nb_phenotypes, nb_samples)
+    # - Rows: phenotypes
+    # - Columns: samples
+    # - phenotype_sample_mtx[phenotype_code, sample_code] = number of cells
+    # Example: if cell 0 is phenotype 5 in sample 3, add 1 to mtx[5, 3]
+    phenotype_sample_mtx = csr_matrix(
+        (np.ones(len(phntp_per_cell)), (phntp_cat.codes, sample_cat.codes)),
+        shape=(len(phntp_cat.categories), len(sample_cat.categories)),
+    )
 
-            # If there are no 'phenotype' cells in 'batch', then it cannot be
-            # present in all batches, so stop now and don't keep this phenotype
-            if phenotype_samples.size == 0:
-                keep_phenotype = False
-                break
+    # Map samples to batches
+    # Example: {0: 0, 1: 0, 2: 1, ...} means samples 0, 1 are in batch 0
+    sample_to_batch_map = (
+        pd.Series(batch_cat.codes, index=sample_cat.codes)
+        .groupby(level=0)
+        .first()
+    )
 
-            # Calculate number of unique samples in current batch and phenotype
-            samples_nb = float(len(np.unique(phenotype_samples)))
+    # Initialise array to store 'phenotype' results
+    keep_phenotypes = np.ones(len(phntp_cat.categories), dtype=bool)
 
-            # Count number of cells per phenotype in each sample
-            cell_count_samples = np.asarray([
-                np.sum(phenotype_samples == smpl)
-                for smpl in np.unique(phenotype_samples)
-            ])
+    # Loop through batches
+    for batch_idx in range(len(batch_cat.categories)):
+        # Get all sample indices for current batch
+        samples_in_batch = sample_to_batch_map[
+            sample_to_batch_map == batch_idx
+        ].index.values
 
-            # Check whether counts satisfy cell/sample threshold
-            cell_sample_bool = cell_count_samples >= min_cellxsample
+        # Slice matrix according to batch: keep all phenotypes (rows) but only
+        # samples present in current batch (cols)
+        batch_matrix = phenotype_sample_mtx[:, samples_in_batch]
 
-            # Calculate proportion of samples in current batch satisfying
-            # cell/sample threshold
-            sample_batch_prop = np.sum(cell_sample_bool) / samples_nb
-            # Note: 'cell_sample_bool' is a boolean array, so it can be summed
+        # Loop through phenotypes and decide whether to keep them
+        for phntp_idx in np.where(keep_phenotypes)[0]:
+            # Get current phenotype counts across all samples in current batch
+            # Note: .toarray() converts sparse to dense, .ravel() flattens to 1D
+            # Example: [0, 5, 12] means 5 cells in sample 1, 12 in sample 2...
+            cell_count_phntp_batch = batch_matrix[phntp_idx].toarray().ravel()
 
-            # Check whether proportion satisfies sample/batch threshold
-            keep_phenotype_batch = sample_batch_prop >= min_samplesxbatch
+            # If there are no 'phenotype' cells in 'batch', that means it cannot
+            # be present in all batches, so skip rest of checks
+            if cell_count_phntp_batch.sum() == 0:
+                keep_phenotypes[phntp_idx] = False
+                continue
 
-            # Intersect batch results with general results
-            keep_phenotype = keep_phenotype and keep_phenotype_batch
-            # Note: phenotypes should be present in all batches for consistency
+            # Count how many samples satisfy cell/sample threshold
+            samples_above_threshold = np.sum(
+                cell_count_phntp_batch >= min_cellxsample
+            )
 
-        # If 'phenotype' is kept, increase phenotype counter
-        if keep_phenotype:
-            nb_phntp += 1
-        else:
-            # If 'phenotype' is rejected, increase undefined cells counter
-            nb_undef_cells += np.sum(phntp_per_cell == phenotype)
+            # Count how many samples have any cells of this phenotype
+            samples_in_batch_total = np.sum(cell_count_phntp_batch > 0)
+
+            # Proportion of (samples with phenotype) that meet threshold
+
+            # Calculate proportion of sample/batch passing cell/sample threshold
+            sample_batch_prop = samples_above_threshold / samples_in_batch_total
+
+            # If proportion is below threshold, discard phenotype
+            if sample_batch_prop < min_samplesxbatch:
+                keep_phenotypes[phntp_idx] = False
+
+    # Count total number of phenotypes and undefined cells
+    nb_phntp = np.sum(keep_phenotypes)
+    nb_undef_cells = np.sum(
+        np.isin(phntp_cat.codes, np.where(~keep_phenotypes)[0])
+    )
 
     logging.debug(f"\t\t\t\t\t{cell_name} - ({comb_name}): Finished check")
 
