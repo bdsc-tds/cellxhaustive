@@ -49,9 +49,8 @@ def get_poss_comb(marker_counter, markers_representative, markers_interest):
             markers_representative, missing_counter
         )
         # Append combinations of representative markers to markers of interest
-        poss_comb = [
-            tuple(markers_interest) + cb for cb in complementation_comb
-        ]
+        markers_interest_tuple = tuple(markers_interest)
+        poss_comb = [markers_interest_tuple + cb for cb in complementation_comb]
     else:  # Without markers of interest
         # Generate combinations of 'marker_counter' representative markers
         poss_comb = list(
