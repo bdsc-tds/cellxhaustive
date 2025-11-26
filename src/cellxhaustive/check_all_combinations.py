@@ -111,7 +111,7 @@ def evaluate_comb(
       1-D numpy array with markers matching each column of 'mat_representative'.
 
     two_peak_threshold: float (default=3)
-      Threshold to consider when determining whether a two-peaks marker is
+      Threshold to consider when determining whether a two peaks marker is
       negative or positive. Expression below this threshold means marker will be
       considered negative. Conversely, expression above this threshold means
       marker will be considered positive.
@@ -120,13 +120,13 @@ def evaluate_comb(
       List of markers that have three peaks.
 
     three_peak_low: float (default=2)
-      Threshold to consider when determining whether a three-peaks marker is
+      Threshold to consider when determining whether a three peaks marker is
       negative or low positive. Expression below this threshold means marker
       will be considered negative. See description of 'three_peak_high' for
       more information on low_positive markers.
 
     three_peak_high: float (default=4)
-      Threshold to consider when determining whether a three-peaks marker is
+      Threshold to consider when determining whether a three peaks marker is
       low_positive or positive. Expression above this threshold means marker
       will be considered positive. Expression between 'three_peak_low' and
       'three_peak_high' means marker will be considered low_positive.
@@ -183,7 +183,7 @@ def evaluate_comb(
     )
 
     # Further check combination and normalise number of phenotype for
-    # three-peaks markers
+    # three peaks markers
     logging.debug(
         f"\t\t\t\t{cell_name} - ({comb_name}): Normalising combination score"
     )
@@ -260,7 +260,7 @@ def check_all_combinations(
       a combination with exactly this number of markers.
 
     two_peak_threshold: float (default=3)
-      Threshold to consider when determining whether a two-peaks marker is
+      Threshold to consider when determining whether a two peaks marker is
       negative or positive. Expression below this threshold means marker will be
       considered negative. Conversely, expression above this threshold means
       marker will be considered positive.
@@ -269,13 +269,13 @@ def check_all_combinations(
       List of markers that have three peaks.
 
     three_peak_low: float (default=2)
-      Threshold to consider when determining whether a three-peaks marker is
+      Threshold to consider when determining whether a three peaks marker is
       negative or low positive. Expression below this threshold means marker
       will be considered negative. See description of 'three_peak_high' for
       more information on low_positive markers.
 
     three_peak_high: float (default=4)
-      Threshold to consider when determining whether a three-peaks marker is
+      Threshold to consider when determining whether a three peaks marker is
       low_positive or positive. Expression above this threshold means marker
       will be considered positive. Expression between 'three_peak_low' and
       'three_peak_high' means marker will be considered low_positive.

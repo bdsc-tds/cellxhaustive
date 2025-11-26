@@ -60,7 +60,7 @@ def score_marker_combinations(
       1-D numpy array with markers matching each column of 'mat_comb'.
 
     two_peak_threshold: float (default=3)
-      Threshold to consider when determining whether a two-peaks marker is
+      Threshold to consider when determining whether a two peaks marker is
       negative or positive. Expression below this threshold means marker will be
       considered negative. Conversely, expression above this threshold means
       marker will be considered positive.
@@ -69,13 +69,13 @@ def score_marker_combinations(
       List of markers that have three peaks.
 
     three_peak_low: float (default=2)
-      Threshold to consider when determining whether a three-peaks marker is
+      Threshold to consider when determining whether a three peaks marker is
       negative or low positive. Expression below this threshold means marker
       will be considered negative. See description of 'three_peak_high' for
       more information on low_positive markers.
 
     three_peak_high: float (default=4)
-      Threshold to consider when determining whether a three-peaks marker is
+      Threshold to consider when determining whether a three peaks marker is
       low_positive or positive. Expression above this threshold means marker
       will be considered positive. Expression between 'three_peak_low' and
       'three_peak_high' means marker will be considered low_positive.
