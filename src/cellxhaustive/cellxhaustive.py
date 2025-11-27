@@ -92,9 +92,6 @@ def main():
     two_peak_threshold = args_dict["two_peak_threshold"]
     uniq_labels = args_dict["uniq_labels"]
 
-    # Get multiple population status
-    multipop = False if len(uniq_labels) == 1 else True
-
     # Get list of arrays describing cells matching each cell type of
     # 'uniq_labels'
     is_label_lst = [(cell_labels == label) for label in uniq_labels]
@@ -310,7 +307,7 @@ def main():
                 min_cellxsample=min_cellxsample,
                 knn_refine=knn_refine,
                 knn_min_probability=knn_min_probability,
-                multipop=multipop,
+                nb_cpu_id=nb_cpu_id,
                 processpool=processpool,
             )
             annot_results_lst.append(results_dict)
@@ -331,7 +328,7 @@ def main():
                         min_cellxsample=min_cellxsample,
                         knn_refine=knn_refine,
                         knn_min_probability=knn_min_probability,
-                        multipop=multipop,
+                        nb_cpu_id=nb_cpu_id,
                         processpool=processpool,
                     ),
                     uniq_labels,

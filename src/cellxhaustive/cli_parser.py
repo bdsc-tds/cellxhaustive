@@ -10,7 +10,7 @@ import os
 import pandas as pd
 import sys
 import yaml
-from math import floor
+from math import ceil
 from importlib import resources as imp_resources
 
 
@@ -684,25 +684,12 @@ def validate_cli(args):
         nb_cpu_id = nb_cpu_eval = 1
     else:  # Parallelise as much as possible
         logging.info(f"\t{args.cores} CPUs provided in total")
-        # Adapt number of CPUs in ThreadPool to number of cell types
-        if len(uniq_labels) == 1:  # Can only parallelise combinations testing
-            nb_cpu_id = 1  # Use only 1 CPU in ThreadPool
-            nb_cpu_eval = (
-                args.cores - nb_cpu_id
-            )  # Assign remaining CPUs to ProcessPool
-        else:  # Can parallelise combinations testing and cell type processing
-            nb_cpu_eval = floor(
-                0.9 * args.cores
-            )  # Assign 90% of CPUs to ProcessPool
-            nb_cpu_id = (
-                args.cores - nb_cpu_eval
-            )  # Assign remaining CPUs to ThreadPool
-            # If more threads than cell types, reassign excess CPUs from
-            # ThreadPool to ProcessPool
-            diff = nb_cpu_id - len(uniq_labels)
-            if diff > 0:
-                nb_cpu_id -= diff
-                nb_cpu_eval += diff
+        nb_cpu_eval = args.cores  # Always use max CPU for combinations testing
+        # Adapt ThreadPool depending on number of CPUs and cell types
+        if len(uniq_labels) == 1:  # Only cell type, cannot parallelise
+            nb_cpu_id = 1
+        else:  # Several cell type, parallelise processing
+            nb_cpu_id = ceil(0.1 * args.cores)  # Assign 10% CPUs to ThreadPool
     logging.info(
         f"\tSetting nb_cpu_id to {nb_cpu_id} and nb_cpu_eval to {nb_cpu_eval}"
     )

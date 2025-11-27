@@ -40,7 +40,7 @@ def identify_phenotypes(
     min_cellxsample,
     knn_refine,
     knn_min_probability,
-    multipop,
+    nb_cpu_id,
     processpool,
 ):
     """
@@ -126,8 +126,8 @@ def identify_phenotypes(
       Confidence threshold for KNN-classifier to reassign a new cell type
       to previously undefined cells.
 
-    multipop: bool
-      Boolean indicating whether multiple cell types are processed.
+    nb_cpu_id: int
+      Number of CPUs used to parallelise (or not) cell type processing.
 
     processpool: None or pathos.pools.ProcessPool object
       If not None, ProcessPool object to use in downstream nested functions.
@@ -354,10 +354,8 @@ def identify_phenotypes(
                     if not processpool:
                         knn_cpu = 1
                     else:
-                        if multipop:  # If multiple cell types, use half of CPUs
-                            knn_cpu = processpool.ncpus // 2
-                        else:  # If only one cell type, use all CPUs
-                            knn_cpu = processpool.ncpus
+                        # Divide CPUs among cell types processed in parallel
+                        knn_cpu = processpool.ncpus // nb_cpu_id
                     str1 = "s" if knn_cpu > 1 else ""
                     logging.info(
                         f"\t\t\t\t\t{cell_name} - ({best_comb_name}): Using {knn_cpu} CPU{str1}"
