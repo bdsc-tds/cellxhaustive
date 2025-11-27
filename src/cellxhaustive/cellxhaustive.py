@@ -365,30 +365,25 @@ def main():
     logging.debug(
         "\tDetermining maximum number of optimal combinations across all cell types"
     )
-    max_comb = max([len(annot_dict[label].keys()) for label in uniq_labels])
+    max_comb = max(len(annot_dict[label]) for label in uniq_labels)
     str1 = "s" if max_comb > 1 else ""
     logging.debug(f"\t\tFound {max_comb} combination{str1}")
 
     # Build list with all column names
     logging.debug("\tBuilding column names")
-    col_names = []
-    for i in range(max_comb):
-        col_names.extend([f"Annotations_{i + 1}", f"Phenotypes_{i + 1}"])
-        if knn_refine:
-            col_names.extend([
-                f"KNN_annotations_{i + 1}",
-                f"KNN_phenotype_{i + 1}",
-                f"KNN_proba_{i + 1}",
-            ])
+    base_cols = ["Annotations", "Phenotypes"]
+    if knn_refine:
+        base_cols.extend(["KNN_annotations", "KNN_phenotype", "KNN_proba"])
+    col_names = [f"{col}_{i + 1}" for i in range(max_comb) for col in base_cols]
 
-    # Initialise empty dataframe to store all annotation results
+    # Initialise empty array to store all annotation results
     logging.debug("\tInitialising empty annotation table")
-    annot_df = pd.DataFrame(
-        None, index=range(input_table.shape[0]), columns=col_names
-    )
+    nb_rows = input_table.shape[0]
+    annot_array = np.full((nb_rows, len(col_names)), np.nan, dtype=object)
 
-    # Fill annotation dataframe with results
+    # Fill annotation array with results
     logging.info("\tFilling annotation table with analyses results")
+    cols_per_comb = len(base_cols)
     for label, is_label in zip(uniq_labels, is_label_lst):
         logging.info(f"\t\tCreating result table for <{label}> annotations")
 
@@ -398,51 +393,48 @@ def main():
 
         # Find number of optimal combinations for 'label' cells
         logging.info("\t\t\tDetermining maximum number of optimal combinations")
-        label_nb_comb = list(sub_results.keys())
-        str1 = "s" if len(label_nb_comb) > 1 else ""
-        logging.info(f"\t\t\t\tFound {len(label_nb_comb)} combination{str1}")
+        label_comb_keys = list(sub_results.keys())
+        nb_label_combs = len(label_comb_keys)
+        str1 = "s" if nb_label_combs > 1 else ""
+        logging.info(f"\t\t\t\tFound {nb_label_combs} combination{str1}")
 
         # Get number of cells
         logging.info("\t\t\tCounting cells")
-        cell_nb = sub_results[list(sub_results)[0]]["new_labels"].shape[0]
+        first_key = label_comb_keys[0]
+        cell_nb = sub_results[first_key]["new_labels"].shape[0]
         # Note: 'list(sub_results)[0]' is used because it will always exist
         logging.info(f"\t\t\t\tFound {cell_nb} cells")
 
-        # Get column names
-        logging.debug("\t\t\tSelecting column names")
-        end = (
-            (5 * len(label_nb_comb)) if knn_refine else (2 * len(label_nb_comb))
-        )
-        col_names_sub = col_names[:end]
-
-        # Initialise empty dataframe to store annotation results for 'label'
-        logging.debug("\t\t\tInitialising empty table to proper dimensions")
-        annot_df_label = pd.DataFrame(
-            np.nan, index=range(cell_nb), columns=col_names_sub, dtype=object
-        )
-
-        # Create dataframe results for all optimal combinations of 'label'
+        # Fill array directly for each combination
         logging.info("\t\t\tFilling table")
-        for idx, comb_nb in enumerate(label_nb_comb):
-            # Extract results
-            sub_res_df = pd.DataFrame.from_dict(
-                sub_results[comb_nb], orient="index"
-            ).transpose()
-
-            # Fill 'label' annotation dataframe
-            start = 5 * idx
-            annot_df_label.iloc[:, start : (start + 5)] = sub_res_df
-
-        # Fill general annotation dataframe with 'label' annotations
-        logging.info(f"\t\tIntegrating <{label}> annotations to general table")
-        annot_df.iloc[is_label, :end] = annot_df_label.copy(deep=True)
-
+        label_indices = np.where(is_label)[0]
+        for idx, comb_nb in enumerate(label_comb_keys):
+            start_col = idx * cols_per_comb
+            # Extract data
+            comb_data = sub_results[comb_nb]
+            # Add base results
+            annot_array[label_indices, start_col] = comb_data["new_labels"]
+            annot_array[label_indices, start_col + 1] = comb_data[
+                "cell_phntp_comb"
+            ]
+            # Add KNN results if needed
+            if knn_refine:
+                annot_array[label_indices, start_col + 2] = comb_data[
+                    "reannotated_labels"
+                ]
+                annot_array[label_indices, start_col + 3] = comb_data[
+                    "reannotated_phntp"
+                ]
+                annot_array[label_indices, start_col + 4] = comb_data[
+                    "reannotation_proba"
+                ]
     logging.info("\t\tAll annotations gathered in general table")
 
     # Merge input dataframe and annotation dataframe
     logging.info("\tMerging input data and annotation table")
-    annot_df.set_index(input_table.index, inplace=True)
-    # Note: set indices to avoid problem during concatenation
+    annot_df = pd.DataFrame(
+        annot_array, index=input_table.index, columns=col_names
+    )
     output_table = pd.concat([input_table, annot_df], axis=1)
 
     # Create output directory if not empty and missing

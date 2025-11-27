@@ -90,89 +90,83 @@ def assign_cell_types(
     logging.info(
         f"\t\t\t\t\t{cell_name} - ({best_comb_name}): Trimming cell classification to keep only relevant markers"
     )
-    markers_representative = np.asarray(sorted(markers_representative))
+    markers_set = set(sorted(markers_representative))
     cell_types_filtered = {}
     for cell_type, cell_mkers in cell_types_dict.items():
-        # Separate and protein marker and sign
-        mkers_lst = [mkers[:-1] for mkers in cell_mkers]
-        signs_lst = [mkers[-1] for mkers in cell_mkers]
-        # Test if markers belong to 'markers_representative' and rebuild list
+        # Keep markers present in markers_representative
         mkers_lst_clean = [
-            f"{mker}{sign}"
-            for mker, sign in zip(mkers_lst, signs_lst)
-            if mker in markers_representative
+            mker for mker in cell_mkers if mker[:-1] in markers_set
         ]
-        # If 'mkers_lst_clean' is not empty, keep it
         if mkers_lst_clean:
             cell_types_filtered[cell_type] = mkers_lst_clean
-        else:
-            cell_types_filtered[cell_type] = []
 
     # Reduce 'cell_types_filtered' redundancy
     logging.info(
         f"\t\t\t\t\t{cell_name} - ({best_comb_name}): Reducing redundancy in new classification"
     )
-    nb_of_prot = np.array([len(mkers) for mkers in cell_types_dict.values()])
-    cell_types_clean = {}
-    for cell_type, cell_mkers in cell_types_filtered.items():
-        # Find which cell types have identical markers
-        comparison = np.array([
-            [(j == cell_mkers) * 1, i] for i, j in cell_types_filtered.items()
-        ])
-        condi = comparison[:, 0].astype(bool)
-        # 'cell_mkers' is either unique or current minimum
-        if (np.sum(condi) == 1) or (
-            comparison[condi, 1][np.argmin(nb_of_prot[condi])] == cell_type
-        ):
-            cell_types_clean[cell_type] = cell_mkers
+    nb_of_prot = {k: len(v) for k, v in cell_types_dict.items()}
 
-    # Remove keys with empty lists of markers and sort marker lists
-    cell_types_clean = {k: sorted(v) for k, v in cell_types_clean.items() if v}
-    # Note: it does not matter if cell_types_clean is empty
+    # Group by marker list to find duplicates
+    markers_to_types = {}
+    for cell_type, cell_mkers in cell_types_filtered.items():
+        key = tuple(cell_mkers)
+        if key not in markers_to_types:
+            markers_to_types[key] = []
+        markers_to_types[key].append(cell_type)
+
+    # Keep only minimum cell type for each unique marker list
+    cell_types_clean = {}
+    for marker_list, cell_types in markers_to_types.items():
+        if len(cell_types) == 1:
+            cell_types_clean[cell_types[0]] = sorted(marker_list)
+        else:
+            # Keep the one with minimum original marker count
+            min_type = min(cell_types, key=lambda x: nb_of_prot[x])
+            cell_types_clean[min_type] = sorted(marker_list)
 
     # Determine number of exact matches between phenotypes from 'best_phntp'
     # and marker lists from 'cell_types_clean'
     logging.info(
         f"\t\t\t\t\t{cell_name} - ({best_comb_name}): Determining exact matches between phenotypes and cell classification"
     )
+
+    # Build reverse mapping for faster lookup
+    markers_to_cell_type = {tuple(v): k for k, v in cell_types_clean.items()}
+
+    # Match phenotypes and cell types
     phntp_match = []
     cell_types_match = []
-    for phntp in np.char.split(best_phntp, sep="/"):
-        if not cell_types_clean:
-            # If 'cell_types_clean' is empty, there can be no exact match
-            break
-        if phntp in cell_types_clean.values():
-            phntp_match.append("/".join(phntp))  # Get matching phntp
-            cell_type = [k for k, v in cell_types_clean.items() if v == phntp]
-            cell_types_match.append(cell_type[0])  # Get matching cell type
+    for phntp_str in best_phntp:
+        phntp = phntp_str.split("/")
+        phntp_tuple = tuple(phntp)
+        if phntp_tuple in markers_to_cell_type:
+            phntp_match.append(phntp_str)
+            cell_types_match.append(markers_to_cell_type[phntp_tuple])
 
     # Determine base name(s) for all phenotypes
-    if len(phntp_match) == 0:  # No exact match
-        # Most present phenotype (i.e. phenotype present in highest number
-        # of cells) will be used as base name
+    n_matches = len(phntp_match)
+    if n_matches == 0:  # No exact match
+        # Most present phenotype will be used as base name
+        mask = np.isin(cell_phntp, best_phntp)
         uniq_phntp, phntp_count = np.unique(
-            cell_phntp[np.isin(cell_phntp, best_phntp)], return_counts=True
+            cell_phntp[mask], return_counts=True
         )
-        # Note: only representative phenotypes need to be considered, hence
-        # filtering with 'best_phntp'
-        base_comb = uniq_phntp[np.argmax(phntp_count)]
+        base_comb = uniq_phntp[phntp_count.argmax()]
         base_name = cell_name
         logging.info(
             f"\t\t\t\t\t\t{cell_name} - ({best_comb_name}): No exact match between phenotypes and cell classification"
         )
-
-    elif len(phntp_match) == 1:  # One exact match that was already determined
+    elif n_matches == 1:  # One exact match that was already determined
         base_comb = phntp_match[0]
         base_name = cell_types_match[0]
         logging.info(
             f"\t\t\t\t\t\t{cell_name} - ({best_comb_name}): 1 exact match between phenotypes and cell classification"
         )
-
     else:  # Several exact matches that were already determined
         base_comb = phntp_match
         base_name = cell_types_match
         logging.info(
-            f"\t\t\t\t\t\t{cell_name} - ({best_comb_name}): Found {len(base_name)} exact match between phenotypes and cell classification"
+            f"\t\t\t\t\t\t{cell_name} - ({best_comb_name}): Found {n_matches} exact matches between phenotypes and cell classification"
         )
 
     # Get mapping dictionary to convert names

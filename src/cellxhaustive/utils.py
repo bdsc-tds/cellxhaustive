@@ -5,6 +5,7 @@ Functions and classes shared between several scripts.
 # Import utility modules
 import logging
 import sys
+from collections import Counter
 
 
 # Functions and classes related to logging
@@ -108,34 +109,33 @@ def get_repr_markers(markers_rep_batches, nb_batch):
       Number of batches that was finally considered during marker selection.
     """
 
-    # Select markers present in 'nb_batch' batches
-    markers_representative = set([
-        mk
-        for mk in markers_rep_batches
-        if markers_rep_batches.count(mk) == nb_batch
-    ])
+    # Count markers using Counter
+    marker_counts = Counter(markers_rep_batches)
 
-    if (
-        len(markers_representative) > 0
-    ):  # 'markers_representative' contains markers
-        mk_rep_str = ", ".join(markers_representative)
+    # Select markers present in 'nb_batch' batches
+    markers_representative = {
+        mk for mk, count in marker_counts.items() if count == nb_batch
+    }
+
+    # Check if representative markers were found
+    if markers_representative:  # At least one representative marker found
+        mk_rep_str = ", ".join(sorted(markers_representative))
         logging.info(
             f"\t\t\tFound {len(markers_representative)} markers: {mk_rep_str}"
         )
-        missing_markers = set([
-            mk
-            for mk in markers_rep_batches
-            if markers_rep_batches.count(mk) < nb_batch
-        ])
+        # Find missing markers
+        missing_markers = {
+            mk for mk, count in marker_counts.items() if count < nb_batch
+        }
         str1 = "s" if len(missing_markers) > 1 else ""
-        missing_mk_str = ", ".join(missing_markers)
+        missing_mk_str = ", ".join(sorted(missing_markers))
         logging.info(
             f"\t\t\tFiltered out {len(missing_markers)} marker{str1}: {missing_mk_str}"
         )
         return markers_representative, missing_markers, nb_batch
-    else:  # No markers in 'markers_representative': retry with one less batch
+    else:  # No representative marker found: retry with one less batch
         nb_batch -= 1
         logging.info(
             f"\t\t\tNo markers found. Retrying with {nb_batch} batches"
         )
-        markers_representative = get_repr_markers(markers_rep_batches, nb_batch)
+        return get_repr_markers(markers_rep_batches, nb_batch)

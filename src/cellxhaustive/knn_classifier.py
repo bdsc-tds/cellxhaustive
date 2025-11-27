@@ -4,7 +4,6 @@ probability for reclassification.
 """
 
 # Import utility modules
-import copy
 import logging
 import numpy as np
 from joblib import parallel_config
@@ -73,11 +72,8 @@ def knn_classifier(
       'mat_representative'.
     """
 
-    # Copy 'new_labels' array to avoid changing the original array
-    reannotated_labels = copy.deepcopy(new_labels)
-    reannotated_labels = reannotated_labels.astype(
-        dtype="object"
-    )  # To avoid strings getting cut
+    # Copy 'new_labels' array. Use dtype="object" to avoid strings getting cut
+    reannotated_labels = new_labels.astype(dtype="object")
 
     # Split data in annotated (train/test) cells and undefined cells (i.e. cells
     # that will be re-annotated by classifier)
@@ -99,25 +95,23 @@ def knn_classifier(
         stratify=annot_phntp,
     )
 
-    # Initialise scaler
+    # Initialize pipeline with scaler and classifier
     logging.info(
         f"\t\t\t\t\t{cell_name} - ({best_comb_name}): Initializing KNN-classifier and parameters grid"
     )
-    scaler = StandardScaler()
-
-    # Initialise KNN-classifier
-    clf = KNeighborsClassifier(p=2, metric="minkowski", n_jobs=None)
-    # Note: default arguments "p=2, metric='minkowski'" are equivalent to
-    # calculating Euclidean distances
-
-    # Initialise pipeline with scaler and classifier
-    pipeline = Pipeline([("scaler", scaler), ("KNN", clf)], verbose=False)
+    pipeline = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            ("KNN", KNeighborsClassifier(p=2, metric="minkowski", n_jobs=None)),
+        ],
+        verbose=False,
+    )
 
     # Define parameters grid for hypertuning
     param_grid = {
-        "KNN__n_neighbors": np.arange(5, 21, 5),
+        "KNN__n_neighbors": [5, 10, 15, 20],
         "KNN__weights": ["uniform", "distance"],
-        "KNN__leaf_size": np.arange(10, 31, 10),
+        "KNN__leaf_size": [10, 20, 30],
     }
 
     # Build parameters grid object
@@ -140,6 +134,7 @@ def knn_classifier(
     with parallel_config(backend="multiprocessing", n_jobs=knn_cpu):
         best_model = knn_grid.fit(X_train, y_train)
 
+    # Display best parameters
     best_model_str = ", ".join(
         f"{k}: {v}" for k, v in best_model.best_params_.items()
     )
@@ -155,31 +150,30 @@ def knn_classifier(
     # Note: this returns an array of probabilities for a cell to belong to a
     # certain cell type
 
+    # Get max probabilities and indices
     logging.info(
         f"\t\t\t\t\t{cell_name} - ({best_comb_name}): Selecting annotations passing knn_min_probability threshold"
     )
-    # Initialise empty array to store updated annotations
-    reannotated = np.full(
-        undef_cells_mat.shape[0], undef_phntp, dtype="object"
-    )  # To avoid strings getting cut
+    max_proba = undef_cells_pred.max(axis=1)
+    max_idx = undef_cells_pred.argmax(axis=1)
 
-    # Extract cell types ordered by sklearn
-    ordered_cell_types = best_model.classes_
-
-    # Create empty array for reannotation probability
-    reannotation_proba = np.full(reannotated_labels.shape[0], np.nan)
-
-    # Get maximum proba for each row
-    reannotation_proba[is_undef] = np.max(undef_cells_pred, axis=1)
+    # Create empty array for reannotation probability and get maximum proba for
+    # each row
+    reannotation_proba = np.full(len(reannotated_labels), np.nan)
+    reannotation_proba[is_undef] = max_proba
 
     # Check if maximum proba of each row is larger than 'knn_min_probability'
-    is_max_higher = reannotation_proba[is_undef] > knn_min_probability
+    passes_threshold = max_proba > knn_min_probability
 
-    # Find index of maximum probability for each row
-    max_idx = np.argmax(undef_cells_pred, axis=1)
+    # Initialise empty array to store updated annotations with undefined labels
+    reannotated = np.full(len(undef_cells_mat), undef_phntp, dtype="object")
 
-    # Extract updated annotations passing threshold
-    reannotated[is_max_higher] = ordered_cell_types[max_idx][is_max_higher]
+    # Assign annotations passing threshold
+    if np.any(passes_threshold):
+        ordered_cell_types = best_model.classes_
+        reannotated[passes_threshold] = ordered_cell_types[
+            max_idx[passes_threshold]
+        ]
 
     # Assign new annotations to original array
     logging.info(

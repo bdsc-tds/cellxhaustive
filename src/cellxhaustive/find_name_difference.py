@@ -38,47 +38,43 @@ def find_name_difference(base_comb, base_name, best_phntp):
 
     # Fill dictionary with new names
     if isinstance(base_comb, str):  # 0 or 1 exact match, variables are strings
-        # Split 'base_comb' string into list of markers
-        base_comb_lst = base_comb.split("/")
+        # Split 'base_comb' string into set of markers
+        base_set = set(base_comb.split("/"))
+        # Loop through all phenotypes
         for comb_str in best_phntp:
-            if (
-                comb_str == base_comb
-            ):  # No need to find differences with 'base_comb'
+            # 'comb_str' and 'base_comb' are identical, no need to look for
+            # differences
+            if comb_str == base_comb:
                 names_conv[comb_str] = base_name
             else:  # Find differences between 'comb_str' and 'base_comb'
-                # Convert strings to lists to facilitate comparisons
-                comb_str_lst = comb_str.split("/")
+                # Split 'comb_str' string into set of markers
+                comb_set = set(comb_str.split("/"))
                 # Find different markers
-                diff_markers = sorted(
-                    list(set(comb_str_lst) - set(base_comb_lst))
-                )
+                diff_markers = sorted(comb_set - base_set)
                 # Add new name to dictionary
                 names_conv[comb_str] = (
                     f"{base_name} ({', '.join(diff_markers)})"
                 )
     else:  # Several exact matches, variables are lists of strings
-        # Split 'base_comb' string list into list of list of markers
-        base_comb_lst = [comb.split("/") for comb in base_comb]
+        # Split 'base_comb' string list into list of set of markers
+        base_sets = [set(comb.split("/")) for comb in base_comb]
+        base_comb_set = set(base_comb)  # For fast membership check
+        # Loop through all phenotypes
         for comb_str in best_phntp:
-            overlap = []
-            if (
-                comb_str in base_comb
-            ):  # No need to find differences with 'base_comb'
+            # 'comb_str' exists in 'base_comb_set', no need to look for
+            # differences
+            if comb_str in base_comb_set:
                 names_conv[comb_str] = base_name[base_comb.index(comb_str)]
             else:
-                comb_str_lst = comb_str.split("/")
-                # Calculate overlap between 'comb_str' and exact matches
-                for comb_lst in base_comb_lst:
-                    overlap.append(len(list(set(comb_lst) & set(comb_str_lst))))
-                # Select maximum overlap
-                max_overlap_idx = overlap.index(max(overlap))
+                # Split 'comb_str' string into set of markers
+                comb_set = set(comb_str.split("/"))
+
+                # Find maximum overlap using set intersection
+                overlaps = [len(base_set & comb_set) for base_set in base_sets]
+                max_overlap_idx = overlaps.index(max(overlaps))
+
                 # Find different markers
-                diff_markers = sorted(
-                    list(
-                        set(comb_str_lst) - set(base_comb_lst[max_overlap_idx])
-                    )
-                )
-                # Add new name to dictionary
+                diff_markers = sorted(comb_set - base_sets[max_overlap_idx])
                 names_conv[comb_str] = (
                     f"{base_name[max_overlap_idx]} ({', '.join(diff_markers)})"
                 )

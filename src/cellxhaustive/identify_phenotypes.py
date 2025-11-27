@@ -398,12 +398,15 @@ def identify_phenotypes(
                     }
 
                     # Update phenotypes of reannotated cells
-                    reannotated_phntp = np.vectorize(
-                        rev_names_conv.get, otypes=[object]
-                    )(reannotated_labels, "tmp")
-                    # Note: 'tmp' is a placeholder used to easily identify
-                    # unidentified cells
-                    still_undef = reannotated_phntp == "tmp"
+                    reannotated_phntp = np.empty(
+                        len(reannotated_labels), dtype=object
+                    )
+                    for cell_type, phenotype in rev_names_conv.items():
+                        mask = reannotated_labels == cell_type
+                        reannotated_phntp[mask] = phenotype
+
+                    # Fill unmatched cells with original phenotype
+                    still_undef = reannotated_phntp == None  # noqa: E711
                     reannotated_phntp[still_undef] = cell_phntp_comb[
                         still_undef
                     ]
@@ -414,9 +417,8 @@ def identify_phenotypes(
                     results_dict[i]["reannotation_proba"] = reannotation_proba
 
                     # Record number of undefined cells after reannotation
-                    nb_undef = np.sum(
-                        reannotated_labels == f"Unannotated {cell_name}"
-                    )
+                    undef_label = f"Unannotated {cell_name}"
+                    nb_undef = np.sum(reannotated_labels == undef_label)
                     undef_counter.append(nb_undef)
 
                     # If there are several solutions and KNN-classifier was run,
@@ -426,41 +428,39 @@ def identify_phenotypes(
                         logging.info(
                             f"\t\t\t\t{cell_name}: Redefining optimal combinations after KNN-classification"
                         )
-                        # Get index of undefined cells minimum
-                        min_undef_idx = [
-                            i
-                            for i, x in enumerate(undef_counter)
-                            if x == min(undef_counter)
-                        ]
-
-                        # Filter results using previous indices
-                        for key in list(results_dict.keys()):
-                            # Keep only indices with minimum undefined cells
-                            if key not in min_undef_idx:
-                                del results_dict[key]
+                        # Get minimum undefined cells count
+                        min_undef = min(undef_counter)
+                        # Filter results. Keep only those with minimum undefined
+                        # cells
+                        results_dict = {
+                            key: val
+                            for key, val in results_dict.items()
+                            if undef_counter[key] == min_undef
+                        }
                         logging.info(
                             f"\t\t\t\t\tFound {len(results_dict)} optimal combination{str1}"
                         )
 
                 else:  # If conditions are not met, no reannotation
+                    nb_undef = np.sum(is_undef)
+                    nb_annotations = len(np.unique(new_labels))
                     logging.warning(
                         f"\t\t\t\t{cell_name} - ({best_comb_name}): Not enough cell types or undefined cells to refine annotations with KNN-classifier"
                     )
                     logging.warning(
-                        f"\t\t\t\t\t{cell_name} - ({best_comb_name}): Undefined cells: {np.sum(is_undef)}"
+                        f"\t\t\t\t\t{cell_name} - ({best_comb_name}): Undefined cells: {nb_undef}"
                     )
                     logging.warning(
-                        f"\t\t\t\t\t{cell_name} - ({best_comb_name}): Annotations: {len(np.unique(new_labels))}"
+                        f"\t\t\t\t\t{cell_name} - ({best_comb_name}): Annotations: {nb_annotations}"
                     )
                     # Use default arrays as placeholders for reannotation
                     # results
-                    reannotation_proba = np.full(new_labels.shape[0], np.nan)
+                    reannotation_proba = np.full(len(new_labels), np.nan)
                     results_dict[i]["reannotated_labels"] = new_labels
                     results_dict[i]["reannotated_phntp"] = cell_phntp_comb
                     results_dict[i]["reannotation_proba"] = reannotation_proba
 
                     # Record number of undefined cells after reannotation
-                    nb_undef = np.sum(is_undef)
                     undef_counter.append(nb_undef)
 
             logging.info(f"\t\t\t\t{cell_name}: Combination {i} processed")
