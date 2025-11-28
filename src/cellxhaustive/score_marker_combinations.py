@@ -1,13 +1,14 @@
 """
 Script that determines number of unique cell phenotypes (combination of positive
-and negative markers) and number of cells without phenotype in an expression matrix
-across different metrics thresholds.
+and negative markers) and number of cells without phenotype in an expression
+matrix across different metrics thresholds.
 """
-
 
 # Import utility modules
 import logging
 import numpy as np
+import pandas as pd
+from scipy.sparse import csr_matrix
 
 
 # Import local functions
@@ -15,17 +16,33 @@ from cellxhaustive.determine_marker_status import determine_marker_status
 
 
 # Function used in check_all_combinations.py
-def score_marker_combinations(mat_comb, batches_label, samples_label,
-                              markers_comb, two_peak_threshold,
-                              three_peak_markers, three_peak_low, three_peak_high,
-                              x_samplesxbatch_space, y_cellxsample_space):
+def score_marker_combinations(
+    cell_name,
+    comb_name,
+    mat_comb,
+    batches_label,
+    samples_label,
+    markers_comb,
+    two_peak_threshold,
+    three_peak_markers,
+    three_peak_low,
+    three_peak_high,
+    min_samplesxbatch,
+    min_cellxsample,
+):
     """
-    Function that determines number of unique cell phenotypes (combination of
+    Function that determines number of unique cell phenotypes (combinations of
     positive and negative markers) and number of cells without phenotype in an
     expression matrix across different metrics thresholds.
 
     Parameters:
     -----------
+    cell_name: str
+      Base name for cell types (e.g. CD4 T-cells for 'CD4T').
+
+    comb_name: str
+      Combination name.
+
     mat_comb: array(float)
       2-D numpy array expression matrix, with cells in D0 and markers in D1.
       In other words, rows contain cells and columns contain markers. This
@@ -42,7 +59,7 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
       1-D numpy array with markers matching each column of 'mat_comb'.
 
     two_peak_threshold: float (default=3)
-      Threshold to consider when determining whether a two-peaks marker is
+      Threshold to consider when determining whether a two peaks marker is
       negative or positive. Expression below this threshold means marker will be
       considered negative. Conversely, expression above this threshold means
       marker will be considered positive.
@@ -51,119 +68,144 @@ def score_marker_combinations(mat_comb, batches_label, samples_label,
       List of markers that have three peaks.
 
     three_peak_low: float (default=2)
-      Threshold to consider when determining whether a three-peaks marker is
-      negative or low positive. Expression below this threshold means marker will
-      be considered negative. See description of 'three_peak_high' for
+      Threshold to consider when determining whether a three peaks marker is
+      negative or low positive. Expression below this threshold means marker
+      will be considered negative. See description of 'three_peak_high' for
       more information on low_positive markers.
 
     three_peak_high: float (default=4)
-      Threshold to consider when determining whether a three-peaks marker is
-      low_positive or positive. Expression above this threshold means marker will
-      be considered positive. Expression between 'three_peak_low' and
+      Threshold to consider when determining whether a three peaks marker is
+      low_positive or positive. Expression above this threshold means marker
+      will be considered positive. Expression between 'three_peak_low' and
       'three_peak_high' means marker will be considered low_positive.
 
-    x_samplesxbatch_space: array(float) (default=[0.5, 0.6, 0.7, ..., 1])
+    min_samplesxbatch: float (default=0.5)
       Minimum proportion of samples within each batch with at least
-      'y_cellxsample_space' cells for a new annotation to be considered. In other
-      words, by default, an annotation needs to be assigned to at least 10, 20...
-      100 cells/sample (see description of next parameter) in at least 50%, 60%...
-      100% of samples within a batch to be considered.
+      'min_cellxsample' cells for a new annotation to be considered. In other
+      words, by default, an annotation needs to be assigned to at least 10
+      cells/sample (see description of next parameter) in at least 50% of
+      samples within a batch to be considered.
 
-    y_cellxsample_space: array(float) (default=[10, 20, 30, ..., 100])
-      Minimum number of cells within each sample in 'x_samplesxbatch_space' % of
+    min_cellxsample: float (default=10)
+      Minimum number of cells within each sample in 'min_samplesxbatch' % of
       samples within each batch for a new annotation to be considered. In other
-      words, by default, an annotation needs to be assigned to at least 10, 20...
-      100 cells/sample in at least 50%, 60%... 100% of samples (see description
-      of previous parameter) within a batch to be considered.
+      words, by default, an annotation needs to be assigned to at least 10
+      cells/sample in at least 50% of samples (see description of previous
+      parameter) within a batch to be considered.
 
     Returns:
     --------
-    nb_phntp: array(float)
-      2-D numpy array with number of unique cell phenotypes (combinations of
-      positive and negative markers from 'markers_comb') identified in 'mat_comb'
-      across grid composed of metrics 'x_samplesxbatch_space' in D0 and
-      'y_cellxsample_space' in D1.
+    nb_phntp: int
+      Number of unique cell phenotypes (combinations of positive and negative
+      markers from 'markers_comb') identified in 'mat_comb'.
 
-    nb_undef_cells: array(float)
-      2-D numpy array with number of undefined cells (cells without a phenotype)
-      in 'mat_comb' across grid composed of metrics 'x_samplesxbatch_space' in
-      D0 and 'y_cellxsample_space' in D1.
+    nb_undef_cells: int
+      Number of undefined cells (cells without a phenotype) in 'mat_comb'.
     """
 
     # Determine markers status of 'markers_comb' using expression data
-    logging.debug('\t\t\t\t\t\tDetermining marker status for each cell')
+    logging.debug(
+        f"\t\t\t\t\t{cell_name} - ({comb_name}): Determining marker status for each cell"
+    )
     phntp_per_cell = determine_marker_status(
         mat_comb=mat_comb,
         markers_comb=markers_comb,
         two_peak_threshold=two_peak_threshold,
         three_peak_markers=three_peak_markers,
         three_peak_low=three_peak_low,
-        three_peak_high=three_peak_high)
+        three_peak_high=three_peak_high,
+    )
 
-    # Initialise arrays to store results
-    nb_phntp = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
-    nb_undef_cells = np.zeros((len(x_samplesxbatch_space), len(y_cellxsample_space)))
+    # Initialise counters to store number of phenotypes and undefined cells
+    nb_phntp = 0
+    nb_undef_cells = 0
 
     # Process marker phenotypes returned by 'determine_marker_status()' and
     # check whether they are worth keeping
-    logging.debug('\t\t\t\t\t\tChecking which phenotypes are passing thresholds')
-    for phenotype in np.unique(phntp_per_cell):
+    logging.debug(
+        f"\t\t\t\t\t{cell_name} - ({comb_name}): Checking which phenotypes are passing thresholds"
+    )
 
-        # Initialise temporary array to store 'phenotype' results
-        keep_phenotype = np.full(nb_phntp.shape, True)
+    # Create categorical integer codes for faster operations
+    # Note: map strings to integers "phenotype0" -> 0, "phenotype1" -> 1...
+    # phntp_cat.codes = array of integers
+    # phntp_cat.categories = array of original strings
+    phntp_cat = pd.Categorical(phntp_per_cell)
+    batch_cat = pd.Categorical(batches_label)
+    sample_cat = pd.Categorical(samples_label)
 
-        # Process batches separately
-        for batch in np.unique(batches_label):
-            # Split phenotype data according to batch
-            phenotypes_batch = phntp_per_cell[batches_label == batch]
+    # Create sparse matrix with number of cells for each phenotype/sample pair
+    # with the following structure:
+    # - Shape: (nb_phenotypes, nb_samples)
+    # - Rows: phenotypes
+    # - Columns: samples
+    # - phenotype_sample_mtx[phenotype_code, sample_code] = number of cells
+    # Example: if cell 0 is phenotype 5 in sample 3, add 1 to mtx[5, 3]
+    phenotype_sample_mtx = csr_matrix(
+        (np.ones(len(phntp_per_cell)), (phntp_cat.codes, sample_cat.codes)),
+        shape=(len(phntp_cat.categories), len(sample_cat.categories)),
+    )
 
-            # Split sample data, first according to batch and then phenotype
-            phenotype_samples = samples_label[batches_label == batch][phenotypes_batch == phenotype]
+    # Map samples to batches
+    # Example: {0: 0, 1: 0, 2: 1, ...} means samples 0, 1 are in batch 0
+    sample_to_batch_map = (
+        pd.Series(batch_cat.codes, index=sample_cat.codes)
+        .groupby(level=0)
+        .first()
+    )
+
+    # Initialise array to store 'phenotype' results
+    keep_phenotypes = np.ones(len(phntp_cat.categories), dtype=bool)
+
+    # Loop through batches
+    for batch_idx in range(len(batch_cat.categories)):
+        # Get all sample indices for current batch
+        samples_in_batch = sample_to_batch_map[
+            sample_to_batch_map == batch_idx
+        ].index.values
+
+        # Slice matrix according to batch: keep all phenotypes (rows) but only
+        # samples present in current batch (cols)
+        batch_matrix = phenotype_sample_mtx[:, samples_in_batch]
+
+        # Loop through phenotypes and decide whether to keep them
+        for phntp_idx in np.where(keep_phenotypes)[0]:
+            # Get current phenotype counts across all samples in current batch
+            # Note: .toarray() converts sparse to dense, .ravel() flattens to 1D
+            # Example: [0, 5, 12] means 5 cells in sample 1, 12 in sample 2...
+            cell_count_phntp_batch = batch_matrix[phntp_idx].toarray().ravel()
 
             # If there are no 'phenotype' cells in 'batch', that means it cannot
-            # be present in all batches, so stop now
-            if phenotype_samples.size == 0:
-                keep_phenotype = np.logical_and(keep_phenotype, False)
-                break
+            # be present in all batches, so skip rest of checks
+            if cell_count_phntp_batch.sum() == 0:
+                keep_phenotypes[phntp_idx] = False
+                continue
 
-            # Calculate number of unique samples in current batch and phenotype
-            samples_nb = float(len(np.unique(phenotype_samples)))
+            # Count how many samples satisfy cell/sample threshold
+            samples_above_threshold = np.sum(
+                cell_count_phntp_batch >= min_cellxsample
+            )
 
-            # Count number of cells per phenotype in each sample
-            cell_count_sample = np.asarray([np.sum(phenotype_samples == smpl)
-                                            for smpl in np.unique(phenotype_samples)])
+            # Count how many samples have any cells of this phenotype
+            samples_in_batch_total = np.sum(cell_count_phntp_batch > 0)
 
-            # Check whether previous counts satisfy cell/sample threshold
-            keep_phenotype_batch = cell_count_sample[:, np.newaxis] >= y_cellxsample_space
-            # Note: np.newaxis is used to add a dimension to work on different
-            # samples concurrently
+            # Proportion of (samples with phenotype) that meet threshold
 
-            # Calculate proportion of samples in current batch satisfying
-            # cell/sample threshold
-            keep_phenotype_batch = (np.sum(keep_phenotype_batch, axis=0) / samples_nb)
-            # Notes:
-            # - 'keep_phenotype_batch' is a boolean array, so it can be summed
-            # - 'np.sum(keep_phenotype_batch, axis=0)' calculates number of samples
-            # satisfying cell/sample threshold for a given y in grid
+            # Calculate proportion of sample/batch passing cell/sample threshold
+            sample_batch_prop = samples_above_threshold / samples_in_batch_total
 
-            # Check whether previous proportions satisfy sample/batch threshold
-            keep_phenotype_batch = keep_phenotype_batch >= x_samplesxbatch_space[:, np.newaxis]
-            # Note: '[:, np.newaxis]' is used to transpose 1-D array into a 2-D
-            # array to allow comparison
+            # If proportion is below threshold, discard phenotype
+            if sample_batch_prop < min_samplesxbatch:
+                keep_phenotypes[phntp_idx] = False
 
-            # Intersect batch results with general results
-            keep_phenotype = np.logical_and(keep_phenotype, keep_phenotype_batch)
-            # Note: for consistency, phenotypes have to be present in all batches,
-            # hence usage of 'np.logical_and()'
+    # Count total number of phenotypes and undefined cells
+    nb_phntp = np.sum(keep_phenotypes)
+    nb_undef_cells = np.sum(
+        np.isin(phntp_cat.codes, np.where(~keep_phenotypes)[0])
+    )
 
-        # Add 'phenotype' presence/absence to phenotype counter
-        nb_phntp += keep_phenotype * 1
-
-        # Add number of undefined cells to counter
-        nb_undef_cells += np.logical_not(keep_phenotype) * np.sum(phntp_per_cell == phenotype)
-
-    logging.debug('\t\t\t\t\t\tFinished check')
+    logging.debug(f"\t\t\t\t\t{cell_name} - ({comb_name}): Finished check")
 
     return nb_phntp, nb_undef_cells
     # Note: 'phntp_per_cell' is not returned to avoid memory cost of storing and
-    # dragging it across several functions and will be recalculated when needed.
+    # dragging it across several functions and will be recalculated when needed

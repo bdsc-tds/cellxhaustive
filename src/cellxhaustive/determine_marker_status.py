@@ -4,14 +4,19 @@ in a case of a marker with three peaks, positive or negative in other cases)
 depending on their expression.
 """
 
-
 # Import utility modules
 import numpy as np
 
 
 # Function used in score_marker_combinations.py
-def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,
-                            three_peak_markers, three_peak_low, three_peak_high):
+def determine_marker_status(
+    mat_comb,
+    markers_comb,
+    two_peak_threshold,
+    three_peak_markers,
+    three_peak_low,
+    three_peak_high,
+):
     """
     Function that multiprocesses marker status computing.
 
@@ -27,7 +32,7 @@ def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,
       1-D numpy array with markers matching each column of 'mat_comb'.
 
     two_peak_threshold: float (default=3)
-      Threshold to consider when determining whether a two-peaks marker is
+      Threshold to consider when determining whether a two peaks marker is
       negative or positive. Expression below this threshold means marker will be
       considered negative. Conversely, expression above this threshold means
       marker will be considered positive.
@@ -36,13 +41,13 @@ def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,
       List of markers that have three peaks.
 
     three_peak_low: float (default=2)
-      Threshold to consider when determining whether a three-peaks marker is
+      Threshold to consider when determining whether a three peaks marker is
       negative or low positive. Expression below this threshold means marker
       will be considered negative. See description of 'three_peak_high' for
       more information on low_positive markers.
 
     three_peak_high: float (default=4)
-      Threshold to consider when determining whether a three-peaks marker is
+      Threshold to consider when determining whether a three peaks marker is
       low_positive or positive. Expression above this threshold means marker
       will be considered positive. Expression between 'three_peak_low' and
       'three_peak_high' means marker will be considered low_positive.
@@ -55,26 +60,39 @@ def determine_marker_status(mat_comb, markers_comb, two_peak_threshold,
       matching that of 'markers_comb'.
     """
 
-    # Create three peak markers mask
+    # Create three peaks markers mask
     is_three = np.isin(markers_comb, three_peak_markers)
 
-    # Convert 'mat_comb' to object dtype to allow replacement of float by string
-    mat_comb_obj = mat_comb.astype(dtype=object)
+    # Initialize marker status array
+    # Use dtype=object to allow storing strings of different lengths
+    mat_comb_obj = np.empty_like(mat_comb, dtype=object)
 
     # Find marker status
-    if any(is_three):  # With three peak markers
-        # Find status of three peak markers
-        mat_comb_obj[:, is_three] = np.where(mat_comb_obj[:, is_three] >= three_peak_high, '+',
-                                             (np.where(mat_comb_obj[:, is_three] < three_peak_low, '-', 'low')))
-        # Find status of other markers
-        mat_comb_obj[:, ~ is_three] = np.where(mat_comb_obj[:, ~ is_three] < two_peak_threshold, '-', '+')
-    else:  # Without three peak markers
-        mat_comb_obj = np.where(mat_comb_obj < two_peak_threshold, '-', '+')
+    if np.any(is_three):
+        # With three peaks markers. Find their status first
+        mat_comb_obj[:, is_three] = np.select(
+            [
+                mat_comb[:, is_three] >= three_peak_high,
+                mat_comb[:, is_three] < three_peak_low,
+            ],
+            ["+", "-"],
+            default="low",
+        )
+        # Find status of two peaks markers
+        mat_comb_obj[:, ~is_three] = np.where(
+            mat_comb[:, ~is_three] < two_peak_threshold, "-", "+"
+        )
+    else:
+        # Only two peaks markers
+        mat_comb_obj = np.where(mat_comb < two_peak_threshold, "-", "+")
 
     # Concatenate markers and status
-    mat_comb_obj = np.char.add(markers_comb, mat_comb_obj.astype(dtype=str))
+    markers_comb_expanded = np.tile(markers_comb, (mat_comb_obj.shape[0], 1))
+    mat_comb_obj = np.char.add(markers_comb_expanded, mat_comb_obj)
 
     # Concatenate all columns into one
-    phntp_per_cell = np.array(['/'.join(row) for row in mat_comb_obj], dtype=str)
+    phntp_per_cell = np.array(
+        ["/".join(row) for row in mat_comb_obj], dtype=str
+    )
 
     return phntp_per_cell
